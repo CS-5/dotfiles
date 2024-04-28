@@ -2,5 +2,9 @@
   "go-template.languages": [
     "toml",
   ],
-  "editor.defaultFormatter": "tamasfe.even-better-toml"
+  "editor.defaultFormatter": "tamasfe.even-better-toml",
+  "editor.tabSize": 2,
+  "files.associations": {
+    "*.sh.tmpl": "shellscript",
+  }
 }

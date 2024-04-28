@@ -1,0 +1,28 @@
+{{ if eq .osid "debian" "ubuntu" -}}
+
+{{ $packages := list
+  "fish"
+  "fzf"
+  "asciinema"
+  "fd-find"
+  "lsd"
+  "httpie"
+  "curl"
+  "git"
+  "wget"
+  "unzip"
+-}}
+
+{{ $sudo := "sudo " -}}
+{{ if eq .chezmoi.username "root" -}}
+{{   $sudo = "" -}}
+{{ end -}}
+
+#!{{ lookPath "bash" }}
+
+set -eufo pipefail
+
+{{ $sudo }}apt-get update
+{{ $sudo }}apt-get install -y {{ $packages | join " " }}
+
+{{ end -}}

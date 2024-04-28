@@ -1,0 +1,13 @@
+{{ if and (eq .osid "debian" "ubuntu") (not .ephemeral) -}}
+
+
+#!{{ lookPath "bash" }}
+
+{{ $sudo := "sudo " -}}
+{{ if eq .chezmoi.username "root" -}}
+{{   $sudo = "" -}}
+{{ end -}}
+
+# TODO
+
+{{ end -}}

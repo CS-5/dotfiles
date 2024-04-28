@@ -1,0 +1,23 @@
+{{ $brews := list
+  "fish"
+  "fzf"
+  "gping"
+  "asciinema"
+  "fd"
+  "lsd"
+  "httpie"
+  "jq"
+  "jnv"
+  "bat"
+  "yt-dlp"
+-}}
+
+#!{{ lookPath "bash" }}
+
+set -eufo pipefail
+
+brew bundle --no-lock --file=/dev/stdin <<EOF
+{{ range ($brews | sortAlpha | uniq) -}}
+brew "{{ . }}"
+{{ end -}}
+EOF

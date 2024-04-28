@@ -28,9 +28,14 @@
     headless = {{ $headless }}
     hostname = {{ $hostname | quote }}
     osid = {{ $osID | quote }}
+    binDir = "~/.local/bin"
 
 [data.versions]
     jnv = "0.2.2"
 
 [github]
     refreshPeriod = "12h"
+
+[edit]
+    command = "code"
+    args = ["--wait"]
