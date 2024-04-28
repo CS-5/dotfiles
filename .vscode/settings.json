@@ -1,0 +1,6 @@
+{
+  "go-template.languages": [
+    "toml",
+  ],
+  "editor.defaultFormatter": "tamasfe.even-better-toml"
+}

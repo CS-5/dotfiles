@@ -1,0 +1,36 @@
+{{- $ephemeral := false -}}
+{{- $headless := false -}}
+{{- $work := false -}}
+{{- "" -}}
+
+{{- $osID := .chezmoi.os -}}
+{{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
+{{-   $osID = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
+{{- end -}}
+
+{{/* Container/VM Detection */}}
+{{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vscode") -}}
+{{-   $ephemeral = true -}}
+{{-   $headless = true -}}
+{{- end -}}
+
+{{- $hostname := .chezmoi.hostname -}}
+
+{{- $email := "carson@carsonseese.com" -}}
+{{- if $work -}}
+{{-   $email = "carson@journalytic.com" -}}
+{{- end -}}
+
+[data]
+    ephemeral = {{ $ephemeral }}
+    email = {{ $email | quote }}
+    work = {{ $work }}
+    headless = {{ $headless }}
+    hostname = {{ $hostname | quote }}
+    osid = {{ $osID | quote }}
+
+[data.versions]
+    jnv = "0.2.2"
+
+[github]
+    refreshPeriod = "12h"
