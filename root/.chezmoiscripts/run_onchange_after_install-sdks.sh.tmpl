@@ -1,0 +1,27 @@
+{{ if not .ephemeral -}}
+
+{{ $system := "linux" -}}
+{{ if eq .chezmoi.os "darwin" -}}
+{{   $system = "macos" -}}
+{{ end -}}
+
+{{ $arch := .chezmoi.arch -}}
+
+{{ $mise := joinPath .binDir "mise" -}}
+
+#!{{ lookPath "bash" }}
+
+set -eufo pipefail
+
+curl -fsSL https://mise.jdx.dev/mise-latest-{{ $system }}-{{ $arch }} -o {{ $mise }} --create-dirs
+chmod +x {{ $mise }}
+
+{{ $mise }} install
+
+echo 'eval "$({{ $mise }} activate bash)"' >> ~/.bashrc
+echo 'eval "$({{ $mise }} activate zsh)"' >> ~/.zshrc
+echo '{{ $mise }} activate fish | source' > ~/.config/fish/conf.d/mise.fish
+
+curl -fsSL https://sh.rustup.rs | sh -s -- -y
+
+{{ end -}}

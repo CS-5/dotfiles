@@ -1,0 +1,17 @@
+{{ $sudo := "sudo" -}}
+{{ if eq .chezmoi.username "root" -}}
+{{   $sudo = "" -}}
+{{ end -}}
+
+{{ $fish := lookPath "fish" }}
+
+#!{{ lookPath "bash" }}
+
+set -eufo pipefail
+
+curl -fsSL https://starship.rs/install.sh | sh -s -- -y
+
+{{ $fish }} -c 'fundle install'
+
+{{ $sudo }} sh -c "echo {{ $fish }} >> /etc/shells"
+{{ $sudo }} chsh -s {{ $fish }} $(whoami)

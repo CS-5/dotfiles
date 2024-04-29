@@ -1,4 +1,4 @@
-{{ if eq .osid "debian" "ubuntu" -}}
+{{ if eq .osid "linux-debian" "linux-ubuntu" -}}
 
 {{ $packages := list
   "fish"
@@ -11,6 +11,7 @@
   "git"
   "wget"
   "unzip"
+  "jq"
 -}}
 
 {{ $sudo := "sudo " -}}
