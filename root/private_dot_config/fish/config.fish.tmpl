@@ -39,3 +39,8 @@ fundle init
 if status is-interactive
     starship init fish | source
 end
+
+##### Env Vars #####
+{{ if .workDevContainer -}}
+set -gx COLORTERM truecolor
+{{ end -}}
