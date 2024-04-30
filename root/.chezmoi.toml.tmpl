@@ -1,7 +1,6 @@
 {{- $ephemeral := false -}}
 {{- $headless := false -}}
-{{- $work := false -}}
-{{- "" -}}
+{{- $workDevContainer := false -}}
 
 {{- $osID := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
@@ -14,24 +13,22 @@
 {{-   $headless = true -}}
 {{- end -}}
 
-{{- $hostname := .chezmoi.hostname -}}
-
-{{- $email := "carson@carsonseese.com" -}}
-{{- if $work -}}
-{{-   $email = "carson@journalytic.com" -}}
+{{/* Work Dev Container Detection (Jank) */}}
+{{- if and $ephemeral (env "GITHUB_TOKEN") (env "NPM_CONFIG_PREFIX") -}}
+{{-   $workDevContainer = true -}}
 {{- end -}}
+
+{{- $hostname := .chezmoi.hostname -}}
 
 [data]
     ephemeral = {{ $ephemeral }}
-    email = {{ $email | quote }}
-    work = {{ $work }}
     headless = {{ $headless }}
     hostname = {{ $hostname | quote }}
     osid = {{ $osID | quote }}
     binDir = "~/.local/bin"
-
-[data.versions]
-    jnv = "0.2.2"
+    workDevContainer = {{ $workDevContainer }}
+    workEmail = "carson@journalytic.com"
+    personalEmail = "carson@carsonseese.com"
 
 [github]
     refreshPeriod = "12h"

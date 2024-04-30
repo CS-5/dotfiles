@@ -1,0 +1,14 @@
+{{ if not .ephemeral -}}
+
+HashKnownHosts no
+
+{{- if eq .osid "darwin" }}
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+{{- end }}
+
+Host github.com
+  User git
+
+{{ end -}}

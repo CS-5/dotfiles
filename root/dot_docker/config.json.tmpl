@@ -1,0 +1,19 @@
+{{ if not .ephemeral -}}
+
+{{ $credHelpers := list
+  `"us-central1-docker.pkg.dev": "gcloud"`
+-}}
+
+{
+{{- if eq .osid "darwin" }}
+  "credsStore": "osxkeychain",
+{{- end }}
+  "credHelpers": {
+  {{- range $credHelpers }}
+    {{ . }}
+  {{- end}}
+  },
+	"auths": {}
+}
+
+{{ end -}}

@@ -1,17 +1,35 @@
+{{ if eq .hostname "CSMBP" -}}
+[includeIf "gitdir:~/dev/work/"]
+  path = .gitconfig-work
+{{ end -}}
+
 [user]
 	name = Carson Seese
-	email = {{ .email }}
+{{ if .workDevContainer -}}
+	email = {{ .workEmail }}
+{{ else -}}
+	email = {{ .personalEmail }}
 	signingkey = /Users/carson/.ssh/id_ed25519.pub
+{{ end -}}
+
 [gpg]
 	format = ssh
+	
 [core]
 	fsmonitor = true
+
 [merge]
 	conflictstyle = zdiff3
+
 [rerere]
 	enabled = true
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if eq .osid "darwin" -}}
 [credential]
 	helper = osxkeychain
-{{ end }}
+{{ end -}}
+
+{{ if eq .osid "windows" -}}
+[credential]
+	helper = manager
+{{ end -}}

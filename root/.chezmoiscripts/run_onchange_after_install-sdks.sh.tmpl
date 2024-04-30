@@ -1,7 +1,7 @@
 {{ if not .ephemeral -}}
 
 {{ $system := "linux" -}}
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if eq .osid "darwin" -}}
 {{   $system = "macos" -}}
 {{ end -}}
 
