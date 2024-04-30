@@ -18,4 +18,4 @@ else
 fi
 
 script_dir="$(cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P)"
-exec "$chezmoi" init --apply "--source=$script_dir"
+exec "$chezmoi" init --promptString sourceDir=$script_dir --source=$script_dir --apply
