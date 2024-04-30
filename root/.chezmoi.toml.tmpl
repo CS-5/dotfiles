@@ -8,7 +8,7 @@
 
 {{/* Container/VM Detection */}}
 {{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vscode") -}}
-{{-   $ephemeral = false -}}
+{{-   $ephemeral = true -}}
 {{- end -}}
 
 {{/* Work Dev Container Detection (Jank) */}}
