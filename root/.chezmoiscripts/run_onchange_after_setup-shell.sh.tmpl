@@ -3,13 +3,13 @@
 {{   $sudo = "" -}}
 {{ end -}}
 
-{{ $fish := lookPath "fish" }}
+{{ $fish := lookPath "fish" -}}
 
 #!{{ lookPath "bash" }}
 
 set -eufo pipefail
 
-curl -fsSL https://starship.rs/install.sh | sh -s -- -y
+curl -fsSL https://starship.rs/install.sh | sh -s -- -y --bin-dir {{ .binDir }}
 
 {{ $fish }} -c 'fundle install'
 

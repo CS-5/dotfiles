@@ -1,5 +1,4 @@
 {{- $ephemeral := false -}}
-{{- $headless := false -}}
 {{- $workDevContainer := false -}}
 
 {{- $osID := .chezmoi.os -}}
@@ -9,8 +8,7 @@
 
 {{/* Container/VM Detection */}}
 {{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vscode") -}}
-{{-   $ephemeral = true -}}
-{{-   $headless = true -}}
+{{-   $ephemeral = false -}}
 {{- end -}}
 
 {{/* Work Dev Container Detection (Jank) */}}
@@ -22,7 +20,6 @@
 
 [data]
     ephemeral = {{ $ephemeral }}
-    headless = {{ $headless }}
     hostname = {{ $hostname | quote }}
     osid = {{ $osID | quote }}
     binDir = "~/.local/bin"
