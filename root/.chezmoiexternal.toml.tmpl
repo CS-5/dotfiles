@@ -1,3 +1,35 @@
 [".config/fish/functions/fundle.fish"]
   type = "file"
   url = "https://git.io/fundle"
+
+{{ if eq .chezmoi.os "linux" -}}
+
+{{ $dustVersion := "1.0.0" -}}
+{{ $dustFileName := printf "dust-v%s-%s-unknown-linux-musl" $dustVersion .chezmoi.arch -}}
+["{{ .binDir }}/dust"]
+  type = "archive-file"
+  url = "https://github.com/bootandy/dust/releases/download/v{{ $dustVersion }}/{{ $dustFileName }}.tar.gz"
+  path = "{{ $dustFileName }}/dust"
+
+{{ $zoxideVersion := "0.9.4" -}}
+{{ $zoxideFileName := printf "zoxide-%s-%s-unknown-linux-musl" $zoxideVersion .chezmoi.arch -}}
+["{{ .binDir }}/zoxide"]
+  type = "archive-file"
+  url = "https://github.com/ajeetdsouza/zoxide/releases/download/v{{ $zoxideVersion }}/{{ $zoxideFileName }}.tar.gz"
+  path = "{{ $zoxideFileName }}/zoxide"
+
+{{ $mcflyVersion := "0.8.4" -}}
+["{{ .binDir }}/mcfly"]
+  type = "archive-file"
+  url = "https://github.com/cantino/mcfly/releases/download/v{{ $mcflyVersion }}/mcfly-v{{ $mcflyVersion }}-{{ .chezmoi.arch }}-unknown-linux-musl.tar.gz"
+  path = "mcfly"
+
+{{ if eq .chezmoi.arch "x86_64" -}}
+{{ $procsVersion := "0.14.5" -}}
+["{{ .binDir }}/procs"]
+  type = "archive-file"
+  url = "https://github.com/dalance/procs/releases/download/v{{ $procsVersion }}/procs-v{{ $procsVersion }}-x86_64-linux.zip"
+  path = "procs"
+{{ end -}}
+
+{{ end -}}
