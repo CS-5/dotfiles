@@ -4,6 +4,7 @@
 {{ end -}}
 
 {{ $fish := lookPath "fish" -}}
+{{ $brew := lookPath "brew" -}}
 
 #!{{ lookPath "bash" }}
 
@@ -15,3 +16,7 @@ curl -fsSL https://starship.rs/install.sh | sh -s -- -y --bin-dir {{ .binDir }}
 
 {{ $sudo }} sh -c "echo {{ $fish }} >> /etc/shells"
 {{ $sudo }} chsh -s {{ $fish }} $(whoami)
+
+{{ if eq .osid "darwin" -}}
+echo 'eval $({{ $brew }} shellenv)' > ~/.config/fish/conf.d/brew.fish
+{{ end -}}
