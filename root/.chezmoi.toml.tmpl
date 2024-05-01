@@ -1,4 +1,4 @@
-{{- $sourceDir := promptString "sourceDir" "" -}}
+{{- $sourceDir := promptString "sourceDir" "~/.local/share/chezmoi" -}}
 
 {{- $ephemeral := false -}}
 {{- $workDevContainer := false -}}
@@ -39,3 +39,5 @@ sourceDir = {{ $sourceDir | quote }}
 [edit]
     command = "code"
     args = ["--wait"]
+
+{{ "" }}
