@@ -4,15 +4,20 @@
 
 {{ if eq .chezmoi.os "linux" -}}
 
+{{ $arch := .chezmoi.arch -}}
+{{ if eq $arch "amd64" -}}
+{{ $arch = "x86_64" -}}
+{{ end -}}
+
 {{ $dustVersion := "1.0.0" -}}
-{{ $dustFileName := printf "dust-v%s-%s-unknown-linux-musl" $dustVersion .chezmoi.arch -}}
+{{ $dustFileName := printf "dust-v%s-%s-unknown-linux-musl" $dustVersion $arch -}}
 ["{{ .binDir }}/dust"]
   type = "archive-file"
   url = "https://github.com/bootandy/dust/releases/download/v{{ $dustVersion }}/{{ $dustFileName }}.tar.gz"
   path = "{{ $dustFileName }}/dust"
 
 {{ $zoxideVersion := "0.9.4" -}}
-{{ $zoxideFileName := printf "zoxide-%s-%s-unknown-linux-musl" $zoxideVersion .chezmoi.arch -}}
+{{ $zoxideFileName := printf "zoxide-%s-%s-unknown-linux-musl" $zoxideVersion $arch -}}
 ["{{ .binDir }}/zoxide"]
   type = "archive-file"
   url = "https://github.com/ajeetdsouza/zoxide/releases/download/v{{ $zoxideVersion }}/{{ $zoxideFileName }}.tar.gz"
@@ -21,10 +26,10 @@
 {{ $mcflyVersion := "0.8.4" -}}
 ["{{ .binDir }}/mcfly"]
   type = "archive-file"
-  url = "https://github.com/cantino/mcfly/releases/download/v{{ $mcflyVersion }}/mcfly-v{{ $mcflyVersion }}-{{ .chezmoi.arch }}-unknown-linux-musl.tar.gz"
+  url = "https://github.com/cantino/mcfly/releases/download/v{{ $mcflyVersion }}/mcfly-v{{ $mcflyVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
   path = "mcfly"
 
-{{ if eq .chezmoi.arch "x86_64" -}}
+{{ if eq .chezmoi.arch "amd64" -}}
 {{ $procsVersion := "0.14.5" -}}
 ["{{ .binDir }}/procs"]
   type = "archive-file"
