@@ -30,10 +30,11 @@
 
 
 {{ $lsdVersion := "1.1.2" -}}
+{{ $lsdFileName := printf "lsd-v%s-%s-unknown-linux-musl" $lsdVersion $arch -}}
 ["{{ .binDir }}/lsd"]
   type = "archive-file"
-  url = "https://github.com/lsd-rs/lsd/releases/download/v{{ $lsdVersion }}/lsd-v{{ $lsdVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
-  path = "lsd"
+  url = "https://github.com/lsd-rs/lsd/releases/download/v{{ $lsdVersion }}/{{ $lsdFileName}}.tar.gz"
+  path = "{{ $lsdFileName }}/lsd"
 
 {{ if eq .chezmoi.arch "amd64" -}}
 {{ $procsVersion := "0.14.5" -}}
