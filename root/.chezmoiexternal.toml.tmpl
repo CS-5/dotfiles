@@ -28,6 +28,13 @@
   url = "https://github.com/cantino/mcfly/releases/download/v{{ $mcflyVersion }}/mcfly-v{{ $mcflyVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
   path = "mcfly"
 
+
+{{ $lsdVersion := "1.1.2" -}}
+["{{ .binDir }}/lsd"]
+  type = "archive-file"
+  url = "https://github.com/lsd-rs/lsd/releases/download/v{{ $lsdVersion }}/lsd-v{{ $lsdVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
+  path = "lsd"
+
 {{ if eq .chezmoi.arch "amd64" -}}
 {{ $procsVersion := "0.14.5" -}}
 ["{{ .binDir }}/procs"]
