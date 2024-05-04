@@ -1,0 +1,16 @@
+{{ if eq .osid "linux-debian" "linux-ubuntu" -}}
+
+{{ $sudo := "sudo" -}}
+{{ if eq .chezmoi.username "root" -}}
+{{   $sudo = "" -}}
+{{ end -}}
+
+#!{{ lookPath "bash" }}
+
+set -eufo pipefail
+
+{{ $sudo }} add-apt-repository ppa:fish-shell/release-3 -y
+{{ $sudo }} apt update
+{{ $sudo }} apt install fish
+
+{{ end -}}
