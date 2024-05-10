@@ -9,7 +9,7 @@
 
 set -eufo pipefail
 
-{{ $sudo }} apt install add-apt-repository
+{{ $sudo }} apt install software-properties-common
 {{ $sudo }} add-apt-repository ppa:fish-shell/release-3 -y
 {{ $sudo }} apt update
 {{ $sudo }} apt install fish
