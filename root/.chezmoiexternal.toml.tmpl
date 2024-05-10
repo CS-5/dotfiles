@@ -5,45 +5,37 @@
 {{ if eq .chezmoi.os "linux" -}}
 
 {{ $arch := .chezmoi.arch -}}
+{{ $musl := "musl" -}}
+
 {{ if eq $arch "amd64" -}}
 {{ $arch = "x86_64" -}}
+{{ else if eq $arch "arm64" -}}
+{{ $arch = "arm" -}}
+{{ $musl = "musleabi" -}}
 {{ end -}}
 
 {{ $dustVersion := "1.0.0" -}}
 ["{{ .binDir }}/dust"]
   type = "archive-file"
-  url = "https://github.com/bootandy/dust/releases/download/v{{ $dustVersion }}/dust-v{{ $dustVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
+  url = "https://github.com/bootandy/dust/releases/download/v{{ $dustVersion }}/dust-v{{ $dustVersion }}-{{ $arch }}-unknown-linux-{{ $musl }}.tar.gz"
   stripComponents = 1
   path = "dust"
 
-{{ $zoxideVersion := "0.9.4" -}}
-["{{ .binDir }}/zoxide"]
-  type = "archive-file"
-  url = "https://github.com/ajeetdsouza/zoxide/releases/download/v{{ $zoxideVersion }}/zoxide-{{ $zoxideVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
-  path = "zoxide"
-
-{{ $mcflyVersion := "0.8.4" -}}
-["{{ .binDir }}/mcfly"]
-  type = "archive-file"
-  url = "https://github.com/cantino/mcfly/releases/download/v{{ $mcflyVersion }}/mcfly-v{{ $mcflyVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
-  path = "mcfly"
-
-
+{{ if eq .osid "linux-ubuntu" -}}
 {{ $lsdVersion := "1.1.2" -}}
 ["{{ .binDir }}/lsd"]
   type = "archive-file"
   url = "https://github.com/lsd-rs/lsd/releases/download/v{{ $lsdVersion }}/lsd-v{{ $lsdVersion }}-{{ $arch }}-unknown-linux-musl.tar.gz"
   stripComponents = 1
   path = "lsd"
+{{ end -}}
 
 {{ if eq .chezmoi.arch "amd64" -}}
-
 {{ $procsVersion := "0.14.5" -}}
 ["{{ .binDir }}/procs"]
   type = "archive-file"
   url = "https://github.com/dalance/procs/releases/download/v{{ $procsVersion }}/procs-v{{ $procsVersion }}-x86_64-linux.zip"
   path = "procs"
-
 {{ end -}}
 
 {{ end -}}
