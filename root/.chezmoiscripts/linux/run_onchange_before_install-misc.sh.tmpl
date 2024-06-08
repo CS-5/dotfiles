@@ -14,7 +14,7 @@ set -eufo pipefail
 {{ $sudo }} apt install lsd
 {{ end -}}
 
-curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --bin-dir {{ joinPath "~" .binDir }}
-curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --to {{ joinPath "~" .binDir }}
+curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --bin-dir {{ .binDir }}
+curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --to {{ .binDir }}
 
 {{ end -}}

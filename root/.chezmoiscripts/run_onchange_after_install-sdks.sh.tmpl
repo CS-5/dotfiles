@@ -7,7 +7,7 @@
 
 {{ $arch := .chezmoi.arch -}}
 
-{{ $mise := joinPath "~" .binDir "mise" -}}
+{{ $mise := joinPath .binDir "mise" -}}
 
 #!{{ lookPath "bash" }}
 
