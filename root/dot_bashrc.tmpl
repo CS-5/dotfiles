@@ -1,0 +1,8 @@
+export PATH="{{ .binDirAbs }}:/usr/local/bin:$PATH"
+eval "$(starship init bash)"
+
+{{ if .workDevContainer -}}
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+  exec fish
+fi
+{{ end -}}
