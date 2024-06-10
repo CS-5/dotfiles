@@ -10,7 +10,7 @@
 
 set -eufo pipefail
 
-curl -fsSL https://starship.rs/install.sh | sh -s -- -y --bin-dir {{ .binDir }}
+curl -fsSL https://starship.rs/install.sh | sh -s -- -y --bin-dir {{ .binDirAbs }}
 
 {{ $fish }} -c 'fundle install'
 

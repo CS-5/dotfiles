@@ -24,11 +24,14 @@
 sourceDir = {{ $sourceDir | quote }}
 {{- end }}
 
+{{- $binDir = ".local/bin" -}}
+
 [data]
     ephemeral = {{ $ephemeral }}
     hostname = {{ $hostname | quote }}
     osid = {{ $osID | quote }}
-    binDir = {{ joinPath .chezmoi.homeDir ".local/bin" }}
+    binDir = "{{ $binDir }}"
+    binDirAbs = "{{ joinPath .chezmoi.homeDir $binDir }}"
     workDevContainer = {{ $workDevContainer }}
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
