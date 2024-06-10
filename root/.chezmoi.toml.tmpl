@@ -22,9 +22,9 @@
 
 {{- if ne $sourceDir "" -}}
 sourceDir = {{ $sourceDir | quote }}
-{{- end }}
+{{- end -}}
 
-{{- $binDir := ".local/bin" -}}
+{{- $binDir := ".local/bin" }}
 
 [data]
     ephemeral = {{ $ephemeral }}
