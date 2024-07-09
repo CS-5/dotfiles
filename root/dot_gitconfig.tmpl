@@ -10,7 +10,7 @@
 {{- else }}
 	email = {{ .personalEmail }}
 {{- end }}
-{{- if stat .gitSshKeyPath }}
+{{- if .gitSignCommits }}
 	signingkey = {{ .gitSshKeyPath }}.pub
 {{- end }}
 
@@ -35,3 +35,8 @@
 [credential]
 	helper = manager
 {{ end -}}
+
+{{ if .gitSignCommits -}}
+[commit]
+	gpgSign = true
+{{ end }}

@@ -12,7 +12,7 @@ Host github.com
   User git
   HostName github.com
 
-{{- if stat .gitSshKeyPath }}
+{{- if .gitSignCommits }}
   IdentityFile {{ .gitSshKeyPath }}
 {{- end }}
 

@@ -24,7 +24,12 @@
 sourceDir = {{ $sourceDir | quote }}
 {{- end -}}
 
-{{- $binDir := ".local/bin" }}
+{{- $binDir := ".local/bin" -}}
+{{- $gitSshKeyPath := joinPath .chezmoi.homeDir ".ssh/id_ed25519_git" -}}
+{{- $gitSignCommits := false -}}
+{{- if stat $gitSshKeyPath -}}
+{{-   $gitSignCommits = true -}}
+{{- end }}
 
 [data]
     ephemeral = {{ $ephemeral }}
@@ -35,7 +40,8 @@ sourceDir = {{ $sourceDir | quote }}
     workDevContainer = {{ $workDevContainer }}
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
-    gitSshKeyPath = "{{ joinPath .chezmoi.homeDir ".ssh/id_ed25519_git" }}"
+    gitSignCommits = {{ $gitSignCommits }}
+    gitSshKeyPath = "{{ $gitSshKeyPath }}"
 
 [github]
     refreshPeriod = "12h"
