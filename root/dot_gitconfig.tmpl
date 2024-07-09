@@ -11,7 +11,7 @@
 	email = {{ .personalEmail }}
 {{- end }}
 {{- if stat .gitSshKeyPath }}
-	signingkey = {{ .gitSshKeyPath }}
+	signingkey = {{ .gitSshKeyPath }}.pub
 {{- end }}
 
 [gpg]
