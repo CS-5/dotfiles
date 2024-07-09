@@ -5,12 +5,14 @@
 
 [user]
 	name = Carson Seese
-{{ if .workDevContainer -}}
+{{- if .workDevContainer }}
 	email = {{ .workEmail }}
-{{ else -}}
+{{- else }}
 	email = {{ .personalEmail }}
-	signingkey = /Users/carson/.ssh/id_ed25519.pub
-{{ end -}}
+{{- end }}
+{{- if stat .gitSshKeyPath }}
+	signingkey = {{ .gitSshKeyPath }}
+{{- end }}
 
 [gpg]
 	format = ssh

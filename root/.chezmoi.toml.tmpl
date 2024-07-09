@@ -35,6 +35,7 @@ sourceDir = {{ $sourceDir | quote }}
     workDevContainer = {{ $workDevContainer }}
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
+    gitSshKeyPath = "{{ joinPath .chezmoi.homeDir ".ssh/id_ed25519_git" }}"
 
 [github]
     refreshPeriod = "12h"
