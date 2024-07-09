@@ -4,6 +4,8 @@
   ],
   "editor.defaultFormatter": "tamasfe.even-better-toml",
   "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.indentSize": "tabSize",
   "files.associations": {
     "*.sh.tmpl": "shellscript",
   }

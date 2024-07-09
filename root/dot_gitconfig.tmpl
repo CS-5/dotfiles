@@ -4,39 +4,45 @@
 {{ end -}}
 
 [user]
-	name = Carson Seese
+  name = Carson Seese
 {{- if .workDevContainer }}
-	email = {{ .workEmail }}
+  email = {{ .workEmail }}
 {{- else }}
-	email = {{ .personalEmail }}
+  email = {{ .personalEmail }}
 {{- end }}
 {{- if .gitSignCommits }}
-	signingkey = {{ .gitSshKeyPath }}.pub
+  signingkey = {{ .gitSshKeyPath }}.pub
 {{- end }}
 
 [gpg]
-	format = ssh
-	
+  format = ssh
+  
 [core]
-	fsmonitor = true
+  fsmonitor = true
 
 [merge]
-	conflictstyle = zdiff3
+  conflictstyle = zdiff3
 
 [rerere]
-	enabled = true
+  enabled = true
 
 {{ if eq .osid "darwin" -}}
 [credential]
-	helper = osxkeychain
+  helper = osxkeychain
 {{ end -}}
 
 {{ if eq .osid "windows" -}}
 [credential]
-	helper = manager
+  helper = manager
 {{ end -}}
 
 {{ if .gitSignCommits -}}
 [commit]
-	gpgSign = true
+  gpgSign = true
+
+[tag]
+  gpgSign = true
+
+[gpg "ssh"]
+	allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}
 {{ end }}
