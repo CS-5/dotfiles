@@ -1,4 +1,4 @@
-name: Test .dotfiles install
+name: Test dotfiles install
 
 on: [pull_request, workflow_dispatch]
 
