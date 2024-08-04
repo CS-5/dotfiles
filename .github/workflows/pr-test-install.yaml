@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install chezmoi & dotfiles
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:${{github.repository}}.git
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply ${{ github.repository_owner }}
   
   install-dotfiles-macos:
     runs-on: macos-latest
     steps:
       - name: Install chezmoi & dotfiles
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:${{github.repository}}.git
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply ${{ github.repository_owner }}
