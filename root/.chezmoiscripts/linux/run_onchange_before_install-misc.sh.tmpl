@@ -5,6 +5,12 @@
 {{   $sudo = "" -}}
 {{ end -}}
 
+{{ $bins := list
+  "lsd-rs/lsd"
+  "dalance/procs"
+  "bootandy/dust"
+-}}
+
 #!{{ lookPath "bash" }}
 
 set -eufo pipefail
@@ -17,4 +23,8 @@ set -eufo pipefail
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --bin-dir {{ .binDirAbs }}
 curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --to {{ .binDirAbs }}
 
+{{ end -}}
+
+{{ range $bin := $bins -}}
+  eget $bin --to {{ .binDirAbs }}
 {{ end -}}
