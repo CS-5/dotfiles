@@ -1,0 +1,20 @@
+name: Test .dotfiles install
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  install-dotfiles-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)"
+      - name: Install dotfiles
+        run: chezmoi init --apply https://github.com/${{github.repository}}.git
+
+  install-dotfiles-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)"
+      - name: Install dotfiles
+        run: chezmoi init --apply https://github.com/${{github.repository}}.git
