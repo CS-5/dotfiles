@@ -1,10 +1,5 @@
 {{ if eq .osid "linux-debian" "linux-ubuntu" -}}
 
-{{ $sudo := "sudo" -}}
-{{ if eq .chezmoi.username "root" -}}
-{{   $sudo = "" -}}
-{{ end -}}
-
 {{ $bins := list
   "lsd-rs/lsd"
   "dalance/procs"
@@ -15,16 +10,11 @@
 
 set -eufo pipefail
 
-{{ if eq .osid "linux-debian" -}}
-# Ubuntu version installed with .chezmoiexternal
-{{ $sudo }} apt install lsd
-{{ end -}}
-
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --bin-dir {{ .binDirAbs }}
 curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --to {{ .binDirAbs }}
 
-{{ end -}}
-
 {{ range $bin := $bins -}}
   eget $bin --to {{ .binDirAbs }}
+{{ end -}}
+
 {{ end -}}
