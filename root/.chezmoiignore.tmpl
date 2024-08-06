@@ -1,15 +1,16 @@
-{{ if ne .chezmoi.os "darwin" }}
+{{ if ne .chezmoi.os "darwin" -}}
 .chezmoiscripts/darwin/**
-{{ end }}
+{{ end -}}
 
-{{ if ne .chezmoi.os "linux" }}
+{{ if ne .chezmoi.os "linux" -}}
 .chezmoiscripts/linux/**
-{{ end }}
+{{ end -}}
 
-{{ if ne .chezmoi.os "windows" }}
+{{ if ne .chezmoi.os "windows" -}}
 .chezmoiscripts/windows/**
-{{ end }}
+{{ end -}}
 
-{{ if ne .hostname "CSMBP" }}
 *gitconfig-work
-{{ end }}
+{{ if eq .hostname "CSMBP" -}}
+!*gitconfig-work
+{{ end -}}

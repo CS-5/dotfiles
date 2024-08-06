@@ -1,20 +1,14 @@
 {{ if eq .osid "linux-debian" "linux-ubuntu" -}}
 
-{{ $bins := list
-  "lsd-rs/lsd"
-  "dalance/procs"
-  "bootandy/dust"
--}}
-
 #!{{ lookPath "bash" }}
 
 set -eufo pipefail
 
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --bin-dir {{ .binDirAbs }}
-curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --to {{ .binDirAbs }}
+curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --force --to {{ .binDirAbs }}
 
-{{ range $bin := $bins -}}
-  eget {{ $bin }} --to {{ $.binDirAbs }}
-{{ end -}}
+eget lsd-rs/lsd --to {{ .binDirAbs }} --asset musl
+eget dalance/procs --to {{ .binDirAbs }}
+eget bootandy/dust --to {{ .binDirAbs }} --asset musl
 
 {{ end -}}
