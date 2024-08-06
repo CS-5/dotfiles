@@ -19,7 +19,9 @@ curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:3/Debi
 {{ $sudo }} apt install fish -y
 
 {{ if .workDevContainer -}}
-ln -s {{ joinPath (env "HISTFILE") "../fish_history" }} {{ joinPath .chezmoi.homeDir ".local/share/fish/fish_history" }}
+{{ $fishDir := joinPath .chezmoi.homeDir ".local/share/fish" }}
+mkdir -p {{ $fishDir }}
+ln -s {{ joinPath (env "HISTFILE") "../fish_history" }} {{ joinPath $fishDir "fish_history" }}
 {{ end -}}
 
 {{ end -}}
