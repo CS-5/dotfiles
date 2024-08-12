@@ -8,6 +8,7 @@ abbr -a gca git commit --amend
 abbr -a gcl git clone
 abbr -a gco git checkout
 abbr -a gp  git push
+abbr -a gpf git push --force-with-lease
 abbr -a gpl git pull
 abbr -a gl  git l
 abbr -a gd  git diff
