@@ -9,6 +9,12 @@
 
 set -eufo pipefail
 
+{{ if .workDevContainer -}}
+{{ $fishDir := joinPath .chezmoi.homeDir ".local/share/fish" }}
+mkdir -p {{ $fishDir }}
+ln -s {{ joinPath (env "HISTFILE") "../fish" }} {{ $fishDir }}
+{{ end -}}
+
 {{ if eq .osid "linux-debian" -}}
 echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/3/Debian_12/ /' | {{ $sudo }} tee /etc/apt/sources.list.d/shells:fish:release:3.list
 curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:3/Debian_12/Release.key | gpg --dearmor | {{ $sudo }} tee /etc/apt/trusted.gpg.d/shells_fish_release_3.gpg > /dev/null
@@ -17,11 +23,5 @@ curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:3/Debi
 {{ end -}}
 {{ $sudo }} apt update
 {{ $sudo }} apt install fish -y
-
-{{ if .workDevContainer -}}
-{{ $fishDir := joinPath .chezmoi.homeDir ".local/share/fish" }}
-mkdir -p {{ $fishDir }}
-ln -s {{ joinPath (env "HISTFILE") "../fish_history" }} {{ joinPath $fishDir "fish_history" }}
-{{ end -}}
 
 {{ end -}}

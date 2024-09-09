@@ -12,4 +12,10 @@ eget dalance/procs --to {{ .binDirAbs }}
 eget bootandy/dust --to {{ .binDirAbs }} --asset musl
 eget aristocratos/btop --to {{ .binDirAbs }}
 
+{{ if .workDevContainer -}}
+{{ $mcflyDir := joinPath .chezmoi.homeDir ".local/share/mcfly" }}
+mkdir -p {{ $mcflyDir }}
+ln -s {{ joinPath (env "HISTFILE") "../mcfly" }} {{ $mcflyDir }}
+{{ end -}}
+
 {{ end -}}
