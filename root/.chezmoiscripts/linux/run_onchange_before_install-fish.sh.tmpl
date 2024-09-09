@@ -10,9 +10,7 @@
 set -eufo pipefail
 
 {{ if .workDevContainer -}}
-{{ $fishDir := joinPath .chezmoi.homeDir ".local/share/fish" }}
-mkdir -p {{ $fishDir }}
-ln -s {{ joinPath (env "HISTFILE") "../fish" }} {{ $fishDir }}
+ln -s {{ joinPath (env "HISTFILE") "../fish" }} {{ joinPath .chezmoi.homeDir ".local/share/fish" }}
 {{ end -}}
 
 {{ if eq .osid "linux-debian" -}}
