@@ -1,8 +1,14 @@
-{{ if eq .osid "linux-debian" "linux-ubuntu" -}}
+{{ if or (eq .osid "linux-debian" "linux-ubuntu") true -}}
 
 #!{{ lookPath "bash" }}
 
 set -eufo pipefail
+
+{{ if .workDevContainer -}}
+{{ $mcflyDir := joinPath .persistDirAbs "mcfly" -}}
+mkdir -p {{ $mcflyDir }}
+cd {{ .dataDirAbs }} && ln -s {{ $mcflyDir }} mcfly
+{{ end -}}
 
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh -s -- --bin-dir {{ .binDirAbs }}
 curl -sSfL https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly --force --to {{ .binDirAbs }}
@@ -11,11 +17,5 @@ eget lsd-rs/lsd --to {{ .binDirAbs }} --asset musl
 eget dalance/procs --to {{ .binDirAbs }}
 eget bootandy/dust --to {{ .binDirAbs }} --asset musl
 eget aristocratos/btop --to {{ .binDirAbs }}
-
-{{ if .workDevContainer -}}
-{{ $mcflyDir := joinPath .chezmoi.homeDir ".local/share/mcfly" }}
-mkdir -p {{ $mcflyDir }}
-ln -s {{ joinPath (env "HISTFILE") "../mcfly" }} {{ $mcflyDir }}
-{{ end -}}
 
 {{ end -}}

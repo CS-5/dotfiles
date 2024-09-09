@@ -37,11 +37,19 @@ sourceDir = {{ $sourceDir | quote }}
     osid = {{ $osID | quote }}
     binDir = ".local/bin"
     binDirAbs = "{{ joinPath .chezmoi.homeDir ".local/bin" }}"
+    dataDirAbs = "{{ joinPath .chezmoi.homeDir ".local/share" }}"
     workDevContainer = {{ $workDevContainer }}
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
     gitSignCommits = {{ $gitSignCommits }}
     gitSshKeyPath = "{{ $gitSshKeyPath }}"
+    {{ if $workDevContainer -}}
+    {{ if ne (env "HISTFILE") "" -}}
+    persistDirAbs = "{{ joinPath (env "HISTFILE") ".." }}"
+    {{ else -}}
+    persistDirAbs = "{{ joinPath .chezmoi.homeDir ".local/persist" }}"
+    {{ end -}}
+    {{ end }}
 
 [github]
     refreshPeriod = "12h"
