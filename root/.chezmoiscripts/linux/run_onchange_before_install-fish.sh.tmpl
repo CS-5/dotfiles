@@ -14,6 +14,7 @@ set -eufo pipefail
 mkdir -p {{ .dataDirAbs }}
 mkdir -p {{ $fishDir }}
 cd {{ .dataDirAbs }} && ln -s {{ $fishDir }} fish
+touch {{ joinPath $fishDir "fish_history" }}
 {{ end -}}
 
 {{ if eq .osid "linux-debian" -}}
