@@ -6,6 +6,7 @@ set -eufo pipefail
 
 {{ if .workDevContainer -}}
 {{ $mcflyDir := joinPath .persistDirAbs "mcfly" -}}
+mkdir -p {{ .dataDirAbs }}
 mkdir -p {{ $mcflyDir }}
 cd {{ .dataDirAbs }} && ln -s {{ $mcflyDir }} mcfly
 {{ end -}}

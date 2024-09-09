@@ -11,6 +11,7 @@ set -eufo pipefail
 
 {{ if .workDevContainer -}}
 {{ $fishDir := joinPath .persistDirAbs "fish" -}}
+mkdir -p {{ .dataDirAbs }}
 mkdir -p {{ $fishDir }}
 cd {{ .dataDirAbs }} && ln -s {{ $fishDir }} fish
 {{ end -}}
