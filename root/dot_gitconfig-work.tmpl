@@ -1,3 +1,9 @@
 [user]  
   name = Carson Seese
   email = {{ .workEmail }}
+  signingkey = key::{{ .gitWorkPubKey }}
+
+{{ if not .ephemeral -}}
+[url "git@github.com-work"]
+  insteadOf = git@github.com
+{{ end }}

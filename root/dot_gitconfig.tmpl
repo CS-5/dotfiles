@@ -1,16 +1,15 @@
+[user]
+  name = Carson Seese
+  email = {{ .personalEmail }}
+  signingkey = key::{{ .gitPersonalPubKey }}
+
 {{ if eq .hostname "CSMBP" -}}
 [includeIf "gitdir:~/dev/work/"]
   path = .gitconfig-work
-{{ end -}}
-
-[user]
-  name = Carson Seese
-{{- if .workDevContainer }}
-  email = {{ .workEmail }}
-{{- else }}
-  email = {{ .personalEmail }}
-{{- end }}
-  signingkey = key::{{ .gitPubKey }}
+{{ else if .workDevContainer -}}
+[include]
+  path = .gitconfig-work
+{{ end }}
 
 [gpg]
   format = ssh
@@ -28,9 +27,7 @@
 {{ if eq .osid "darwin" -}}
 [credential]
   helper = osxkeychain
-{{ end }}
-
-{{ if eq .osid "windows" -}}
+{{ else if  eq .osid "windows" -}}
 [credential]
   helper = manager
 {{ end }}
@@ -42,7 +39,7 @@
   gpgSign = true
 
 [gpg "ssh"]
-	allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}
+  allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}
 
 [alias]
-	pushfwl = push --force-with-lease
+  pushfwl = push --force-with-lease

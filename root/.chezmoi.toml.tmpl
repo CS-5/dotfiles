@@ -36,7 +36,8 @@ sourceDir = {{ $sourceDir | quote }}
     workDevContainer = {{ $workDevContainer }}
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
-    gitPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDQ9z12zyLxIgicWzp3fK+YWwT2GosiDaOTjfiFaVXsk carson@carsonseese.com" 
+    gitWorkPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEW7dcdfyDjNk1Epswi6ab6KDKpuKFRmIzAXHBSDO/k6 carson@journalytic.com" 
+    gitPersonalPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIQPvDGDBUVy9HHjTvQB6EkjJE7VqoDWWF3NmvkMjLh6 carson@carsonseese.com"
     {{ if $workDevContainer -}}
     {{ if ne (env "HISTFILE") "" -}}
     persistDirAbs = "{{ joinPath (env "HISTFILE") ".." }}"

@@ -1,19 +1,20 @@
 {{ if not .ephemeral -}}
+Host github.com
+  Hostname github.com
+  User git
+  IdentityFile ~/.ssh/git_personal
 
-HashKnownHosts no
+Host github.com-work
+  Hostname github.com
+  User git
+  IdentityFile ~/.ssh/git_work
 
-{{- if eq .osid "darwin" }}
 Host *
   AddKeysToAgent yes
+  IdentitiesOnly yes
+  {{ if eq .osid "darwin" -}}
   UseKeychain yes
-{{- end }}
-
-Host github.com
-  User git
-  HostName github.com
-
-{{- if .gitSignCommits }}
-  IdentityFile {{ .gitSshKeyPath }}
-{{- end }}
-
+  {{ end -}}
+  Compression yes
+  PreferredAuthentications publickey
 {{ end -}}
