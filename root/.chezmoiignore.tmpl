@@ -9,8 +9,3 @@
 {{ if ne .chezmoi.os "windows" -}}
 .chezmoiscripts/windows/**
 {{ end -}}
-
-*gitconfig-work
-{{ if eq .hostname "CSMBP" -}}
-!*gitconfig-work
-{{ end -}}
