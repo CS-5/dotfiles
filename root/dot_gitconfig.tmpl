@@ -10,9 +10,7 @@
 {{- else }}
   email = {{ .personalEmail }}
 {{- end }}
-{{- if .gitSignCommits }}
-  signingkey = {{ .gitSshKeyPath }}.pub
-{{- end }}
+  signingkey = key::{{ .gitPubKey }}
 
 [gpg]
   format = ssh
@@ -30,14 +28,13 @@
 {{ if eq .osid "darwin" -}}
 [credential]
   helper = osxkeychain
-{{ end -}}
+{{ end }}
 
 {{ if eq .osid "windows" -}}
 [credential]
   helper = manager
-{{ end -}}
+{{ end }}
 
-{{ if .gitSignCommits -}}
 [commit]
   gpgSign = true
 
@@ -46,7 +43,6 @@
 
 [gpg "ssh"]
 	allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}
-{{ end }}
 
 [alias]
 	pushfwl = push --force-with-lease

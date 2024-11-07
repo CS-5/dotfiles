@@ -1,3 +1,1 @@
-{{- if .gitSignCommits -}}
-{{ .personalEmail }} {{ include (print .gitSshKeyPath ".pub") }}
-{{- end -}}
+{{ .personalEmail }},{{ .workEmail }} {{ .gitPubKey }}

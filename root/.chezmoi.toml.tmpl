@@ -24,12 +24,7 @@
 sourceDir = {{ $sourceDir | quote }}
 {{- end -}}
 
-{{- $binDir := ".local/bin" -}}
-{{- $gitSshKeyPath := joinPath .chezmoi.homeDir ".ssh/id_ed25519_git" -}}
-{{- $gitSignCommits := false -}}
-{{- if stat $gitSshKeyPath -}}
-{{-   $gitSignCommits = true -}}
-{{- end }}
+{{- $binDir := ".local/bin" }}
 
 [data]
     ephemeral = {{ $ephemeral }}
@@ -41,8 +36,7 @@ sourceDir = {{ $sourceDir | quote }}
     workDevContainer = {{ $workDevContainer }}
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
-    gitSignCommits = {{ $gitSignCommits }}
-    gitSshKeyPath = "{{ $gitSshKeyPath }}"
+    gitPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDQ9z12zyLxIgicWzp3fK+YWwT2GosiDaOTjfiFaVXsk carson@carsonseese.com" 
     {{ if $workDevContainer -}}
     {{ if ne (env "HISTFILE") "" -}}
     persistDirAbs = "{{ joinPath (env "HISTFILE") ".." }}"
