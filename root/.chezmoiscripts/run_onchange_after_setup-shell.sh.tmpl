@@ -8,7 +8,7 @@
 
 #!{{ lookPath "bash" }}
 
-set -eufo pipefail
+set -xeufo pipefail
 
 curl -fsSL https://starship.rs/install.sh | sh -s -- -y --bin-dir {{ .binDirAbs }}
 

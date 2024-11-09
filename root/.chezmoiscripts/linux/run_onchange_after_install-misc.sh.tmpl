@@ -2,7 +2,7 @@
 
 #!{{ lookPath "bash" }}
 
-set -eufo pipefail
+set -xeufo pipefail
 
 {{ if .workDevContainer -}}
 {{ $mcflyDir := joinPath .persistDirAbs "mcfly" -}}

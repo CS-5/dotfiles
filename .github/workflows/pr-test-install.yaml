@@ -7,10 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install chezmoi & dotfiles
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- init --promptString sourceDir=~/.local/share/chezmoi --apply ${{ github.repository_owner }}
+        run: |
+        set -euxo pipefail
+        sh -c "$(curl -fsLS get.chezmoi.io)" -- init --promptString sourceDir=~/.local/share/chezmoi --apply ${{ github.repository_owner }}
   
   install-dotfiles-macos:
     runs-on: macos-latest
     steps:
       - name: Install chezmoi & dotfiles
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- init --promptString sourceDir=~/.local/share/chezmoi --apply ${{ github.repository_owner }}
+        run: |
+        set -euxo pipefail
+        sh -c "$(curl -fsLS get.chezmoi.io)" -- init --promptString sourceDir=~/.local/share/chezmoi --apply ${{ github.repository_owner }}

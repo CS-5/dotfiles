@@ -11,7 +11,7 @@
 
 #!{{ lookPath "bash" }}
 
-set -eufo pipefail
+set -xeufo pipefail
 
 curl -fsSL https://mise.jdx.dev/mise-latest-{{ $system }}-{{ $arch }} -o {{ $mise }} --create-dirs
 chmod +x {{ $mise }}
