@@ -1,4 +1,5 @@
 [tools]
-go = "1.22.2"
+go = "latest"
 node = "20.12.2"
 bun = "latest"
+usage = "latest"

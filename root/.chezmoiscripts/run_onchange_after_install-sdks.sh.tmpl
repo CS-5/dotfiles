@@ -22,8 +22,7 @@ echo 'eval "$({{ $mise }} activate bash)"' >> ~/.bashrc
 echo 'eval "$({{ $mise }} activate zsh)"' >> ~/.zshrc
 echo '{{ $mise }} activate fish | source' > ~/.config/fish/conf.d/mise.fish
 
-# Temporarily disable completions for mise
-# {{ $mise }} completion fish > ~/.config/fish/completions/mise.fish
+{{ $mise }} completion fish > ~/.config/fish/completions/mise.fish
 
 curl -fsSL https://sh.rustup.rs | sh -s -- -y
 
