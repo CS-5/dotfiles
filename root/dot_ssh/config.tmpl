@@ -14,8 +14,8 @@ Host github.com-work
 Host *
   AddKeysToAgent yes
   IdentitiesOnly yes
+  Compression yes
   {{ if eq .osid "darwin" -}}
   UseKeychain yes
   {{ end -}}
-  Compression yes
 {{ end -}}

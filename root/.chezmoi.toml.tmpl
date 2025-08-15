@@ -1,50 +1,62 @@
-{{- $sourceDir := promptString "sourceDir" "~/.local/share/chezmoi" -}}
+sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | quote -}}
 
-{{- $ephemeral := false -}}
-{{- $workDevContainer := false -}}
+{{ $containerType := "none" -}}
+{{ $isEphemeral := false -}}
+{{ if env "CODESPACES" -}}
+{{   $containerType = "codespaces" -}}
+{{   $isEphemeral = true -}}
+{{ else if or (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "vscode") -}}
+{{   $containerType = "devcontainer" -}}
+{{   $isEphemeral = true -}}
+{{ end -}}
 
-{{- $osID := .chezmoi.os -}}
+{{- $osId := .chezmoi.os -}}
 {{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
-{{-   $osID = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
+{{-   $osId = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
 {{- end -}}
 
-{{/* Container/VM Detection */}}
-{{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vscode") -}}
-{{-   $ephemeral = true -}}
-{{- end -}}
+{{ $isWorkDc := false -}}
+{{ if and (eq $containerType "devcontianer") (env "GITHUB_TOKEN") -}}
+{{   $isWorkDc = true -}}
+{{  end -}}
 
-{{/* Work Dev Container Detection (Jank) */}}
-{{- if and $ephemeral (env "GITHUB_TOKEN") (env "NPM_CONFIG_PREFIX") -}}
-{{-   $workDevContainer = true -}}
-{{- end -}}
+{{ $isRoot := false -}}
+{{ if eq .chezmoi.username "root" -}}
+{{   $isRoot = true -}}
+{{ end -}}
 
-{{- $hostname := .chezmoi.hostname -}}
-
-{{- if ne $sourceDir "" -}}
-sourceDir = {{ $sourceDir | quote }}
-{{- end -}}
-
-{{- $binDir := ".local/bin" }}
+{{ $binDir := env "DOTFILES_BIN_DIR" | default "~/.local/bin" -}}
 
 [data]
-    ephemeral = {{ $ephemeral }}
-    hostname = {{ $hostname | quote }}
-    osid = {{ $osID | quote }}
-    binDir = ".local/bin"
-    binDirAbs = "{{ joinPath .chezmoi.homeDir ".local/bin" }}"
-    dataDirAbs = "{{ joinPath .chezmoi.homeDir ".local/share" }}"
-    workDevContainer = {{ $workDevContainer }}
+    # Environment Info
+    os = {{ .chezmoi.os | quote }}
+    osId = {{ $osId | quote }}
+    arch = {{ .chezmoi.arch | quote }}
+    hostname = {{ .chezmoi.hostname | quote }}
+    containerType = {{ $containerType | quote }}
+
+    isMac = {{ eq .chezmoi.os "darwin" }}
+    isWorkDc = {{ $isWorkDc }}
+    isEphemeral = {{ $isEphemeral }}
+    isRoot = {{ $isRoot }}
+
+    # Directory paths
+    binDir = {{ $binDir | quote }}
+    binDirAbs = {{ joinPath .chezmoi.homeDir $binDir | quote }}
+    dataDirAbs = {{ joinPath .chezmoi.homeDir ".local/share" | quote }}
+
+    {{ if $isWorkDc -}}
+    {{ if ne (env "HISTFILE") "" -}}
+    persistDirAbs = {{ joinPath (env "HISTFILE") ".." | quote}}
+    {{ else -}}
+    persistDirAbs = {{ joinPath .chezmoi.homeDir ".local/persist" | quote }}
+    {{ end -}}
+    {{ end -}}
+
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
     gitWorkPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEW7dcdfyDjNk1Epswi6ab6KDKpuKFRmIzAXHBSDO/k6 carson@journalytic.com" 
     gitPersonalPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIQPvDGDBUVy9HHjTvQB6EkjJE7VqoDWWF3NmvkMjLh6 carson@carsonseese.com"
-    {{ if $workDevContainer -}}
-    {{ if ne (env "HISTFILE") "" -}}
-    persistDirAbs = "{{ joinPath (env "HISTFILE") ".." }}"
-    {{ else -}}
-    persistDirAbs = "{{ joinPath .chezmoi.homeDir ".local/persist" }}"
-    {{ end -}}
-    {{ end }}
 
 [github]
     refreshPeriod = "12h"
@@ -52,5 +64,11 @@ sourceDir = {{ $sourceDir | quote }}
 [edit]
     command = "code"
     args = ["--wait"]
+    apply = true
 
-{{ "" }}
+[merge]
+    command = "code"
+    args = ["--wait", "--merge", "--diff"]
+
+[env]
+    HOMEBREW_NO_AUTO_UPDATE = "1"

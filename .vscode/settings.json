@@ -1,12 +1,20 @@
 {
-  "go-template.languages": [
-    "toml",
-  ],
-  "editor.defaultFormatter": "tamasfe.even-better-toml",
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.indentSize": "tabSize",
   "files.associations": {
-    "*.sh.tmpl": "shellscript",
-  }
+    "*.tmpl": "go-template",
+  },
+  "go-template.languages": [
+    "tmpl"
+  ],
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers",
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
 }

@@ -1,6 +1,8 @@
 {
   "recommendations": [
     "jinliming2.vscode-go-template",
-    "tamasfe.even-better-toml"
+    "tamasfe.even-better-toml",
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format"
   ]
 }
