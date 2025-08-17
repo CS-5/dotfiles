@@ -1,7 +1,7 @@
 sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | quote -}}
 
 {{ $isWorkDc := env "DOTFILES_WORK_DC" | default false -}}
-{{- $binDir := ".local/bin" }}
+{{ $binDir := ".local/bin" -}}
 
 [data]
     # Environment Info  
