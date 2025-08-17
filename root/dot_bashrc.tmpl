@@ -1,8 +1,41 @@
-export PATH="{{ .binDirAbs }}:/usr/local/bin:$PATH"
-eval "$(starship init bash)"
-
-{{ if .workDevContainer -}}
-if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-  exec fish
+{{ if .isMac -}}
+# Homebrew completion (macOS)
+if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    if [[ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]]; then
+        source "$(brew --prefix)/etc/profile.d/bash_completion.sh"
+    fi
 fi
-{{ end -}}
+{{- end }}
+
+export PATH="{{ .binDirAbs }}:$PATH"
+
+# Initialize starship prompt
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init bash)"
+fi
+
+# Initialize tools
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate bash)"
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init bash)"
+fi
+
+if command -v mcfly >/dev/null 2>&1; then
+    eval "$(mcfly init bash)"
+fi
+
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+
+# History settings
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+
+# Shell options
+shopt -s checkwinsize
+shopt -s globstar
