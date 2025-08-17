@@ -1,4 +1,4 @@
-{{ if not .isEphemeral -}}
+{{- if not .isWorkDc }}
 Host github.com
   Hostname github.com
   User git
@@ -15,7 +15,7 @@ Host *
   AddKeysToAgent yes
   IdentitiesOnly yes
   Compression yes
-  {{ if eq .osId "darwin" -}}
+{{- if eq .os "darwin" }}
   UseKeychain yes
-  {{ end -}}
+{{- end }}
 {{ end -}}

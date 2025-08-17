@@ -6,10 +6,10 @@
 {{ if eq .hostname "CSMBP" -}}
 [includeIf "gitdir:~/dev/work/"]
   path = .gitconfig-work
-{{ else if .isWorkDc -}}
+{{- else if .isWorkDc }}
 [include]
   path = .gitconfig-work
-{{ end }}
+{{- end }}
 
 [gpg]
   format = ssh
@@ -24,13 +24,13 @@
 [rerere]
   enabled = true
 
-{{ if eq .osId "darwin" -}}
+{{ if eq .os "darwin" -}}
 [credential]
   helper = osxkeychain
-{{ else if  eq .osId "windows" -}}
+{{- else if eq .os "windows" }}
 [credential]
   helper = manager
-{{ end }}
+{{- end }}
 
 [commit]
   gpgSign = true
