@@ -1,50 +1,27 @@
-{{- $sourceDir := promptString "sourceDir" "~/.local/share/chezmoi" -}}
+sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | quote }}
 
-{{- $ephemeral := false -}}
-{{- $workDevContainer := false -}}
-
-{{- $osID := .chezmoi.os -}}
-{{- if (and (eq .chezmoi.os "linux") (hasKey .chezmoi.osRelease "id")) -}}
-{{-   $osID = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
-{{- end -}}
-
-{{/* Container/VM Detection */}}
-{{- if or (env "CODESPACES") (env "REMOTE_CONTAINERS_IPC") (eq .chezmoi.username "root" "ubuntu" "vscode") -}}
-{{-   $ephemeral = true -}}
-{{- end -}}
-
-{{/* Work Dev Container Detection (Jank) */}}
-{{- if and $ephemeral (env "GITHUB_TOKEN") (env "NPM_CONFIG_PREFIX") -}}
-{{-   $workDevContainer = true -}}
-{{- end -}}
-
-{{- $hostname := .chezmoi.hostname -}}
-
-{{- if ne $sourceDir "" -}}
-sourceDir = {{ $sourceDir | quote }}
-{{- end -}}
-
-{{- $binDir := ".local/bin" }}
+{{ $isWorkDc := env "DOTFILES_WORK_DC" | default false -}}
+{{ $binDir := ".local/bin" -}}
 
 [data]
-    ephemeral = {{ $ephemeral }}
-    hostname = {{ $hostname | quote }}
-    osid = {{ $osID | quote }}
-    binDir = ".local/bin"
-    binDirAbs = "{{ joinPath .chezmoi.homeDir ".local/bin" }}"
-    dataDirAbs = "{{ joinPath .chezmoi.homeDir ".local/share" }}"
-    workDevContainer = {{ $workDevContainer }}
+    # Environment Info  
+    os = {{ .chezmoi.os | quote }}
+    arch = {{ .chezmoi.arch | quote }}
+    hostname = {{ .chezmoi.hostname | quote }}
+
+    isMac = {{ eq .chezmoi.os "darwin" }}
+    isDc = {{ env "REMOTE_CONTAINERS_IPC" | not | not }}
+    isWorkDc = {{ $isWorkDc }}
+
+    # Directory paths
+    binDir = {{ $binDir | quote }}
+    binDirAbs = {{ joinPath .chezmoi.homeDir $binDir | quote }}
+
+    # Email and SSH keys
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
     gitWorkPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEW7dcdfyDjNk1Epswi6ab6KDKpuKFRmIzAXHBSDO/k6 carson@journalytic.com" 
     gitPersonalPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIQPvDGDBUVy9HHjTvQB6EkjJE7VqoDWWF3NmvkMjLh6 carson@carsonseese.com"
-    {{ if $workDevContainer -}}
-    {{ if ne (env "HISTFILE") "" -}}
-    persistDirAbs = "{{ joinPath (env "HISTFILE") ".." }}"
-    {{ else -}}
-    persistDirAbs = "{{ joinPath .chezmoi.homeDir ".local/persist" }}"
-    {{ end -}}
-    {{ end }}
 
 [github]
     refreshPeriod = "12h"
@@ -52,5 +29,11 @@ sourceDir = {{ $sourceDir | quote }}
 [edit]
     command = "code"
     args = ["--wait"]
+    apply = true
 
-{{ "" }}
+[merge]
+    command = "code"
+    args = ["--wait", "--merge", "--diff"]
+
+[env]
+    HOMEBREW_NO_AUTO_UPDATE = "1"
