@@ -24,7 +24,7 @@
 [rerere]
   enabled = true
 
-{{ if eq .os "darwin" -}}
+{{ if .isMac -}}
 [credential]
   helper = osxkeychain
 {{- else if eq .os "windows" }}

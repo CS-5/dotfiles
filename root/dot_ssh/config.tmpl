@@ -1,4 +1,8 @@
-{{- if not .isDc }}
+{{- if .isMac }}
+Include ~/.orbstack/ssh/config
+{{- end }}
+
+{{ if not .isDc -}}
 Host github.com
   Hostname github.com
   User git
@@ -15,7 +19,7 @@ Host *
   AddKeysToAgent yes
   IdentitiesOnly yes
   Compression yes
-{{- if eq .os "darwin" }}
+{{- if .isMac }}
   UseKeychain yes
 {{- end }}
 {{ end -}}
