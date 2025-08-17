@@ -6,7 +6,7 @@
 {{ if eq .hostname "CSMBP" -}}
 [includeIf "gitdir:~/dev/work/"]
   path = .gitconfig-work
-{{ else if .workDevContainer -}}
+{{ else if .isWorkDc -}}
 [include]
   path = .gitconfig-work
 {{ end }}
@@ -24,10 +24,10 @@
 [rerere]
   enabled = true
 
-{{ if eq .osid "darwin" -}}
+{{ if eq .osId "darwin" -}}
 [credential]
   helper = osxkeychain
-{{ else if  eq .osid "windows" -}}
+{{ else if  eq .osId "windows" -}}
 [credential]
   helper = manager
 {{ end }}
