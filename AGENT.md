@@ -6,17 +6,19 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 This is a personal dotfiles repository managed with [chezmoi](https://www.chezmoi.io/). It contains configuration files for various development tools including Git, Fish shell, SSH, Docker, and development environments.
 
+For comprehensive chezmoi documentation, reference guides, and tutorials, visit: <https://www.chezmoi.io/>
+
 ## Key Scripts
 
 ### Installation Scripts
 
 - `./install.sh` - Standard installation script that installs chezmoi and applies dotfiles
-- `./install-work-dc.sh` - Work development container installation (includes additional tools like GitHub CLI and mise)
+- `./devcontainer.sh` - Development container installation script with optional work mode
 
 ### Development Scripts  
 
 - `./render.sh [template-file]` - Renders chezmoi templates to stdout for testing
-- `./test.sh [environment]` - Comprehensive testing script using Docker containers to validate installations
+- `./test.sh [environment] [options]` - Comprehensive testing script using Docker containers to validate installations
 
 ## Architecture
 
@@ -52,8 +54,9 @@ The dotfiles adapt based on environment variables:
 # Install dotfiles
 ./install.sh
 
-# Install work dev container variant
-./install-work-dc.sh
+# Install dev container variants
+./devcontainer.sh            # Personal dev container
+./devcontainer.sh --work     # Work dev container (includes GitHub CLI)
 
 # Test template rendering
 ./render.sh root/dot_gitconfig.tmpl
@@ -62,6 +65,14 @@ The dotfiles adapt based on environment variables:
 ./test.sh                    # All environments
 ./test.sh debian-basic       # Basic Debian only
 ./test.sh debian-work-devcontainer  # Work dev container only
+
+# Test with interactive shell access
+./test.sh debian-basic --interactive              # Drop into shell after test
+./test.sh debian-work-devcontainer --interactive  # Debug in container
+
+# Test options
+./test.sh --no-cleanup       # Keep containers after testing
+./test.sh --timeout 600      # Set custom timeout (seconds)
 
 # Manual chezmoi operations (after install)
 chezmoi diff                 # Show pending changes
@@ -77,8 +88,16 @@ The repository includes comprehensive Docker-based testing via `test.sh`:
 - Validates file installation, directory creation, and tool functionality
 - Uses timeout protection and proper cleanup
 - Provides detailed validation output
+- Supports interactive mode for debugging and manual validation
+- Automatic cleanup can be disabled for container inspection
 
-When making changes, always run `./test.sh` to ensure compatibility across environments.
+### Testing Features
+
+- `--interactive` - Drop into container shell after test completion for manual validation
+- `--no-cleanup` - Keep containers running after tests for inspection
+- `--timeout SECONDS` - Custom timeout per test (default: 300 seconds)
+
+When making changes, always run `./test.sh` to ensure compatibility across environments. Use `--interactive` mode to manually verify functionality.
 
 ## Development Guidelines
 
