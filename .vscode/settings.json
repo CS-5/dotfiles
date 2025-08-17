@@ -16,5 +16,5 @@
   },
   "[fish]": {
     "editor.defaultFormatter": "bmalehorn.vscode-fish"
-  }
+  },
 }
