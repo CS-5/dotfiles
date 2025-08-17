@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if command -v gh >/dev/null 2>&1; then
+  gh completion -s fish > "{{ .chezmoi.homeDir }}/.config/fish/completions/gh.fish"
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  docker completion fish > "{{ .chezmoi.homeDir }}/.config/fish/completions/docker.fish"
+fi
