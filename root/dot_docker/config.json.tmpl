@@ -1,17 +1,11 @@
-{{ if not .ephemeral -}}
-
-{{ $credHelpers := list
-  `"us-central1-docker.pkg.dev": "gcloud"`
--}}
+{{ if not .isEphemeral -}}
 
 {
-{{- if eq .osid "darwin" }}
+{{- if eq .osId "darwin" }}
   "credsStore": "osxkeychain",
 {{- end }}
   "credHelpers": {
-  {{- range $credHelpers }}
-    {{ . }}
-  {{- end}}
+    "us-central1-docker.pkg.dev": "gcloud"
   },
   "auths": {}
 }
