@@ -13,7 +13,6 @@ abbr -a gl git l
 abbr -a gd git diff
 abbr -a gds git diff --staged
 abbr -a gf git fetch
-abbr -a gco git checkout
 
 alias l='ls -l'
 alias la='ls -a'
