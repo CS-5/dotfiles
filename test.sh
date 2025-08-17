@@ -19,11 +19,11 @@ TEST_TIMEOUT=300  # 5 minutes timeout per test
 CLEANUP_ON_EXIT=true
 
 # Test environments configuration
-AVAILABLE_ENVIRONMENTS="debian-basic debian-work-devcontainer"
+AVAILABLE_ENVIRONMENTS="debian-basic debian-devcontainer debian-work-devcontainer"
 
 get_base_image() {
     case "$1" in
-        debian-basic|debian-work-devcontainer)
+        debian-basic|debian-devcontainer|debian-work-devcontainer)
             echo "debian:bookworm"
             ;;
         *)
@@ -37,7 +37,7 @@ get_env_vars() {
         debian-basic)
             echo ""
             ;;
-        debian-work-devcontainer)
+        debian-devcontainer|debian-work-devcontainer)
             echo "REMOTE_CONTAINERS_IPC=1 USER=vscode"
             ;;
     esac
@@ -48,32 +48,39 @@ get_install_script() {
         debian-basic)
             echo "./install.sh"
             ;;
+        debian-devcontainer)
+            echo "./devcontainer.sh"
+            ;;
         debian-work-devcontainer)
-            echo "./install-work-dc.sh"
+            echo "./devcontainer.sh --work"
             ;;
     esac
 }
 
 usage() {
     cat << EOF
-Usage: $0 [ENVIRONMENT]
+Usage: $0 [ENVIRONMENT] [OPTIONS]
 
 Test dotfiles installation in Docker containers for various environments.
 
 Environments:
   debian-basic              Basic Debian installation (uses install.sh)
-  debian-work-devcontainer  Debian work dev container simulation (uses install-work-dc.sh)
+  debian-devcontainer       Non-work dev container (uses devcontainer.sh)
+  debian-work-devcontainer  Work dev container simulation (uses devcontainer.sh --work)
   all                       Run all tests (default)
 
 Options:
   -h, --help          Show this help message
   --no-cleanup        Don't cleanup containers after testing
   --timeout SECONDS   Set timeout per test (default: 300)
+  --interactive       Drop into container shell after test completion
 
 Examples:
   $0                                        # Run all tests
   $0 debian-basic                           # Test only Debian basic
+  $0 debian-devcontainer                    # Test non-work dev container
   $0 debian-work-devcontainer --no-cleanup  # Test work dev container, keep container
+  $0 debian-basic --interactive             # Test basic and drop into shell
 
 EOF
 }
@@ -102,14 +109,11 @@ cleanup_container() {
     fi
 }
 
-cleanup_all_test_containers() {
-    for env in $AVAILABLE_ENVIRONMENTS; do
-        cleanup_container "dotfiles-test-$env"
-    done
-}
+# Interactive mode flag
+INTERACTIVE_MODE=false
 
-# Cleanup on exit if enabled
-trap 'if [ "$CLEANUP_ON_EXIT" = true ]; then cleanup_all_test_containers; fi' EXIT
+# Cleanup on exit if enabled (skip if in interactive mode)
+trap 'if [ "$CLEANUP_ON_EXIT" = true ] && [ "$INTERACTIVE_MODE" = false ]; then cleanup_all_test_containers; fi' EXIT
 
 validate_installation() {
     local container_name="$1"
@@ -119,7 +123,7 @@ validate_installation() {
     # Determine user home directory
     local user_home
     case "$env_name" in
-        debian-work-devcontainer)
+        debian-devcontainer|debian-work-devcontainer)
             user_home="/home/vscode"
             ;;
         *)
@@ -181,17 +185,19 @@ validate_installation() {
     case "$env_name" in
         *work*)
             # Check work dev container specific configurations
-            if docker exec "$container_name" test -f "$user_home/.gitconfig" 2>/dev/null; then
-                local git_config
-                git_config=$(docker exec "$container_name" cat "$user_home/.gitconfig" 2>/dev/null || echo "")
-                if [[ "$git_config" == *"carson@journalytic.com"* ]]; then
+            if docker exec "$container_name" test -f "$user_home/.gitconfig-work" 2>/dev/null; then
+                local work_git_config
+                work_git_config=$(docker exec "$container_name" cat "$user_home/.gitconfig-work" 2>/dev/null || echo "")
+                if [[ "$work_git_config" == *"carson@journalytic.com"* ]]; then
                     log_success "Work dev container git config detected"
                 else
                     log_warning "Work-specific git config not found"
                 fi
+            else
+                log_warning "Work-specific git config file (.gitconfig-work) not found"
             fi
             
-            # Check if additional tools were installed by install-work-dc.sh
+            # Check if additional tools were installed by devcontainer.sh --work
             if docker exec "$container_name" which gh >/dev/null 2>&1; then
                 log_success "GitHub CLI installed"
             else
@@ -199,11 +205,38 @@ validate_installation() {
                 ((validation_errors++))
             fi
             
+            # Mise is intentionally ignored in dev containers (see .chezmoiignore.tmpl)
             if docker exec "$container_name" test -f "$user_home/.local/bin/mise" 2>/dev/null; then
-                log_success "Mise installed via install-work-dc.sh"
+                log_warning "Mise found (unexpected in dev container)"
             else
-                log_warning "Mise not found"
+                log_success "Mise not installed (as expected in dev container)"
+            fi
+            ;;
+        debian-devcontainer)
+            # Check non-work dev container specific configurations
+            if docker exec "$container_name" test -f "$user_home/.gitconfig" 2>/dev/null; then
+                local git_config
+                git_config=$(docker exec "$container_name" cat "$user_home/.gitconfig" 2>/dev/null || echo "")
+                if [[ "$git_config" == *"carson@journalytic.com"* ]]; then
+                    log_warning "Work git config detected in non-work container"
+                else
+                    log_success "Personal git config detected"
+                fi
+            fi
+            
+            # GitHub CLI should be installed in dev containers
+            if docker exec "$container_name" which gh >/dev/null 2>&1; then
+                log_success "GitHub CLI installed"
+            else
+                log_warning "GitHub CLI not found"
                 ((validation_errors++))
+            fi
+            
+            # Mise is intentionally ignored in dev containers (see .chezmoiignore.tmpl)
+            if docker exec "$container_name" test -f "$user_home/.local/bin/mise" 2>/dev/null; then
+                log_warning "Mise found (unexpected in dev container)"
+            else
+                log_success "Mise not installed (as expected in dev container)"
             fi
             ;;
         debian-basic)
@@ -259,7 +292,7 @@ run_test() {
     # Build test dockerfile content
     local dockerfile_content
     case "$env_name" in
-        debian-work-devcontainer)
+        debian-devcontainer|debian-work-devcontainer)
             dockerfile_content=$(cat << EOF
 FROM $base_image
 
@@ -343,7 +376,7 @@ EOF
     install_script=$(get_install_script "$env_name")
     
     case "$env_name" in
-        debian-work-devcontainer)
+        debian-devcontainer|debian-work-devcontainer)
             user_home="/home/vscode"
             ;;
         *)
@@ -373,9 +406,52 @@ EOF
     
     if [ $validation_result -eq 0 ]; then
         log_success "All validations passed for $env_name"
+        
+        # If interactive mode, drop into container shell
+        if [ "$INTERACTIVE_MODE" = true ]; then
+            log "Entering interactive mode for $env_name..."
+            log "Container: $container_name"
+            
+            # Determine the user and shell
+            case "$env_name" in
+                debian-devcontainer|debian-work-devcontainer)
+                    docker exec -it "$container_name" sudo -u vscode fish || docker exec -it "$container_name" sudo -u vscode bash
+                    ;;
+                *)
+                    docker exec -it "$container_name" sudo -u test fish || docker exec -it "$container_name" sudo -u test bash
+                    ;;
+            esac
+            
+            log "Exited interactive mode for $env_name"
+            
+            # Cleanup container after interactive session
+            cleanup_container "$container_name"
+        fi
+        
         return 0
     else
         log_error "$validation_result validation errors found for $env_name"
+        
+        # If interactive mode, still offer to drop into container for debugging
+        if [ "$INTERACTIVE_MODE" = true ]; then
+            log "Entering interactive mode for debugging $env_name..."
+            log "Container: $container_name"
+            
+            case "$env_name" in
+                debian-devcontainer|debian-work-devcontainer)
+                    docker exec -it "$container_name" sudo -u vscode fish || docker exec -it "$container_name" sudo -u vscode bash
+                    ;;
+                *)
+                    docker exec -it "$container_name" sudo -u test fish || docker exec -it "$container_name" sudo -u test bash
+                    ;;
+            esac
+            
+            log "Exited interactive mode for $env_name"
+            
+            # Cleanup container after interactive debugging session
+            cleanup_container "$container_name"
+        fi
+        
         return 1
     fi
 }
@@ -394,11 +470,16 @@ main() {
                 CLEANUP_ON_EXIT=false
                 shift
                 ;;
+            --interactive)
+                INTERACTIVE_MODE=true
+                CLEANUP_ON_EXIT=false  # Don't cleanup when interactive
+                shift
+                ;;
             --timeout)
                 TEST_TIMEOUT="$2"
                 shift 2
                 ;;
-            all|debian-basic|debian-work-devcontainer)
+            all|debian-basic|debian-devcontainer|debian-work-devcontainer)
                 target_env="$1"
                 shift
                 ;;
@@ -462,7 +543,8 @@ main() {
             failed_tests="$failed_tests $env"
         fi
         
-        if [ "$CLEANUP_ON_EXIT" = true ]; then
+        # Skip cleanup for individual tests if in interactive mode
+        if [ "$CLEANUP_ON_EXIT" = true ] && [ "$INTERACTIVE_MODE" = false ]; then
             cleanup_container "dotfiles-test-$env"
         fi
     done

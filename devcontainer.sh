@@ -9,6 +9,28 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Default values
+WORK_MODE=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --work)
+            WORK_MODE=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--work]"
+            echo "  --work    Configure for work environment"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option $1"
+            exit 1
+            ;;
+    esac
+done
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -41,31 +63,26 @@ fi
 mkdir -p ~/.local/bin ~/.config/fish/{conf.d,completions}
 
 # Set environment for this session
-export DOTFILES_WORK_DC=true
+if [[ "$WORK_MODE" == "true" ]]; then
+    export DOTFILES_WORK_DC=true
+    log_info "Setting up work dev container"
+else
+    log_info "Setting up non-work dev container"
+fi
+
 export PATH="$HOME/.local/bin:$PATH"
-
-show_progress "Installing minimal dependencies for dotfiles setup"
-
-# Update package list and install only essential packages needed for install script
 sudo apt-get update
 sudo apt-get install -y curl git wget
 
-log_success "Essential packages installed"
-
+#### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
-
-# Use the existing install script to set up chezmoi and dotfiles
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_SOURCE_DIR="$SCRIPT_DIR"
-
-log_info "Running dotfiles install script"
 "$SCRIPT_DIR/install.sh"
-
 log_success "Dotfiles installed and applied"
 
+#### System packages ####
 show_progress "Installing additional system packages"
-
-# Install remaining system packages
 sudo apt-get install -y \
     gnupg \
     hyperfine \
@@ -78,36 +95,23 @@ sudo apt-get install -y \
     jq \
     ripgrep \
     fish
-
 log_success "System packages installed"
 
-show_progress "Installing GitHub CLI"
-
-# Install GitHub CLI
+#### GH CLI ####
+show_progress "Installing GitHub CLI (work mode)"
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
 sudo apt update
 sudo apt install -y gh
-
 log_success "GitHub CLI installed"
 
+#### Shell ####
 show_progress "Setting up shell"
-
-# Change default shell to fish if not already set
 if [[ "$SHELL" != *"fish"* ]]; then
     log_info "Changing default shell to fish"
     sudo chsh -s "$(which fish)" "$USER"
 fi
-
+fish -c "fundle install"
 log_success "Shell setup complete"
 
-show_progress "Final setup steps"
-
-log_success "Work dev container setup complete!"
-echo
-log_info "You may need to restart your terminal or run 'exec fish' to fully activate the new environment"
-echo
-log_info "Available tools:"
-log_info "  - Fish shell with custom configuration and aliases"
-log_info "  - GitHub CLI for repository management"
-log_info "  - Various CLI utilities (ripgrep, fd, jq, hyperfine, etc.)"
+log_success "Dev container setup complete"

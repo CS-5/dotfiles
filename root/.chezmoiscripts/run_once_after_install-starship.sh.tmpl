@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if command -v starship >/dev/null 2>&1; then
+    echo "Starship is already installed"
+    exit 0
+fi
+
+mkdir -p "{{ .binDirAbs }}"
+
+curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir "{{ .binDirAbs }}"
