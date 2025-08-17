@@ -1,13 +1,10 @@
 {
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "editor.indentSize": "tabSize",
+  "editor.formatOnSave": true,
   "files.associations": {
     "*.tmpl": "go-template",
   },
-  "go-template.languages": [
-    "tmpl"
-  ],
   "[dockerfile]": {
     "editor.defaultFormatter": "ms-azuretools.vscode-containers",
   },
@@ -17,4 +14,7 @@
   "[toml]": {
     "editor.defaultFormatter": "tamasfe.even-better-toml"
   },
+  "[fish]": {
+    "editor.defaultFormatter": "bmalehorn.vscode-fish"
+  }
 }

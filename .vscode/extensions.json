@@ -3,6 +3,8 @@
     "jinliming2.vscode-go-template",
     "tamasfe.even-better-toml",
     "timonwong.shellcheck",
-    "foxundermoon.shell-format"
+    "foxundermoon.shell-format",
+    "mads-hartmann.bash-ide-vscode",
+    "bmalehorn.vscode-fish"
   ]
 }
