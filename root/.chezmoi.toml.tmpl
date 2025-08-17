@@ -10,6 +10,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     hostname = {{ .chezmoi.hostname | quote }}
 
     isMac = {{ eq .chezmoi.os "darwin" }}
+    isDc = {{ env "REMOTE_CONTAINERS_IPC" | not | not }}
     isWorkDc = {{ $isWorkDc }}
 
     # Directory paths

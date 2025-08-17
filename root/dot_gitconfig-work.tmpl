@@ -3,7 +3,7 @@
   email = {{ .workEmail }}
   signingkey = key::{{ .gitWorkPubKey }}
 
-{{ if not .isWorkDc -}}
+{{ if not .isDc -}}
 [url "git@github.com-work"]
   insteadOf = git@github.com
 {{- end }}
