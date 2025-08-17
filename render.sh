@@ -29,32 +29,12 @@ if [[ ! -f "$SCRIPT_DIR/$TEMPLATE_FILE" ]]; then
     exit 1
 fi
 
-# Create a temporary directory for safe rendering
+# Create a temporary directory and config
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-# Copy the entire dotfiles structure
-cp -r "$SCRIPT_DIR"/* "$TEMP_DIR/"
+# Render the config template using the repo's version
+chezmoi execute-template --source="$SCRIPT_DIR/root" < "$SCRIPT_DIR/root/.chezmoi.toml.tmpl" > "$TEMP_DIR/chezmoi.toml"
 
-# Create a temporary home directory
-mkdir -p "$TEMP_DIR/temp_home/.config/chezmoi"
-mkdir -p "$TEMP_DIR/temp_home/.local/share/chezmoi"
-
-# Copy source files to the temporary chezmoi source directory
-cp -r "$TEMP_DIR/root"/* "$TEMP_DIR/temp_home/.local/share/chezmoi/"
-
-# Set up environment
-export HOME="$TEMP_DIR/temp_home"
-export CHEZMOI_SOURCE_DIR="$TEMP_DIR/temp_home/.local/share/chezmoi"
-
-# Set some default variables that might be missing
-export DOTFILES_SOURCE_DIR="$TEMP_DIR/temp_home/.local/share/chezmoi"
-
-# Change to temp directory and render
-cd "$TEMP_DIR/temp_home"
-
-# Initialize chezmoi in the temp directory
-chezmoi init --source="$TEMP_DIR/temp_home/.local/share/chezmoi" 2>/dev/null || true
-
-# Render the template
-chezmoi execute-template < "$SCRIPT_DIR/$TEMPLATE_FILE"
+# Use the rendered config to execute the template
+chezmoi execute-template --config="$TEMP_DIR/chezmoi.toml" --source="$SCRIPT_DIR/root" < "$SCRIPT_DIR/$TEMPLATE_FILE"
