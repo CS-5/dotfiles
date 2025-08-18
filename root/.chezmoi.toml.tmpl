@@ -1,6 +1,7 @@
 sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | quote }}
 
 {{ $isWorkDc := env "DOTFILES_WORK_DC" | default false -}}
+{{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") -}}
 {{ $binDir := ".local/bin" -}}
 
 [data]
@@ -10,7 +11,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     hostname = {{ .chezmoi.hostname | quote }}
 
     isMac = {{ eq .chezmoi.os "darwin" }}
-    isDc = {{ env "REMOTE_CONTAINERS_IPC" | not | not }}
+    isDc = {{ or $probablyDc $isWorkDc }}
     isWorkDc = {{ $isWorkDc }}
 
     # Directory paths
