@@ -1,0 +1,12 @@
+theme = Raycast_Dark
+cursor-invert-fg-bg = true
+
+font-family = FiraCode Nerd Font
+
+quick-terminal-screen = mouse
+
+keybind = global:cmd+grave_accent=toggle_quick_terminal
+keybind = shift+enter=text:\n
+
+window-height = 40
+window-width = 140
