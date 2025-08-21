@@ -1,4 +1,0 @@
-{{- $claudePathAbs := (joinPath .chezmoi.homeDir ".claude/local/claude") }}
-{{ if stat $claudePathAbs -}}
-alias claude={{ $claudePathAbs | quote }}
-{{ end -}}

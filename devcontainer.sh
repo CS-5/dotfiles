@@ -15,19 +15,19 @@ WORK_MODE=false
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --work)
-            WORK_MODE=true
-            shift
-            ;;
-        -h|--help)
-            echo "Usage: $0 [--work]"
-            echo "  --work    Configure for work environment"
-            exit 0
-            ;;
-        *)
-            echo "Unknown option $1"
-            exit 1
-            ;;
+    --work)
+        WORK_MODE=true
+        shift
+        ;;
+    -h | --help)
+        echo "Usage: $0 [--work]"
+        echo "  --work    Configure for work environment"
+        exit 0
+        ;;
+    *)
+        echo "Unknown option $1"
+        exit 1
+        ;;
     esac
 done
 
@@ -94,16 +94,21 @@ sudo apt-get install -y \
     unzip \
     jq \
     ripgrep \
-    fish
+    fish \
+    lsd
 log_success "System packages installed"
 
 #### GH CLI ####
-show_progress "Installing GitHub CLI (work mode)"
+show_progress "Installing GitHub CLI"
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
 sudo apt update
 sudo apt install -y gh
 log_success "GitHub CLI installed"
+
+show_progress "Installing Claude Code"
+curl -fsSL https://claude.ai/install.sh | bash
+log_success
 
 #### Shell ####
 show_progress "Setting up shell"
