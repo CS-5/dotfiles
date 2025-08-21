@@ -112,11 +112,11 @@ log_success
 
 #### Shell ####
 show_progress "Setting up shell"
+fish -c "fundle install"
 if [[ "$SHELL" != *"fish"* ]]; then
     log_info "Changing default shell to fish"
     sudo chsh -s "$(which fish)" "$USER"
 fi
-fish -c "fundle install"
 log_success "Shell setup complete"
 
 log_success "Dev container setup complete"
