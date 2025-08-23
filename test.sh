@@ -109,6 +109,16 @@ cleanup_container() {
     fi
 }
 
+cleanup_all_test_containers() {
+    log "Cleaning up all test containers..."
+    containers=$(docker ps -a --format '{{.Names}}' | grep '^dotfiles-test-' || true)
+    if [ -n "$containers" ]; then
+        echo "$containers" | while read -r container; do
+            cleanup_container "$container"
+        done
+    fi
+}
+
 # Interactive mode flag
 INTERACTIVE_MODE=false
 
@@ -144,7 +154,8 @@ validate_installation() {
     # Check if dotfiles are applied
     local expected_files=(
         ".gitconfig"
-        ".bashrc" 
+        ".bashrc"
+        ".zshrc"
         ".config/fish/config.fish"
         ".config/starship.toml"
         ".config/mise/config.toml"
@@ -244,6 +255,18 @@ validate_installation() {
             if docker exec "$container_name" test -f "$user_home/.gitconfig" 2>/dev/null; then
                 log_success "Git config applied"
             fi
+            
+            # Check zsh history configuration
+            if docker exec "$container_name" test -f "$user_home/.zshrc" 2>/dev/null; then
+                local zshrc_content
+                zshrc_content=$(docker exec "$container_name" cat "$user_home/.zshrc" 2>/dev/null || echo "")
+                if [[ "$zshrc_content" == *"HISTFILE=~/.zsh_history"* ]] && [[ "$zshrc_content" == *"HISTSIZE=20000"* ]] && [[ "$zshrc_content" == *"SAVEHIST=20000"* ]]; then
+                    log_success "Zsh history configuration validated"
+                else
+                    log_warning "Zsh history configuration incomplete"
+                    ((validation_errors++))
+                fi
+            fi
             ;;
     esac
 
@@ -313,6 +336,7 @@ RUN apt-get update && apt-get install -y \\
     ripgrep \\
     fish \\
     lsd \\
+    zsh \\
     && rm -rf /var/lib/apt/lists/*
 
 # Create vscode user to emulate dev container environment

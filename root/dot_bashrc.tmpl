@@ -31,7 +31,9 @@ fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
 
 # History settings
-HISTCONTROL=ignoreboth:erasedups
-HISTSIZE=10000
+HISTFILE=~/.bash_history
+HISTSIZE=20000
 HISTFILESIZE=20000
+HISTCONTROL=ignoreboth:erasedups
 shopt -s histappend
+shopt -s cmdhist

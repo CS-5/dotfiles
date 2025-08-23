@@ -34,10 +34,12 @@ fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
 # History settings
-HISTSIZE=10000
-SAVEHIST=20000
 HISTFILE=~/.zsh_history
-setopt HIST_IGNORE_BOTH_DUPS
+HISTSIZE=20000
+SAVEHIST=20000
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_IGNORE_SPACE
+setopt HIST_SAVE_NO_DUPS
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
