@@ -90,6 +90,7 @@ The repository includes comprehensive Docker-based testing via `test.sh`:
 - Provides detailed validation output
 - Supports interactive mode for debugging and manual validation
 - Automatic cleanup can be disabled for container inspection
+- Failures in any scripts (`test.sh`, `devcontainer.sh`, etc.) and/or failures in the container config should be considered test failures, even if the tests did not run and explicitly fail.
 
 ### Testing Features
 
