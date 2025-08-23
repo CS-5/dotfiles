@@ -1,0 +1,43 @@
+{{ if .isMac -}}
+# Homebrew completion (macOS)
+if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    if [[ -r "$(brew --prefix)/share/zsh/site-functions" ]]; then
+        fpath=("$(brew --prefix)/share/zsh/site-functions" $fpath)
+    fi
+fi
+{{- end }}
+
+export PATH="{{ .binDirAbs }}:$PATH"
+
+# Enable completions
+autoload -U compinit && compinit
+
+# Initialize starship prompt
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+fi
+
+# Initialize tools
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh)"
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init zsh)"
+fi
+
+if command -v mcfly >/dev/null 2>&1; then
+    eval "$(mcfly init zsh)"
+fi
+
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
+
+# History settings
+HISTSIZE=10000
+SAVEHIST=20000
+HISTFILE=~/.zsh_history
+setopt HIST_IGNORE_BOTH_DUPS
+setopt HIST_IGNORE_SPACE
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
