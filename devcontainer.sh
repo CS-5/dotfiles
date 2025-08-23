@@ -90,7 +90,6 @@ sudo apt-get install -y \
     fd-find \
     fzf \
     asciinema \
-    httpie \
     unzip \
     jq \
     ripgrep \
@@ -108,7 +107,7 @@ log_success "GitHub CLI installed"
 
 show_progress "Installing Claude Code"
 curl -fsSL https://claude.ai/install.sh | bash
-log_success
+log_success "Claude Code installed"
 
 #### Shell ####
 show_progress "Setting up shell"
