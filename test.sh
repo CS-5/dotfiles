@@ -302,6 +302,17 @@ RUN apt-get update && apt-get install -y \\
     git \\
     sudo \\
     coreutils \\
+    gnupg \\
+    hyperfine \\
+    duf \\
+    fd-find \\
+    fzf \\
+    asciinema \\
+    unzip \\
+    jq \\
+    ripgrep \\
+    fish \\
+    lsd \\
     && rm -rf /var/lib/apt/lists/*
 
 # Create vscode user to emulate dev container environment
