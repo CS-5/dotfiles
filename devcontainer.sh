@@ -81,8 +81,8 @@ export DOTFILES_SOURCE_DIR="$SCRIPT_DIR"
 "$SCRIPT_DIR/install.sh"
 log_success "Dotfiles installed and applied"
 
-#### System packages ####
-show_progress "Installing additional system packages"
+#### Tools ####
+show_progress "Installing additional tools"
 sudo apt-get install -y \
     gnupg \
     hyperfine \
@@ -95,12 +95,12 @@ sudo apt-get install -y \
     ripgrep \
     fish \
     lsd \
-    neovim \
-    wget \
-    curl \
-    lazygit
+    neovim 
 
-log_success "System packages installed"
+eget --to ~/.local/bin https://github.com/jesseduffield/lazygit
+eget --to ~/.local/bin https://github.com/jesseduffield/lazydocker
+
+log_success "Tools installed"
 
 #### GH CLI ####
 show_progress "Installing GitHub CLI"
