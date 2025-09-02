@@ -94,7 +94,12 @@ sudo apt-get install -y \
     jq \
     ripgrep \
     fish \
-    lsd
+    lsd \
+    neovim \
+    wget \
+    curl \
+    lazygit
+
 log_success "System packages installed"
 
 #### GH CLI ####
