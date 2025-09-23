@@ -83,7 +83,7 @@ sudo apt-get install -y curl git wget
 show_progress "Installing chezmoi and dotfiles"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_SOURCE_DIR="$SCRIPT_DIR"
-"$SCRIPT_DIR/install.sh"
+"$SCRIPT_DIR/install-dotfiles.sh"
 log_success "Dotfiles installed and applied"
 
 #### Tools ####
