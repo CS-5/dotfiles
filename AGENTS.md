@@ -12,8 +12,8 @@ For comprehensive chezmoi documentation, reference guides, and tutorials, visit:
 
 ### Installation Scripts
 
-- `./install.sh` - Standard installation script that installs chezmoi and applies dotfiles
-- `./devcontainer.sh` - Development container installation script with optional work mode
+- `./install-dotfiles.sh` - Standard installation script that installs chezmoi and applies dotfiles
+- `./install.sh` - Development container installation script with optional work mode
 
 ### Development Scripts  
 
@@ -52,11 +52,10 @@ The dotfiles adapt based on environment variables:
 
 ```bash
 # Install dotfiles
-./install.sh
+./install-dotfiles.sh
 
-# Install dev container variants
-./devcontainer.sh            # Personal dev container
-./devcontainer.sh --work     # Work dev container (includes GitHub CLI)
+# Install tools + dotfiles in dev container
+./devcontainer.sh
 
 # Test template rendering
 ./render.sh root/dot_gitconfig.tmpl
@@ -90,7 +89,7 @@ The repository includes comprehensive Docker-based testing via `test.sh`:
 - Provides detailed validation output
 - Supports interactive mode for debugging and manual validation
 - Automatic cleanup can be disabled for container inspection
-- Failures in any scripts (`test.sh`, `devcontainer.sh`, etc.) and/or failures in the container config should be considered test failures, even if the tests did not run and explicitly fail.
+- Failures in any scripts (`test.sh`, `install.sh`, etc.) and/or failures in the container config should be considered test failures, even if the tests did not run and explicitly fail.
 
 ### Testing Features
 
