@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 WORK_MODE=false
-if [[ "${GITHUB_REPOSITORY%%/*}" == "journalytic" ]]; then
+if [[ "${GITHUB_REPOSITORY:-}" != "" && "${GITHUB_REPOSITORY%%/*}" == "journalytic" ]]; then
     WORK_MODE=true
 fi
 
