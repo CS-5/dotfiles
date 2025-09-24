@@ -10,3 +10,5 @@ keybind = shift+enter=text:\n
 
 window-height = 40
 window-width = 140
+
+shell-integration-features = sudo, title, ssh-env
