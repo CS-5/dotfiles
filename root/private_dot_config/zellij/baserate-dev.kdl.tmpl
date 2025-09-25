@@ -1,3 +1,4 @@
+{{- if .isWorkDc }}
 layout {
     pane split_direction="horizontal" {
         pane split_direction="vertical" {
@@ -16,3 +17,4 @@ layout {
         }
     }
 }
+{{ end -}}
