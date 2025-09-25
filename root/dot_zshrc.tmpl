@@ -33,6 +33,10 @@ fi
 
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
+pkill() {
+    ps -e | fzf --multi | awk '{print $1}' | xargs kill "$@"
+}
+
 # History settings
 HISTFILE=~/.zsh_history
 HISTSIZE=20000

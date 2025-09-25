@@ -14,10 +14,10 @@ abbr -a gd git diff
 abbr -a gds git diff --staged
 abbr -a gf git fetch
 
-alias l='ls -l'
-alias la='ls -a'
-alias lla='ls -la'
-alias lt='ls --tree'
+alias l="ls -l"
+alias la="ls -a"
+alias lla="ls -la"
+alias lt="ls --tree"
 alias ls=lsd
 
-alias reload='exec fish'
+alias reload="exec fish"
