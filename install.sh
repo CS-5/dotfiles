@@ -81,7 +81,7 @@ sudo apt-get install -y curl git wget
 
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts"
 export DOTFILES_SOURCE_DIR="$SCRIPT_DIR"
 "$SCRIPT_DIR/install-dotfiles.sh"
 log_success "Dotfiles installed and applied"
@@ -104,6 +104,8 @@ sudo apt-get install -y \
 
 eget --to ~/.local/bin https://github.com/jesseduffield/lazygit
 eget --to ~/.local/bin https://github.com/jesseduffield/lazydocker
+
+"$SCRIPT_DIR/install-zellij.sh"
 
 log_success "Tools installed"
 
