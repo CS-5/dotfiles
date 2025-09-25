@@ -1,0 +1,18 @@
+layout {
+    pane split_direction="horizontal" {
+        pane split_direction="vertical" {
+            pane name="client" {
+                command "make"
+                args "run_client"
+            }
+            pane name="notifyd" {
+                command "make"
+                args "run_notifyd"
+            }
+        }
+        pane name="frontend" {
+            command "make"
+            args "run_server"
+        }
+    }
+}

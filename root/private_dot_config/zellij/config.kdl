@@ -1,0 +1,50 @@
+ui {
+  pane_frames {
+    hide_session_name false
+  }
+}
+
+keybinds {
+    normal {
+        bind "Alt h" { MoveFocus "Left"; }
+        bind "Alt l" { MoveFocus "Right"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        
+        bind "Ctrl Alt h" { NewPane "Left"; }
+        bind "Ctrl Alt l" { NewPane "Right"; }
+        bind "Ctrl Alt j" { NewPane "Down"; }
+        bind "Ctrl Alt k" { NewPane "Up"; }
+        
+        bind "Ctrl Alt H" { Resize "Increase Left"; }
+        bind "Ctrl Alt L" { Resize "Increase Right"; }
+        bind "Ctrl Alt J" { Resize "Increase Down"; }
+        bind "Ctrl Alt K" { Resize "Increase Up"; }
+        
+        bind "Alt Space" { ToggleFloatingPanes; }
+        bind "Alt 1" { GoToTab 1; }
+        bind "Alt 2" { GoToTab 2; }
+        bind "Alt 3" { GoToTab 3; }
+        bind "Alt 4" { GoToTab 4; }
+        bind "Alt 5" { GoToTab 5; }
+    }
+}
+
+// Plugin aliases - can be used to change the implementation of Zellij
+// changing these requires a restart to take effect
+plugins {
+    about location="zellij:about"
+    compact-bar location="zellij:compact-bar"
+    configuration location="zellij:configuration"
+    filepicker location="zellij:strider" {
+        cwd "/"
+    }
+    plugin-manager location="zellij:plugin-manager"
+    session-manager location="zellij:session-manager"
+    status-bar location="zellij:status-bar"
+    strider location="zellij:strider"
+    tab-bar location="zellij:tab-bar"
+    welcome-screen location="zellij:session-manager" {
+        welcome_screen true
+    }
+}
