@@ -31,7 +31,7 @@ fi
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
 
 fzkill() {
-    ps -e | fzf --multi | awk '{print $1}' | xargs kill "$@"
+    ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
 }
 
 # History settings
