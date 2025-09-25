@@ -22,7 +22,7 @@ if ! chezmoi="$(command -v chezmoi)"; then
 fi
 
 if [ -z "${DOTFILES_SOURCE_DIR:-}" ]; then
-  DOTFILES_SOURCE_DIR="$(cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P)"
+  DOTFILES_SOURCE_DIR="$(cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P)/.."
   export DOTFILES_SOURCE_DIR
 fi
 
