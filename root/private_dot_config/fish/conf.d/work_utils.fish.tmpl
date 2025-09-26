@@ -1,5 +1,5 @@
 {{- if .isWorkDc -}}
-set -l workspace_path "/workspaces/app"
+set -g workspace_path "/workspaces/app"
 
 function start
     if test (pwd) = $workspace_path
