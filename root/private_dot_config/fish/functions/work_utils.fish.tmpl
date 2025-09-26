@@ -1,0 +1,34 @@
+{{- if .isWorkDc -}}
+set -l workspace_path "/workspaces/app"
+
+function start
+    if test (pwd) = $workspace_path
+        zellij --layout=baserate-dev
+    end
+end
+
+# Auto-register script commands when in workspace
+function __register_script_commands
+    for script in $workspace_path/bin/*.sh
+        if test -x $script
+            set -l script_name (basename $script .sh)
+            # Create a temporary function for this script
+            eval "function $script_name
+                $script \$argv
+            end"
+        end
+    end
+end
+
+# Register commands on directory change
+function __workspace_cd --on-variable PWD
+    if test (pwd) = $workspace_path
+        __register_script_commands
+    end
+end
+
+# Register commands when shell starts if already in workspace
+if test (pwd) = $workspace_path
+    __register_script_commands
+end
+{{- end -}}
