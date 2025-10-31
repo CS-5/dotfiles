@@ -17,6 +17,8 @@ if [[ "${GITHUB_REPOSITORY:-}" != "" && "${GITHUB_REPOSITORY%%/*}" == "journalyt
     WORK_MODE=true
 fi
 
+DOTFILES_BIN_DIR="${HOME}/.local/bin"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -65,7 +67,7 @@ if [[ -z "${REMOTE_CONTAINERS_IPC:-}" && "${USER:-}" != "vscode" && "${CODESPACE
 fi
 
 # Create necessary directories
-mkdir -p ~/.local/bin ~/.config/fish/{conf.d,completions}
+mkdir -p "$DOTFILES_BIN_DIR" ~/.config/fish/{conf.d,completions}
 
 # Set environment for this session
 if [[ "$WORK_MODE" == "true" ]]; then
@@ -102,8 +104,8 @@ sudo apt-get install -y \
     lsd \
     neovim 
 
-eget --to ~/.local/bin https://github.com/jesseduffield/lazygit
-eget --to ~/.local/bin https://github.com/jesseduffield/lazydocker
+"$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/jesseduffield/lazygit
+"$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/jesseduffield/lazydocker
 
 "$SCRIPT_DIR/install-zellij.sh"
 
