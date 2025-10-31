@@ -49,10 +49,10 @@ get_install_script() {
             echo "./install.sh"
             ;;
         debian-devcontainer)
-            echo "./devcontainer.sh"
+            echo "./install.sh"
             ;;
         debian-work-devcontainer)
-            echo "./devcontainer.sh --work"
+            echo "./install.sh --work"
             ;;
     esac
 }
@@ -65,8 +65,8 @@ Test dotfiles installation in Docker containers for various environments.
 
 Environments:
   debian-basic              Basic Debian installation (uses install.sh)
-  debian-devcontainer       Non-work dev container (uses devcontainer.sh)
-  debian-work-devcontainer  Work dev container simulation (uses devcontainer.sh --work)
+  debian-devcontainer       Non-work dev container (uses install.sh)
+  debian-work-devcontainer  Work dev container simulation (uses install.sh --work)
   all                       Run all tests (default)
 
 Options:
@@ -208,7 +208,7 @@ validate_installation() {
                 log_warning "Work-specific git config file (.gitconfig-work) not found"
             fi
             
-            # Check if additional tools were installed by devcontainer.sh --work
+            # Check if additional tools were installed by install.sh --work
             if docker exec "$container_name" which gh >/dev/null 2>&1; then
                 log_success "GitHub CLI installed"
             else

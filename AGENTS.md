@@ -55,7 +55,7 @@ The dotfiles adapt based on environment variables:
 ./install-dotfiles.sh
 
 # Install tools + dotfiles in dev container
-./devcontainer.sh
+./install.sh
 
 # Test template rendering
 ./render.sh root/dot_gitconfig.tmpl
