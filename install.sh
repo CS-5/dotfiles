@@ -18,6 +18,9 @@ if [[ "${GITHUB_REPOSITORY:-}" != "" && "${GITHUB_REPOSITORY%%/*}" == "journalyt
 fi
 
 DOTFILES_BIN_DIR="${HOME}/.local/bin"
+DOTFILES_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export DOTFILES_SOURCE_DIR
+SCRIPT_DIR="$DOTFILES_SOURCE_DIR/scripts"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -83,8 +86,6 @@ sudo apt-get install -y curl git wget
 
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts"
-export DOTFILES_SOURCE_DIR="$SCRIPT_DIR"
 "$SCRIPT_DIR/install-dotfiles.sh"
 log_success "Dotfiles installed and applied"
 
