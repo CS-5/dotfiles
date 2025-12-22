@@ -17,4 +17,10 @@
   "[fish]": {
     "editor.defaultFormatter": "bmalehorn.vscode-fish"
   },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    }
+  }
 }
