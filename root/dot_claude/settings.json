@@ -1,13 +1,22 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline.sh"
+  },
   "permissions": {
     "allow": [
       "Bash(rg:*)",
+      "Bash(fdfind:*)", 
       "Bash(fd:*)",
-      "Bash(ast-grep:*)",
+      "Bash(ast-grep:*)", 
+      "Bash(sg:*)",
       "Bash(find:*)",
       "Bash(sed:*)",
       "Bash(jq:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(fzf:*)"
     ]
-  }
+  },
+  "alwaysThinkingEnabled": true
 }
