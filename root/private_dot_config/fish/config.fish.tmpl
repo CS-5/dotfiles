@@ -27,4 +27,6 @@ fundle init
 
 fish_add_path {{ .binDirAbs | quote }}
 
+{{ if not .isDc -}}
 fish_ssh_agent
+{{- end }}
