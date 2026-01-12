@@ -1,7 +1,9 @@
-[user]  
+[user]
   name = Carson Seese
   email = {{ .workEmail }}
+{{- if not .isCodespaces }}
   signingkey = key::{{ .gitWorkPubKey }}
+{{- end }}
 
 {{ if not .isDc -}}
 [url "git@github.com-work"]

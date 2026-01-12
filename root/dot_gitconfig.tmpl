@@ -1,7 +1,9 @@
 [user]
   name = Carson Seese
   email = {{ .personalEmail }}
+{{- if not .isCodespaces }}
   signingkey = key::{{ .gitPersonalPubKey }}
+{{- end }}
 
 {{ if eq .hostname "CSMBP" -}}
 [includeIf "gitdir:~/dev/work/"]
@@ -11,8 +13,10 @@
   path = .gitconfig-work
 {{- end }}
 
+{{ if not .isCodespaces -}}
 [gpg]
   format = ssh
+{{- end }}
   
 [core]
   fsmonitor = true
@@ -32,6 +36,7 @@
   helper = manager
 {{- end }}
 
+{{ if not .isCodespaces -}}
 [commit]
   gpgSign = true
 
@@ -40,6 +45,7 @@
 
 [gpg "ssh"]
   allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}
+{{- end }}
 
 [alias]
   pushfwl = push --force-with-lease
