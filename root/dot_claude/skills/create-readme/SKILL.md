@@ -1,7 +1,8 @@
 ---
+name: create-readme
 description: Create a directory/package specific readme file
 argument-hint: <directory/path>
-allowed-tools:
+allowed-tools: Read, Glob, Grep, AskUserQuestion
 ---
 
 # Overview

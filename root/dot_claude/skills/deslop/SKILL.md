@@ -1,3 +1,8 @@
+---
+name: deslop
+description: Remove AI code slop from the current branch's diff against main
+---
+
 # Remove AI code slop
 
 Check the diff against the main branch, and remove all AI generated slop introduced in this branch.
