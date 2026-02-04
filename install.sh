@@ -107,6 +107,7 @@ sudo apt-get install -y \
 
 "$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/jesseduffield/lazygit
 "$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/jesseduffield/lazydocker
+"$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/ast-grep/ast-grep
 
 "$SCRIPT_DIR/install-zellij.sh"
 

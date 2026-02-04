@@ -12,6 +12,12 @@ At the start of EVERY session involving non-trivial work:
 
 This is not optional. Do this proactively without being asked.
 
+## Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
 ## Workflow Orchestration
 
 ### 1. Plan Mode Default
@@ -63,15 +69,9 @@ This is not optional. Do this proactively without being asked.
 5. **Document Results**: Add review section to `.carson/ai/todo.md`
 6. **Capture Lessons**: Update `.carson/ai/todo.md` after corrections
 
-## Core Principles
+## Tools
 
-- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
-- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
-
-## Shell tools
-
-IT IS CRITICAL THAT THESE TOOLS are preferred over the less functional and performant system defaults.
+Use tools that produce concise & accurate output to reduce context bloat. Use of these tools is not optional unless the tool is not available on the system.
 
 1. Trying to find FILES?
    - On Debian/Ubuntu: `fdfind`
