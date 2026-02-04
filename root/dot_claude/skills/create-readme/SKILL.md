@@ -3,6 +3,7 @@ name: create-readme
 description: Create a directory/package specific readme file
 argument-hint: <directory/path>
 allowed-tools: Read, Glob, Grep, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # Overview
