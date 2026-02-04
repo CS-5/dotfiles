@@ -1,0 +1,18 @@
+#!/bin/bash
+# Copy Claude config from ~/.claude to $CLAUDE_CONFIG_DIR if set
+set -euo pipefail
+
+# Only copy if CLAUDE_CONFIG_DIR is set and differs from default
+if [[ -z "${CLAUDE_CONFIG_DIR:-}" ]] || [[ "$CLAUDE_CONFIG_DIR" == "$HOME/.claude" ]]; then
+    exit 0
+fi
+
+mkdir -p "$CLAUDE_CONFIG_DIR"
+
+# Copy individual managed files
+cp "$HOME/.claude/CLAUDE.md" "$CLAUDE_CONFIG_DIR/"
+cp "$HOME/.claude/settings.json" "$CLAUDE_CONFIG_DIR/"
+cp "$HOME/.claude/statusline.sh" "$CLAUDE_CONFIG_DIR/"
+
+# Sync skills/ with deletion of removed skills
+rsync -a --delete "$HOME/.claude/skills/" "$CLAUDE_CONFIG_DIR/skills/"

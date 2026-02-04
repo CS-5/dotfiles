@@ -2,9 +2,15 @@
 
 These are the top user-level instructions for AI agents. These must be respected but may be overridden by project-specific guidance.
 
-## `.carson/ai` directory
+## Session Startup (REQUIRED)
 
-All repositories are eligible for a `.carson` directory at the root, which is ignored by the system's global `.gitignore`. You may create this directory if it does not exist. Consider `.carson/ai` to be your personal scratchpad that will not be checked into the repo. The following instructions contain further details about what may be included in this directory.
+At the start of EVERY session involving non-trivial work:
+
+1. **Initialize workspace**: Check if `.carson/ai/` exists, create it if not. This directory will be automatically ignored by the global gitignore.
+2. **Review lessons**: Read `.carson/ai/lessons.md` if it exists - apply relevant patterns
+3. **Plan work**: Before starting implementation, write the plan to `.carson/ai/todo.md` (additional details on todo tracking below)
+
+This is not optional. Do this proactively without being asked.
 
 ## Workflow Orchestration
 
