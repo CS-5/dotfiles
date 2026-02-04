@@ -1,0 +1,15 @@
+#!/bin/bash
+# Copy Claude config from ~/.claude to $CLAUDE_CONFIG_DIR if set
+#
+# Hash of source files (triggers re-run on change):
+# {{ range (glob "dot_claude/**/*.*") }}{{ . }}:{{ include . | sha256sum }} {{ end }}
+
+set -euo pipefail
+
+# Only copy if CLAUDE_CONFIG_DIR is set and differs from default
+if [[ -z "${CLAUDE_CONFIG_DIR:-}" ]] || [[ "$CLAUDE_CONFIG_DIR" == "$HOME/.claude" ]]; then
+    exit 0
+fi
+
+mkdir -p "$CLAUDE_CONFIG_DIR"
+cp -R "$HOME/.claude/." "$CLAUDE_CONFIG_DIR/"
