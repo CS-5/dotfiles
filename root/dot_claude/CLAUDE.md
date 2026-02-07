@@ -1,29 +1,17 @@
 # CLAUDE.md
 
-These are the top user-level instructions for AI agents. These must be respected but may be overridden by project-specific guidance.
+These are the top user-level instructions for AI agents. These MUST be respected and followed exactly. They may be supplemented by project-specific guidance.
 
-## Session Startup (REQUIRED)
+## `.carson/ai` Directory
 
-At the start of EVERY session involving non-trivial work:
-
-1. **Initialize workspace**: Check if `.carson/ai/` exists, create it if not. This directory will be automatically ignored by the global gitignore.
-2. **Review lessons**: Read `.carson/ai/lessons.md` if it exists - apply relevant patterns
-3. **Plan work**: Before starting implementation, write the plan to `.carson/ai/todo.md` (additional details on todo tracking below)
-
-This is not optional. Do this proactively without being asked.
-
-## Core Principles
-
-- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
-- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+All repositories are eligible for a `.carson` directory at the root, which is ignored by the system's global `.gitignore`. You MUST create this directory if it does not exist when you first need it. `.carson/ai` is your personal scratchpad — it will not be checked into the repo.
 
 ## Workflow Orchestration
 
 ### 1. Plan Mode Default
 
-- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
-- If something goes sideways, STOP and re-plan immediately - don't keep pushing
+- You MUST enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan immediately — do not keep pushing
 - Use plan mode for verification steps, not just building
 - Write detailed specs upfront to reduce ambiguity
 
@@ -36,28 +24,28 @@ This is not optional. Do this proactively without being asked.
 
 ### 3. Self-Improvement Loop
 
-- After ANY correction from the user: update `.carson/ai/lessons.md` with the pattern
+- After ANY correction from the user: ALWAYS update `.carson/ai/lessons.md` with the pattern
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
+- ALWAYS review `.carson/ai/lessons.md` at session start before doing any work
 
-### 3. Verification Before Done
+### 4. Verification Before Done
 
-- Never mark a task complete without proving it is high quality
+- NEVER mark a task complete without proving it is high quality
 - Diff behavior between main and your changes when relevant
 - Ask yourself: "Would a staff engineer approve this?"
 
-### 4. Demand Elegance (Balanced)
+### 5. Demand Elegance (Balanced)
 
 - For non-trivial changes: pause and ask "is there a more elegant way?"
 - If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes - don't over-engineer
+- Skip this for simple, obvious fixes — don't over-engineer
 - Challenge your own work before presenting it
 
 ### 6. Autonomous Bug Fixing
 
 - When given a bug report: just fix it. Don't ask for hand-holding
-- Point at logs, errors, failing tests - then resolve them
+- Point at logs, errors, failing tests — then resolve them
 - Zero context switching required from the user
 
 ## Task Management
@@ -67,16 +55,22 @@ This is not optional. Do this proactively without being asked.
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
 5. **Document Results**: Add review section to `.carson/ai/todo.md`
-6. **Capture Lessons**: Update `.carson/ai/todo.md` after corrections
+6. **Capture Lessons**: Update `.carson/ai/lessons.md` after corrections
 
-## Tools
+## Core Principles
 
-Use tools that produce concise & accurate output to reduce context bloat. Use of these tools is not optional unless the tool is not available on the system.
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
 
-1. Trying to find FILES?
-   - On Debian/Ubuntu: `fdfind`
-   - On MacOS: `fd`
-2. Trying to find CODE or need syntax-aware search? Use `ast-grep`
-3. Trying to find TEXT or STRINGS? Use `rg`
-4. Trying to SELECT from multiple results? Pipe to `fzf`
-5. Trying to interact with JSON? Use `jq`
+## Shell Tools
+
+When running Bash commands for search or file operations, ALWAYS prefer these tools over less functional defaults:
+
+1. Finding FILES → `fd` (macOS) / `fdfind` (Debian/Ubuntu)
+2. Syntax-aware CODE search → `ast-grep` / `sg`
+3. Finding TEXT or STRINGS → `rg`
+4. Selecting from multiple results → pipe to `fzf`
+5. Interacting with JSON → `jq`
+
+Note: Claude Code's built-in Grep, Glob, and Read tools are acceptable for simple, single-shot searches. Use the shell tools above when you need advanced features (e.g., multi-line patterns, syntax-aware matching, complex filtering, or piped workflows).
