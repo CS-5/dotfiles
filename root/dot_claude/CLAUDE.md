@@ -2,18 +2,28 @@
 
 These are the top user-level instructions for AI agents. These MUST be respected and followed exactly. They may be supplemented by project-specific guidance.
 
+## Session Start (MANDATORY — do this BEFORE any work)
+
+1. Create `.carson/ai/` directory at the repo root if it does not exist (`mkdir -p`)
+2. Read `.carson/ai/lessons.md` if it exists — internalize before proceeding
+3. Acknowledge to the user that you've reviewed lessons (one line is fine)
+
+These three steps MUST happen before responding to the user's first request. No exceptions.
+
 ## `.carson/ai` Directory
 
-All repositories are eligible for a `.carson` directory at the root, which is ignored by the system's global `.gitignore`. You MUST create this directory if it does not exist when you first need it. `.carson/ai` is your personal scratchpad — it will not be checked into the repo.
+`.carson/ai` is your persistent scratchpad, ignored by the system's global `.gitignore`. It will not be checked into the repo. Use it for:
+
+- `lessons.md` — patterns, mistakes, and rules to prevent them
+- `todo.md` — task tracking for multi-step work (use INSTEAD of built-in TaskCreate tools)
 
 ## Workflow Orchestration
 
 ### 1. Plan Mode Default
 
-- You MUST enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- Enter plan mode for tasks with architectural decisions or unclear scope
+- Simple, well-specified tasks (clear what + where + how) can skip plan mode
 - If something goes sideways, STOP and re-plan immediately — do not keep pushing
-- Use plan mode for verification steps, not just building
-- Write detailed specs upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
 
@@ -24,10 +34,9 @@ All repositories are eligible for a `.carson` directory at the root, which is ig
 
 ### 3. Self-Improvement Loop
 
-- After ANY correction from the user: ALWAYS update `.carson/ai/lessons.md` with the pattern
+- After ANY correction from the user: ALWAYS update `.carson/ai/lessons.md`
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
-- ALWAYS review `.carson/ai/lessons.md` at session start before doing any work
 
 ### 4. Verification Before Done
 
@@ -50,11 +59,13 @@ All repositories are eligible for a `.carson` directory at the root, which is ig
 
 ## Task Management
 
-1. **Plan First**: Write plan to `.carson/ai/todo.md` with checkable items
+For multi-step tasks, use `.carson/ai/todo.md` (NOT the built-in TaskCreate/TaskUpdate tools):
+
+1. **Plan First**: Write plan with checkable items
 2. **Verify Plan**: Check in before starting implementation
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `.carson/ai/todo.md`
+5. **Document Results**: Add review section
 6. **Capture Lessons**: Update `.carson/ai/lessons.md` after corrections
 
 ## Core Principles
