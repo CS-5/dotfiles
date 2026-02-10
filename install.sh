@@ -62,13 +62,6 @@ show_progress() {
     echo -e "${YELLOW}==> $1${NC}"
 }
 
-# Check if we're in a dev container
-# TODO: User check here is probably not the most reliable, but it works for me, for now.
-if [[ -z "${REMOTE_CONTAINERS_IPC:-}" && "${USER:-}" != "vscode" && "${CODESPACES:-}" != "true" ]]; then
-    log_error "This script is intended for dev container environments only"
-    exit 1
-fi
-
 # Create necessary directories
 mkdir -p "$DOTFILES_BIN_DIR" ~/.config/fish/{conf.d,completions}
 
