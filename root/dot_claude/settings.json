@@ -1,15 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "statusLine": {
-    "type": "command",
-    "command": "bash ~/.claude/statusline.sh"
-  },
+  "model": "opus",
+  "alwaysThinkingEnabled": true,
   "permissions": {
     "allow": [
       "Bash(rg:*)",
-      "Bash(fdfind:*)", 
+      "Bash(fdfind:*)",
       "Bash(fd:*)",
-      "Bash(ast-grep:*)", 
+      "Bash(ast-grep:*)",
       "Bash(sg:*)",
       "Bash(find:*)",
       "Bash(sed:*)",
@@ -18,7 +16,15 @@
       "Bash(fzf:*)"
     ]
   },
-  "alwaysThinkingEnabled": true,
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline.sh"
+  },
   "hooks": {
     "PreToolUse": [
       {
