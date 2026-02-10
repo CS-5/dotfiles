@@ -62,6 +62,16 @@ show_progress() {
     echo -e "${YELLOW}==> $1${NC}"
 }
 
+IS_LXC=false
+if grep -qa 'container=lxc' /proc/1/environ 2>/dev/null; then
+    IS_LXC=true
+fi
+
+if [[ "$IS_LXC" != "true" && -z "${REMOTE_CONTAINERS_IPC:-}" && "${USER:-}" != "vscode" && "${CODESPACES:-}" != "true" ]]; then
+    log_error "This script is intended for dev container/LXC environments only"
+    exit 1
+fi
+
 # Create necessary directories
 mkdir -p "$DOTFILES_BIN_DIR" ~/.config/fish/{conf.d,completions}
 
@@ -103,6 +113,12 @@ sudo apt-get install -y \
 "$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/ast-grep/ast-grep
 
 "$SCRIPT_DIR/install-zellij.sh"
+
+if [[ "$IS_LXC" == "true" ]]; then
+    show_progress "Installing mise"
+    curl https://mise.run | sh
+    log_success "mise installed"
+fi
 
 log_success "Tools installed"
 
