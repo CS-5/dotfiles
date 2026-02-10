@@ -6,19 +6,16 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 This is a personal dotfiles repository managed with [chezmoi](https://www.chezmoi.io/). It contains configuration files for various development tools including Git, Fish shell, SSH, Docker, and development environments.
 
-For comprehensive chezmoi documentation, reference guides, and tutorials, visit: <https://www.chezmoi.io/>
-
 ## Key Scripts
 
 ### Installation Scripts
 
-- `./install-dotfiles.sh` - Standard installation script that installs chezmoi and applies dotfiles
+- `./scripts/install-dotfiles.sh` - Standard installation script that installs chezmoi and applies dotfiles
 - `./install.sh` - Development container installation script with optional work mode
 
 ### Development Scripts  
 
 - `./render.sh [template-file]` - Renders chezmoi templates to stdout for testing
-- `./test.sh [environment] [options]` - Comprehensive testing script using Docker containers to validate installations
 
 ## Architecture
 
@@ -34,6 +31,7 @@ The dotfiles adapt based on environment variables:
 
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
 - `DOTFILES_WORK_DC` - Forces work dev container configuration
+- `CODESPACES` - Detects GitHub Codespaces environment (disables SSH agent, GPG signing)
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
 
 ### Configuration Variants
@@ -41,18 +39,33 @@ The dotfiles adapt based on environment variables:
 - **Personal**: Default configuration using personal email/SSH keys
 - **Work Dev Container**: Uses work email, includes additional tools, separate git config
 
+### Chezmoi Automation Scripts
+
+Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
+
+- `run_once_after_install-starship.sh.tmpl` - Installs Starship prompt
+- `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
+- `run_onchange_after_install-completions.sh.tmpl` - Generates fish completions for `gh` and `docker`
+
+### External File Management
+
+- `root/.chezmoiexternal.toml.tmpl` - Pulls external dependencies (fundle, eget binaries)
+- `root/.chezmoiignore.tmpl` - Controls which files chezmoi ignores per environment
+
 ### Key Files
 
 - `root/.chezmoi.toml.tmpl` - Main chezmoi configuration with environment variables
 - `root/dot_gitconfig.tmpl` - Git configuration with conditional work includes
 - `root/dot_gitconfig-work.tmpl` - Work-specific git configuration
 - `root/private_dot_config/fish/config.fish.tmpl` - Fish shell configuration
+- `root/dot_bashrc.tmpl` - Bash configuration (Homebrew, starship, mise, zoxide, mcfly)
+- `root/dot_zshrc.tmpl` - Zsh configuration
 
 ## Common Commands
 
 ```bash
 # Install dotfiles
-./install-dotfiles.sh
+./scripts/install-dotfiles.sh
 
 # Install tools + dotfiles in dev container
 ./install.sh
@@ -60,44 +73,11 @@ The dotfiles adapt based on environment variables:
 # Test template rendering
 ./render.sh root/dot_gitconfig.tmpl
 
-# Run comprehensive tests
-./test.sh                    # All environments
-./test.sh debian-basic       # Basic Debian only
-./test.sh debian-work-devcontainer  # Work dev container only
-
-# Test with interactive shell access
-./test.sh debian-basic --interactive              # Drop into shell after test
-./test.sh debian-work-devcontainer --interactive  # Debug in container
-
-# Test options
-./test.sh --no-cleanup       # Keep containers after testing
-./test.sh --timeout 600      # Set custom timeout (seconds)
-
 # Manual chezmoi operations (after install)
 chezmoi diff                 # Show pending changes
 chezmoi apply               # Apply changes
 chezmoi status              # Show status
 ```
-
-## Testing
-
-The repository includes comprehensive Docker-based testing via `test.sh`:
-
-- Tests multiple environments (debian-basic, debian-work-devcontainer)
-- Validates file installation, directory creation, and tool functionality
-- Uses timeout protection and proper cleanup
-- Provides detailed validation output
-- Supports interactive mode for debugging and manual validation
-- Automatic cleanup can be disabled for container inspection
-- Failures in any scripts (`test.sh`, `install.sh`, etc.) and/or failures in the container config should be considered test failures, even if the tests did not run and explicitly fail.
-
-### Testing Features
-
-- `--interactive` - Drop into container shell after test completion for manual validation
-- `--no-cleanup` - Keep containers running after tests for inspection
-- `--timeout SECONDS` - Custom timeout per test (default: 300 seconds)
-
-When making changes, always run `./test.sh` to ensure compatibility across environments. Use `--interactive` mode to manually verify functionality.
 
 ## Development Guidelines
 
@@ -107,8 +87,8 @@ When making changes, always run `./test.sh` to ensure compatibility across envir
 
 2. **Keep changes simple and maintainable** - If a change grows in complexity, ask for feedback/instruction or suggest ways to refine the scope to remain simple and maintainable.
 
-3. **Documentation maintenance** - Regularly check and update documentation (including AGENT.md) for stale content when patterns or configurations change.
+3. **Documentation maintenance** - Regularly check and update documentation (including AGENTS.md) for stale content when patterns or configurations change.
 
 4. **Template formatting** - Template files containing Go template strings must be formatted carefully to preserve correct whitespace and avoid trimming issues.
 
-5. **NEVER test on host machine** - Changes must never be tested on the host machine. `chezmoi apply` should be considered dangerous unless run within a Docker container. Always use `./test.sh` for validation.
+5. **NEVER test on host machine** - Changes must never be tested on the host machine. `chezmoi apply` should be considered dangerous unless run within a Docker container.
