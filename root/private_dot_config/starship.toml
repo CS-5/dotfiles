@@ -2,5 +2,5 @@
 
 command_timeout = 1000
 
-[contianer]
+[container]
 disabled = true
