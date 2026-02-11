@@ -8,6 +8,11 @@ set -eufo pipefail
 WORK_MODE=false
 if [[ "${GITHUB_REPOSITORY:-}" != "" && "${GITHUB_REPOSITORY%%/*}" == "journalytic" ]]; then
     WORK_MODE=true
+elif [[ -d "/workspaces/app" ]]; then
+    repo_url=$(git -C /workspaces/app remote get-url origin 2>/dev/null || true)
+    if [[ "$repo_url" == *"journalytic"* ]]; then
+        WORK_MODE=true
+    fi
 fi
 
 DOTFILES_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
