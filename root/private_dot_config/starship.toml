@@ -6,7 +6,8 @@ command_timeout = 1000
 disabled = true
 
 [hostname]
-disabled = true
+ssh_only = true
+format = '[\[$hostname\]]($style) '
 
 [username]
 disabled = true

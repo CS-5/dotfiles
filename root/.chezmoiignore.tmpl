@@ -5,3 +5,7 @@ private_dot_config/ghostty
 {{- if .isWorkDc }}
 private_dot_config/zellij/layouts/baserate-dev.kdl
 {{ end -}}
+
+{{- if and (ne .hostname "CSMBP") (not .isWorkDc) }}
+.gitconfig-work
+{{ end -}}
