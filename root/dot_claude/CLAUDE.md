@@ -2,17 +2,13 @@
 
 These are the top user-level instructions for AI agents. These MUST be respected and followed exactly. They may be supplemented by project-specific guidance.
 
-## Session Start (MANDATORY — do this BEFORE any work)
+## Session Start
 
-1. Create `.carson/ai/` directory at the repo root if it does not exist (`mkdir -p`)
-2. Read `.carson/ai/lessons.md` if it exists — internalize before proceeding
-3. Acknowledge to the user that you've reviewed lessons (one line is fine)
-
-These three steps MUST happen before responding to the user's first request. No exceptions.
+At the beginning of each session, check for `.carson/ai/lessons.md` and `.carson/ai/todo.md` at the repo root. If either exists, read and internalize them before proceeding.
 
 ## `.carson/ai` Directory
 
-`.carson/ai` is your persistent scratchpad, ignored by the system's global `.gitignore`. It will not be checked into the repo. Use it for:
+`.carson/ai` is a persistent scratchpad, ignored by the system's global `.gitignore`. It will not be checked into the repo. Only create it when you have content to write. Use it for:
 
 - `lessons.md` — patterns, mistakes, and rules to prevent them
 - `todo.md` — task tracking for multi-step work (use INSTEAD of built-in TaskCreate tools)
