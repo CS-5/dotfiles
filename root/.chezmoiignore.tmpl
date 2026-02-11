@@ -1,3 +1,7 @@
 {{- if .isDc }}
 private_dot_config/ghostty
 {{ end -}}
+
+{{- if .isWorkDc }}
+private_dot_config/zellij/layouts/baserate-dev.kdl
+{{ end -}}
