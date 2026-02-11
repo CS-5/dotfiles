@@ -4,7 +4,6 @@
 {{- if not .isCodespaces }}
   signingkey = key::{{ .gitSigningPubKey }}
 {{- end }}
-
 {{ if eq .hostname "CSMBP" -}}
 [includeIf "gitdir:~/dev/work/"]
   path = .gitconfig-work
@@ -12,7 +11,6 @@
 [include]
   path = .gitconfig-work
 {{- end }}
-
 {{ if not .isCodespaces -}}
 [gpg]
   format = ssh
@@ -36,7 +34,6 @@
 [credential]
   helper = manager
 {{- end }}
-
 [credential "https://github.com"]
   helper = !gh auth git-credential
 
