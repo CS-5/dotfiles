@@ -4,3 +4,9 @@ command_timeout = 1000
 
 [container]
 disabled = true
+
+[hostname]
+disabled = true
+
+[username]
+disabled = true
