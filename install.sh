@@ -5,13 +5,6 @@
 
 set -eufo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
 WORK_MODE=false
 if [[ "${GITHUB_REPOSITORY:-}" != "" && "${GITHUB_REPOSITORY%%/*}" == "journalytic" ]]; then
     WORK_MODE=true
@@ -20,6 +13,8 @@ fi
 DOTFILES_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_SOURCE_DIR
 SCRIPT_DIR="$DOTFILES_SOURCE_DIR/scripts"
+
+source "$SCRIPT_DIR/lib.sh"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -39,27 +34,6 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
-
-# Logging functions
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-show_progress() {
-    echo -e "${YELLOW}==> $1${NC}"
-}
 
 IS_LXC=false
 if grep -qa 'container=lxc' /proc/1/environ 2>/dev/null; then
