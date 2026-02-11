@@ -1,9 +1,10 @@
 [user]
   name = Carson Seese
   email = {{ .personalEmail }}
-{{- if and (not .isCodespaces) (not .isWorkDc) }}
+{{- if not .isCodespaces }}
   signingkey = key::{{ .gitSigningPubKey }}
 {{- end }}
+
 {{ if eq .hostname "CSMBP" -}}
 [includeIf "gitdir:~/dev/work/"]
   path = .gitconfig-work
@@ -11,11 +12,7 @@
 [include]
   path = .gitconfig-work
 {{- end }}
-{{ if not .isCodespaces -}}
-[gpg]
-  format = ssh
-{{- end }}
-  
+
 [core]
   fsmonitor = true
   excludesfile = {{ joinPath .chezmoi.homeDir ".gitignore-global" }}
@@ -34,6 +31,7 @@
 [credential]
   helper = manager
 {{- end }}
+
 [credential "https://github.com"]
   helper = !gh auth git-credential
 
@@ -43,6 +41,9 @@
 
 [tag]
   gpgSign = true
+
+[gpg]
+  format = ssh
 
 [gpg "ssh"]
   allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}

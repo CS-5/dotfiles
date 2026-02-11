@@ -20,11 +20,9 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     binDir = {{ $binDir | quote }}
     binDirAbs = {{ joinPath .chezmoi.homeDir $binDir | quote }}
 
-    # Email and SSH keys
     workEmail = "carson@journalytic.com"
     personalEmail = "carson@carsonseese.com"
-    gitWorkPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEW7dcdfyDjNk1Epswi6ab6KDKpuKFRmIzAXHBSDO/k6 carson@journalytic.com" 
-    gitSigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKEgjvCUvsO0qdi0D+H0ksk2HbfGhlQU7fQE4F817N+G carson@carsonseese.com"
+    gitSigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKEgjvCUvsO0qdi0D+H0ksk2HbfGhlQU7fQE4F817N+G"
 
 [github]
     refreshPeriod = "12h"
