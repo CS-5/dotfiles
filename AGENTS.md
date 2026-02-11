@@ -39,13 +39,17 @@ The dotfiles adapt based on environment variables:
 - **Personal**: Default configuration using personal email/SSH keys
 - **Work Dev Container**: Uses work email, includes additional tools, separate git config
 
+### Tool Management
+
+CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/config.toml.tmpl`. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
+
 ### Chezmoi Automation Scripts
 
 Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
 
-- `run_once_after_install-starship.sh.tmpl` - Installs Starship prompt
+- `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
-- `run_onchange_after_install-completions.sh.tmpl` - Generates fish completions for `gh` and `docker`
+- `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for `gh` and `docker`
 
 ### External File Management
 

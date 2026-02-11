@@ -1,0 +1,26 @@
+[tools]
+starship = "latest"
+lazygit = "latest"
+lazydocker = "latest"
+ast-grep = "latest"
+zellij = "latest"
+hyperfine = "latest"
+duf = "latest"
+fd = "latest"
+fzf = "latest"
+jq = "latest"
+ripgrep = "latest"
+lsd = "latest"
+neovim = "latest"
+gh = "latest"
+zoxide = "latest"
+
+
+{{- if not .isDc }}
+go = "latest"
+node = "latest"
+bun = "latest"
+{{- end }}
+
+[settings]
+idiomatic_version_file_enable_tools = ["node"]

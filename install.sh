@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Note: This file is named `install.sh` for compatibility reasons, to ensure it 
+# Note: This file is named `install.sh` for compatibility reasons, to ensure it
 # works by default with GitHub Codespaces and VSCode Dev Containers.
 
 set -eufo pipefail
@@ -17,7 +17,6 @@ if [[ "${GITHUB_REPOSITORY:-}" != "" && "${GITHUB_REPOSITORY%%/*}" == "journalyt
     WORK_MODE=true
 fi
 
-DOTFILES_BIN_DIR="${HOME}/.local/bin"
 DOTFILES_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_SOURCE_DIR
 SCRIPT_DIR="$DOTFILES_SOURCE_DIR/scripts"
@@ -73,7 +72,7 @@ if [[ "$IS_LXC" != "true" && -z "${REMOTE_CONTAINERS_IPC:-}" && "${USER:-}" != "
 fi
 
 # Create necessary directories
-mkdir -p "$DOTFILES_BIN_DIR" ~/.config/fish/{conf.d,completions}
+mkdir -p ~/.local/bin ~/.config/fish/{conf.d,completions}
 
 # Set environment for this session
 if [[ "$WORK_MODE" == "true" ]]; then
@@ -84,52 +83,24 @@ else
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
+
+#### Bootstrap Dependencies ####
+show_progress "Installing bootstrap dependencies"
 sudo apt-get update
-sudo apt-get install -y curl git wget
+sudo apt-get install -y curl git wget unzip gnupg fish
+log_success "Bootstrap dependencies installed"
+
+#### Mise ####
+show_progress "Installing mise"
+curl https://mise.run | sh
+log_success "mise installed"
 
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
 "$SCRIPT_DIR/install-dotfiles.sh"
 log_success "Dotfiles installed and applied"
 
-#### Tools ####
-show_progress "Installing additional tools"
-sudo apt-get install -y \
-    gnupg \
-    hyperfine \
-    duf \
-    fd-find \
-    fzf \
-    asciinema \
-    unzip \
-    jq \
-    ripgrep \
-    fish \
-    lsd \
-    neovim 
-
-"$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/jesseduffield/lazygit
-"$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/jesseduffield/lazydocker
-"$DOTFILES_BIN_DIR"/eget --to ~/.local/bin https://github.com/ast-grep/ast-grep
-
-"$SCRIPT_DIR/install-zellij.sh"
-
-if [[ "$IS_LXC" == "true" ]]; then
-    show_progress "Installing mise"
-    curl https://mise.run | sh
-    log_success "mise installed"
-fi
-
-log_success "Tools installed"
-
-#### GH CLI ####
-show_progress "Installing GitHub CLI"
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-sudo apt update
-sudo apt install -y gh
-log_success "GitHub CLI installed"
-
+#### Claude Code ####
 show_progress "Installing Claude Code"
 curl -fsSL https://claude.ai/install.sh | bash
 log_success "Claude Code installed"

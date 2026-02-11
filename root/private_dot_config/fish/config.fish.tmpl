@@ -20,7 +20,9 @@ set -g fish_color_selection white --bold '--background=brblack'
 set -g fish_color_user brgreen
 set -g fish_color_valid_path --underline
 
-fundle plugin edc/bass
+fish_add_path ~/.local/share/mise/shims
+
+fundle plugin 'edc/bass'
 fundle plugin 'PatrickF1/fzf.fish'
 fundle plugin 'jorgebucaran/autopair.fish'
 fundle init
