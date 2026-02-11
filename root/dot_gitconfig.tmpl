@@ -1,7 +1,7 @@
 [user]
   name = Carson Seese
   email = {{ .personalEmail }}
-{{- if not .isCodespaces }}
+{{- if and (not .isCodespaces) (not .isWorkDc) }}
   signingkey = key::{{ .gitSigningPubKey }}
 {{- end }}
 {{ if eq .hostname "CSMBP" -}}
