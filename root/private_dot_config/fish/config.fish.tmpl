@@ -29,6 +29,10 @@ fundle init
 
 fish_add_path {{ .binDirAbs | quote }}
 
+function update-system
+    bash "$(chezmoi source-path)/../update.sh"
+end
+
 {{ if not .isDc -}}
 fish_ssh_agent
 {{- end }}

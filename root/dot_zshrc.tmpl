@@ -37,6 +37,10 @@ fzkill() {
     ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
 }
 
+update-system() {
+    bash "$(chezmoi source-path)/../update.sh"
+}
+
 # History settings
 HISTFILE=~/.zsh_history
 HISTSIZE=20000
