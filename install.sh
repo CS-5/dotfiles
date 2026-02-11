@@ -66,7 +66,7 @@ export PATH="$HOME/.local/bin:$PATH"
 #### Bootstrap Dependencies ####
 show_progress "Installing bootstrap dependencies"
 sudo apt-get update
-sudo apt-get install -y curl git wget unzip gnupg fish
+sudo apt-get install -y curl git wget unzip gnupg fish neovim
 log_success "Bootstrap dependencies installed"
 
 #### Mise ####
