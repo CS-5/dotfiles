@@ -2,7 +2,7 @@
   name = Carson Seese
   email = {{ .personalEmail }}
 {{- if not .isCodespaces }}
-  signingkey = key::{{ .gitPersonalPubKey }}
+  signingkey = key::{{ .gitSigningPubKey }}
 {{- end }}
 
 {{ if eq .hostname "CSMBP" -}}
