@@ -37,6 +37,9 @@
   helper = manager
 {{- end }}
 
+[credential "https://github.com"]
+  helper = !gh auth git-credential
+
 {{ if not .isCodespaces -}}
 [commit]
   gpgSign = true
