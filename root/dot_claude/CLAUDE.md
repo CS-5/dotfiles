@@ -8,7 +8,7 @@ At the beginning of each session, check for `.carson/ai/lessons.md` and `.carson
 
 ## `.carson/ai` Directory
 
-`.carson/ai` is a persistent scratchpad, ignored by the system's global `.gitignore`. It will not be checked into the repo. Only create it when you have content to write. Use it for:
+`.carson/ai` is a persistent scratchpad, ignored by the system's global `.gitignore`. DO NOT ADD IT TO THE REPO's `.gitignore`. It will not be checked into the repo. Only create it when you have content to write. Use it for:
 
 - `lessons.md` — patterns, mistakes, and rules to prevent them
 - `todo.md` — task tracking for multi-step work (use INSTEAD of built-in TaskCreate tools)
