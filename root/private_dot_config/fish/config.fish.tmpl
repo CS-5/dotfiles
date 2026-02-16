@@ -29,6 +29,8 @@ fundle init
 
 fish_add_path {{ .binDirAbs | quote }}
 
+set -gx VISUAL nvim
+
 function update-system
     bash "$(chezmoi source-path)/../update.sh"
 end

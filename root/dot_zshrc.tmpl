@@ -9,6 +9,7 @@ fi
 {{- end }}
 
 export PATH="{{ .binDirAbs }}:$PATH"
+export VISUAL=nvim
 
 # Enable completions
 autoload -U compinit && compinit

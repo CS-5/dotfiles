@@ -9,6 +9,7 @@ fi
 {{- end }}
 
 export PATH="{{ .binDirAbs }}:$PATH"
+export VISUAL=nvim
 
 # Initialize starship prompt
 if command -v starship >/dev/null 2>&1; then
