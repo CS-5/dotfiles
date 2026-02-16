@@ -1,7 +1,5 @@
 # AGENTS.md
 
-This file provides guidance to AI Agents when working with code in this repository.
-
 ## Repository Overview
 
 This is a personal dotfiles repository managed with [chezmoi](https://www.chezmoi.io/). It contains configuration files for various development tools including Git, Fish shell, SSH, Docker, and development environments.
