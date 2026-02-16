@@ -10,26 +10,25 @@ ui {
 }
 
 keybinds {
-    normal {
+    shared_except "locked" {
         bind "Alt h" { MoveFocusOrTab "Left"; }
         bind "Alt l" { MoveFocusOrTab "Right"; }
         bind "Alt j" { MoveFocusOrTab "Down"; }
         bind "Alt k" { MoveFocusOrTab "Up"; }
 
+        bind "Alt n" { NewPane; }
         bind "Alt H" { NewPane "Left"; }
         bind "Alt L" { NewPane "Right"; }
         bind "Alt J" { NewPane "Down"; }
         bind "Alt K" { NewPane "Up"; }
 
-        bind "Ctrl Alt h" { Resize "Decrease Left"; }
-        bind "Ctrl Alt l" { Resize "Decrease Right"; }
-        bind "Ctrl Alt j" { Resize "Decrease Down"; }
-        bind "Ctrl Alt k" { Resize "Decrease Up"; }
+        bind "Ctrl Alt h" { Resize "Increase Left"; }
+        bind "Ctrl Alt l" { Resize "Increase Right"; }
+        bind "Ctrl Alt j" { Resize "Increase Down"; }
+        bind "Ctrl Alt k" { Resize "Increase Up"; }
 
-        bind "Ctrl Alt H" { Resize "Increase Left"; }
-        bind "Ctrl Alt L" { Resize "Increase Right"; }
-        bind "Ctrl Alt J" { Resize "Increase Down"; }
-        bind "Ctrl Alt K" { Resize "Increase Up"; }
+        bind "Alt f" { ToggleFocusFullscreen; }
+        bind "Alt e" { EditScrollback; }
 
         bind "Alt Space" { ToggleFloatingPanes; }
         bind "Alt 1" { GoToTab 1; }
@@ -38,8 +37,6 @@ keybinds {
         bind "Alt 4" { GoToTab 4; }
         bind "Alt 5" { GoToTab 5; }
 
-        bind "Alt n" { GoToNextTab; }
-        bind "Alt p" { GoToPreviousTab; }
         bind "Alt t" { NewTab; }
         bind "Alt w" { CloseFocus; }
         bind "Alt s" {
