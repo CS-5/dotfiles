@@ -11,15 +11,20 @@ ui {
 
 keybinds {
     normal {
-        bind "Alt h" { MoveFocus "Left"; }
-        bind "Alt l" { MoveFocus "Right"; }
-        bind "Alt j" { MoveFocus "Down"; }
-        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt h" { MoveFocusOrTab "Left"; }
+        bind "Alt l" { MoveFocusOrTab "Right"; }
+        bind "Alt j" { MoveFocusOrTab "Down"; }
+        bind "Alt k" { MoveFocusOrTab "Up"; }
 
-        bind "Ctrl Alt h" { NewPane "Left"; }
-        bind "Ctrl Alt l" { NewPane "Right"; }
-        bind "Ctrl Alt j" { NewPane "Down"; }
-        bind "Ctrl Alt k" { NewPane "Up"; }
+        bind "Alt H" { NewPane "Left"; }
+        bind "Alt L" { NewPane "Right"; }
+        bind "Alt J" { NewPane "Down"; }
+        bind "Alt K" { NewPane "Up"; }
+
+        bind "Ctrl Alt h" { Resize "Decrease Left"; }
+        bind "Ctrl Alt l" { Resize "Decrease Right"; }
+        bind "Ctrl Alt j" { Resize "Decrease Down"; }
+        bind "Ctrl Alt k" { Resize "Decrease Up"; }
 
         bind "Ctrl Alt H" { Resize "Increase Left"; }
         bind "Ctrl Alt L" { Resize "Increase Right"; }
@@ -37,7 +42,12 @@ keybinds {
         bind "Alt p" { GoToPreviousTab; }
         bind "Alt t" { NewTab; }
         bind "Alt w" { CloseFocus; }
-        bind "Alt s" { LaunchOrFocusPlugin "session-manager" { floating true }; }
+        bind "Alt s" {
+            LaunchOrFocusPlugin "session-manager" {
+                floating true
+                move_to_focused_tab true
+            };
+        }
     }
 }
 
