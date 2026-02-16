@@ -5,7 +5,3 @@ private_dot_config/ghostty
 {{- if and (ne .hostname "CSMBP") (not .isWorkDc) }}
 .gitconfig-work
 {{ end -}}
-
-{{- if .isMac }}
-.chezmoiscripts/run_once_after_install-ghostty-terminfo.sh
-{{ end -}}
