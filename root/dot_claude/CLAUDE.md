@@ -6,12 +6,36 @@ These are the top user-level instructions for AI agents. These MUST be respected
 
 At the beginning of each session, check for `.carson/ai/lessons.md` and `.carson/ai/todo.md` at the repo root. If either exists, read and internalize them before proceeding.
 
-## `.carson/ai` Directory
+## `.carson` Directory
 
-`.carson/ai` is a persistent scratchpad, ignored by the system's global `.gitignore`. DO NOT ADD IT TO THE REPO's `.gitignore`. It will not be checked into the repo. Only create it when you have content to write. Use it for:
+`.carson` is a persistent local directory, ignored by the system's global `.gitignore`. DO NOT ADD IT TO THE REPO's `.gitignore`. It will not be checked into the repo. Only create subdirectories when you have content to write.
+
+### `.carson/docs`
+
+User-supplied documentation for AI agents to reference. The user may place docs here for packages, libraries, APIs, or tools used by the project. When researching how to use a dependency or tool:
+
+1. **Check `.carson/docs` first** — it is curated and more reliable than web searches
+2. Fall back to web searches only for topics not covered there
+3. Note: this directory will not have comprehensive docs for everything — use judgment on when to look elsewhere
+
+Do not write to this directory. It is maintained by the user.
+
+### `.carson/ai`
+
+AI agent workspace. Use it for:
 
 - `lessons.md` — patterns, mistakes, and rules to prevent them
 - `todo.md` — task tracking for multi-step work (use INSTEAD of built-in TaskCreate tools)
+
+### `.carson/ai/scratchpad`
+
+Workspace for AI-generated artifacts that have lasting value: analysis scripts, data processing output, generated reports, or reference material worth keeping. Use this when:
+
+- You produce a script or output the user may want to review or reuse
+- Analysis results should persist beyond the current conversation
+- You need a place to write files that are not part of the project source
+
+Do NOT use this for throwaway/temporary code. If the user would never need to see it, keep it ephemeral.
 
 ## Workflow Orchestration
 
