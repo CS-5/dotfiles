@@ -1,0 +1,9 @@
+{{ if eq .chezmoi.os "windows" -}}
+# mise config hash: {{ include "private_dot_config/mise/config.toml.tmpl" | sha256sum }}
+
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    mise install --yes
+} else {
+    Write-Host "mise not found, skipping tool install"
+}
+{{- end }}

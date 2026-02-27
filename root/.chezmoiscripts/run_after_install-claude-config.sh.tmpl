@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/bin/bash
 
 # Copy Claude config from ~/.claude to $CLAUDE_CONFIG_DIR if set
@@ -16,3 +17,4 @@ cp "$HOME/.claude/settings.json" "$CLAUDE_CONFIG_DIR/"
 
 # Sync skills/ with deletion of removed skills
 rsync -a --delete "$HOME/.claude/skills/" "$CLAUDE_CONFIG_DIR/skills/"
+{{- end }}

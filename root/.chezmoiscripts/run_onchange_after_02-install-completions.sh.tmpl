@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 #!/bin/bash
 
 if command -v gh >/dev/null 2>&1; then
@@ -7,3 +8,4 @@ fi
 if command -v docker >/dev/null 2>&1; then
   docker completion fish > "{{ .chezmoi.homeDir }}/.config/fish/completions/docker.fish"
 fi
+{{- end }}

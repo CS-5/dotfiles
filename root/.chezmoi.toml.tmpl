@@ -12,6 +12,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     hostname = {{ .chezmoi.hostname | quote }}
 
     isMac = {{ eq .chezmoi.os "darwin" }}
+    isWindows = {{ eq .chezmoi.os "windows" }}
     isDc = {{ or $probablyDc $isWorkDc $isCodespaces }}
     isWorkDc = {{ $isWorkDc }}
     isCodespaces = {{ $isCodespaces }}

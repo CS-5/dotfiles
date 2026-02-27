@@ -3,7 +3,6 @@ starship = "latest"
 lazygit = "latest"
 lazydocker = "latest"
 ast-grep = "latest"
-zellij = "latest"
 hyperfine = "latest"
 duf = "latest"
 fd = "latest"
@@ -14,7 +13,11 @@ lsd = "latest"
 gh = "latest"
 zoxide = "latest"
 
-{{ if not .isDc -}}
+{{- if ne .chezmoi.os "windows" -}}
+zellij = "latest"
+{{- end }}
+
+{{- if not .isDc -}}
 go = "latest"
 node = "latest"
 bun = "latest"

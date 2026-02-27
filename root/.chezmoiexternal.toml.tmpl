@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "windows" -}}
 [".config/fish/functions/fundle.fish"]
   type = "file"
   url = "https://git.io/fundle"
@@ -9,3 +10,4 @@
   url = "https://github.com/zyedidia/eget/releases/download/v{{ $egetVersion }}/eget-{{ $egetVersion }}-{{ .chezmoi.os }}_{{ .chezmoi.arch }}.tar.gz"
   path = "eget"
   stripComponents = 1
+{{- end }}
