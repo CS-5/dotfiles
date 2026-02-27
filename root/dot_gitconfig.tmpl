@@ -15,7 +15,7 @@
 
 [core]
   fsmonitor = true
-  excludesfile = {{ joinPath .chezmoi.homeDir ".gitignore-global" }}
+  excludesfile = {{ joinPath .chezmoi.homeDir ".gitignore-global" | replace "\\" "/" }}
 
 [merge]
   conflictstyle = zdiff3
@@ -46,7 +46,7 @@
   format = ssh
 
 [gpg "ssh"]
-  allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" }}
+  allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" | replace "\\" "/" }}
 {{- end }}
 
 [alias]
