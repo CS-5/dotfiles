@@ -15,5 +15,5 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply CS-5
 ### Windows
 
 ```powershell
-irm get.chezmoi.io/ps1 | powershell -c - -- init --apply CS-5
+iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 ```

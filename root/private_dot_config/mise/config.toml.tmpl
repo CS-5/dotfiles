@@ -12,12 +12,10 @@ ripgrep = "latest"
 lsd = "latest"
 gh = "latest"
 zoxide = "latest"
-
-{{- if ne .chezmoi.os "windows" -}}
+{{ if ne .chezmoi.os "windows" -}}
 zellij = "latest"
 {{- end }}
-
-{{- if not .isDc -}}
+{{ if not .isDc -}}
 go = "latest"
 node = "latest"
 bun = "latest"
