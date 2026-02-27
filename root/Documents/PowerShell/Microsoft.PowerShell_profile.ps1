@@ -14,7 +14,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 
 # Mise activation
 if (Get-Command mise -ErrorAction SilentlyContinue) {
-    mise activate pwsh --shims | Out-String | Invoke-Expression
+    (&mise activate pwsh) | Out-String | Invoke-Expression
 }
 
 # Zoxide
