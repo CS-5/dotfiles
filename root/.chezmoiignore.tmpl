@@ -1,5 +1,7 @@
 {{- if eq .chezmoi.os "windows" }}
 **/*.sh
+!.claude/statusline.sh
+!.claude/hooks/*.sh
 .bashrc
 .zshrc
 .hushlogin
@@ -8,7 +10,6 @@
 .config/zellij
 .gitconfig-work
 .docker
-.claude/hooks
 {{- else }}
 Documents
 
