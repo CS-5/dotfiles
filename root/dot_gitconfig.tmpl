@@ -36,6 +36,7 @@
 {{- end }}
 
 [credential "https://github.com"]
+  helper =
   helper = !gh auth git-credential
 
 {{ if not .isCodespaces -}}
