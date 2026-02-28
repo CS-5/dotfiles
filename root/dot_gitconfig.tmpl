@@ -16,6 +16,9 @@
 [core]
   fsmonitor = true
   excludesfile = {{ joinPath .chezmoi.homeDir ".gitignore-global" | replace "\\" "/" }}
+{{- if .isWsl }}
+  sshCommand = ssh.exe
+{{- end }}
 
 [merge]
   conflictstyle = zdiff3
