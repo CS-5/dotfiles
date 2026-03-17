@@ -4,11 +4,13 @@ These are the top user-level instructions for AI agents. These MUST be respected
 
 ## Session Start
 
-At the beginning of each session, check for `.carson/ai/lessons.md` and `.carson/ai/todo.md` at the repo root. If either exists, read and internalize them before proceeding.
+At the beginning of each session, check for `.carson/ai/lessons.md` and `.carson/ai/todo.md` relative to the project root. If either exists, read and internalize them before proceeding. If they don't exist, move on - do not probe further or create them preemptively.
 
 ## `.carson` Directory
 
-`.carson` is a persistent local directory, ignored by the system's global `.gitignore`. DO NOT ADD IT TO THE REPO's `.gitignore`. It will not be checked into the repo. Only create subdirectories when you have content to write.
+`.carson` is a persistent local directory **relative to the project/repo root** (i.e., `<project>/.carson/`). It is NEVER under `$HOME` or any absolute path like `/home/carson/.carson` — always resolve it from the working directory / repo root. It is ignored by the system's global `.gitignore`. DO NOT ADD IT TO THE REPO's `.gitignore`. It will not be checked into the repo.
+
+**On-demand creation only**: Do not create `.carson` or its subdirectories/files at session start. Create directories and files only when you have content to write (e.g., a lesson learned, a todo item, a scratchpad artifact). If nothing needs to be persisted, don't touch it.
 
 ### `.carson/docs`
 
