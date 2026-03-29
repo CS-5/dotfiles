@@ -18,6 +18,8 @@
   excludesfile = {{ joinPath .chezmoi.homeDir ".gitignore-global" | replace "\\" "/" }}
 {{- if .isWsl }}
   sshCommand = ssh.exe
+{{- else if .isWindows }}
+  sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
 {{- end }}
 
 [merge]
@@ -51,6 +53,9 @@
 
 [gpg "ssh"]
   allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" | replace "\\" "/" }}
+{{- if .isWindows }}
+  program = C:/Windows/System32/OpenSSH/ssh-keygen.exe
+{{- end }}
 {{- end }}
 
 [alias]
