@@ -12,16 +12,30 @@
   },
   "permissions": {
     "allow": [
-      "Bash(rg:*)",
-      "Bash(fdfind:*)",
-      "Bash(fd:*)",
       "Bash(ast-grep:*)",
-      "Bash(sg:*)",
-      "Bash(find:*)",
-      "Bash(sed:*)",
-      "Bash(jq:*)",
       "Bash(awk:*)",
-      "Bash(fzf:*)"
+      "Bash(cat:*)",
+      "Bash(command:*)",
+      "Bash(fd:*)",
+      "Bash(fdfind:*)",
+      "Bash(find:*)",
+      "Bash(fzf:*)",
+      "Bash(git blame:*)",
+      "Bash(git branch:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git show:*)",
+      "Bash(git status:*)",
+      "Bash(head:*)",
+      "Bash(jq:*)",
+      "Bash(ls:*)",
+      "Bash(rg:*)",
+      "Bash(sed:*)",
+      "Bash(sg:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)"
     ]
   },
   "enabledPlugins": {
