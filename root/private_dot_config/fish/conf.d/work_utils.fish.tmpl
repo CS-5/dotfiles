@@ -1,12 +1,6 @@
 {{- if .isWorkDc -}}
 set -g workspace_path "/workspaces/app"
 
-function start
-    if test (pwd) = $workspace_path
-        zellij --layout=baserate-dev
-    end
-end
-
 # Auto-register script commands when in workspace
 function __register_script_commands
     for script in $workspace_path/bin/*.sh
