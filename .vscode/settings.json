@@ -4,9 +4,10 @@
   "editor.formatOnSave": true,
   "files.associations": {
     "*.tmpl": "go-template",
+    "root/.chezmoitemplates/*": "go-template"
   },
   "[dockerfile]": {
-    "editor.defaultFormatter": "ms-azuretools.vscode-containers",
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers"
   },
   "[shellscript]": {
     "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
