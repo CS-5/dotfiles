@@ -9,7 +9,7 @@ fi
 {{- end }}
 
 export PATH="{{ .binDirAbs }}:$PATH"
-export VISUAL=nvim
+{{ template "env-posix" . }}
 
 # Enable completions
 autoload -U compinit && compinit

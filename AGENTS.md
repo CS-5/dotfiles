@@ -49,6 +49,23 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for `gh` and `docker`
 
+### Environment Variables
+
+Simple key-value environment variables (e.g., `VISUAL`, `HOMEBREW_NO_AUTO_UPDATE`) are centralized in template partials under `root/.chezmoitemplates/`. Each partial renders the same variables in the syntax for its target shell:
+
+| Partial | Syntax | Consumed by |
+| --- | --- | --- |
+| `env-posix` | `export VAR=val` | `dot_bashrc.tmpl`, `dot_zshrc.tmpl` |
+| `env-fish` | `set -gx VAR val` | `config.fish.tmpl` |
+| `env-powershell` | `$env:VAR = "val"` | `Microsoft.PowerShell_profile.ps1.tmpl` |
+| `env-windows-persist` | `[Environment]::SetEnvironmentVariable(...)` | `run_onchange_after_03-windows-env.ps1.tmpl` |
+
+**To add a new env var:** Add one line in the appropriate syntax to each partial that should receive it. Use chezmoi template guards (e.g., `{{ if .isMac }}`) for conditional vars. Not all vars need to appear in every partial — add only to the shells/platforms where the var applies.
+
+**Complex setup** (PATH manipulation, `brew shellenv`, tool activations like mise/starship/zoxide, SSH agent) belongs in each shell's own config file or `conf.d/` files — not in the centralized partials.
+
+On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from `env-windows-persist` to the User registry via `[Environment]::SetEnvironmentVariable()`. It re-runs automatically when the partial's content changes.
+
 ### External File Management
 
 - `root/.chezmoiexternal.toml.tmpl` - Pulls external dependencies (fundle, eget binaries)

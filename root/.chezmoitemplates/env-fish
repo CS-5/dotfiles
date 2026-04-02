@@ -1,0 +1,4 @@
+set -gx VISUAL nvim
+{{ if .isMac -}}
+set -gx HOMEBREW_NO_AUTO_UPDATE 1
+{{ end -}}

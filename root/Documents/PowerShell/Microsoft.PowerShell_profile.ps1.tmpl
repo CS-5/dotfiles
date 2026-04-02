@@ -4,8 +4,8 @@ if (Test-Path $localBin) {
     $env:PATH = "$localBin;$env:PATH"
 }
 
-# Set editor
-$env:VISUAL = "nvim"
+# Environment variables
+{{ template "env-powershell" . }}
 
 # Starship prompt
 if (Get-Command starship -ErrorAction SilentlyContinue) {

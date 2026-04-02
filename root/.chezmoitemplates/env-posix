@@ -1,0 +1,4 @@
+export VISUAL=nvim
+{{ if .isMac -}}
+export HOMEBREW_NO_AUTO_UPDATE=1
+{{ end -}}
