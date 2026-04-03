@@ -8,10 +8,19 @@
 .config/fish
 .config/ghostty
 .config/zellij
+.config/pnpm
 .gitconfig-work
 .docker
+Library
 {{- else }}
 Documents
+AppData
+
+{{- if .isMac }}
+.config/pnpm
+{{- else }}
+Library
+{{- end }}
 
 {{- if .isDc }}
 private_dot_config/ghostty
