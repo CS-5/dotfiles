@@ -27,6 +27,8 @@
       "Bash(git rev-parse:*)",
       "Bash(git show:*)",
       "Bash(git status:*)",
+      "Bash(go doc:*)",
+      "Bash(go vet:*)",
       "Bash(head:*)",
       "Bash(jq:*)",
       "Bash(ls:*)",
@@ -35,7 +37,8 @@
       "Bash(sg:*)",
       "Bash(tail:*)",
       "Bash(wc:*)",
-      "Bash(which:*)"
+      "Bash(which:*)",
+      "WebSearch"
     ]
   },
   "enabledPlugins": {
