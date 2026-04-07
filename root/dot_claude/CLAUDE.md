@@ -57,6 +57,8 @@ Project-local scratchpad at `<repo-root>/.carson/`. Ignored by global gitignore 
 
 ## Shell Tools
 
+@RTK.md
+
 When running Bash commands for search or file operations, ALWAYS prefer these tools over less functional defaults:
 
 1. Finding FILES → `fd` (macOS) / `fdfind` (Debian/Ubuntu)
