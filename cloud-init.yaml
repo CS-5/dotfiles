@@ -23,6 +23,7 @@ package_update: true
 package_upgrade: true
 
 packages:
+  - build-essential
   - ca-certificates
   - curl
   - git
