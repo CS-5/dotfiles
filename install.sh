@@ -69,20 +69,10 @@ sudo apt-get update
 sudo apt-get install -y curl git wget unzip gnupg fish neovim
 log_success "Bootstrap dependencies installed"
 
-#### Mise ####
-show_progress "Installing mise"
-curl https://mise.run | sh
-log_success "mise installed"
-
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
 "$SCRIPT_DIR/install-dotfiles.sh"
 log_success "Dotfiles installed and applied"
-
-#### Claude Code ####
-show_progress "Installing Claude Code"
-curl -fsSL https://claude.ai/install.sh | bash
-log_success "Claude Code installed"
 
 #### Shell ####
 show_progress "Setting up shell"
@@ -92,5 +82,15 @@ if [[ "$SHELL" != *"fish"* ]]; then
     sudo chsh -s "$(which fish)" "$USER"
 fi
 log_success "Shell setup complete"
+
+#### Mise ####
+show_progress "Installing mise"
+curl https://mise.run | sh
+log_success "mise installed"
+
+#### Claude Code ####
+show_progress "Installing Claude Code"
+curl -fsSL https://claude.ai/install.sh | bash
+log_success "Claude Code installed"
 
 log_success "Dev container setup complete"
