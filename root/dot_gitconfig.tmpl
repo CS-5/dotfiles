@@ -29,15 +29,16 @@
 [rerere]
   enabled = true
 
-{{ if .isMac -}}
-[credential]
-  helper = osxkeychain
-{{- else if eq .os "windows" }}
+{{ if eq .os "windows" -}}
 [credential]
   helper = manager
 {{- end }}
 
 [credential "https://github.com"]
+  helper =
+  helper = !gh auth git-credential
+
+[credential "https://gist.github.com"]
   helper =
   helper = !gh auth git-credential
 
