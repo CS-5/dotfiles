@@ -45,8 +45,8 @@ if grep -qa 'container=lxc' /proc/1/environ 2>/dev/null; then
     IS_LXC=true
 fi
 
-if [[ "$IS_LXC" != "true" && -z "${REMOTE_CONTAINERS_IPC:-}" && "${USER:-}" != "vscode" && "${CODESPACES:-}" != "true" ]]; then
-    log_error "This script is intended for dev container/LXC environments only"
+if [[ "$IS_LXC" != "true" && -z "${REMOTE_CONTAINERS_IPC:-}" && "${USER:-}" != "vscode" && "${CODESPACES:-}" != "true" && "${DOTFILES_CLOUD_INIT:-}" != "true" ]]; then
+    log_error "This script is intended for dev container/LXC/cloud-init environments only"
     exit 1
 fi
 

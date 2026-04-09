@@ -1,0 +1,35 @@
+#cloud-config
+# General-purpose dev VM / container provisioning.
+#
+# Creates a sudo user, imports SSH keys from GitHub, installs bootstrap
+# packages, then clones this dotfiles repo and runs install.sh to set up
+# mise, chezmoi-managed dotfiles, fish, fundle, and Claude Code.
+#
+# Target distro: Ubuntu/Debian (apt-based). install.sh uses apt-get.
+
+hostname: csdev
+manage_etc_hosts: true
+
+users:
+  - name: carson
+    groups: [sudo]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_import_id:
+      - gh:CS-5
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - wget
+  - unzip
+  - gnupg
+
+runcmd:
+  - su - carson -c "git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi"
+  - su - carson -c "DOTFILES_CLOUD_INIT=true ~/.local/share/chezmoi/install.sh"
