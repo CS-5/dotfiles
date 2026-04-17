@@ -69,6 +69,14 @@ sudo apt-get update
 sudo apt-get install -y curl git wget unzip gnupg fish neovim
 log_success "Bootstrap dependencies installed"
 
+#### Mise ####
+show_progress "Installing mise"
+curl https://mise.run | sh
+if [[ "$WORK_MODE" == "true" ]]; then
+    mise trust --cd=/workspaces/app --quiet
+fi
+log_success "mise installed"
+
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
 "$SCRIPT_DIR/install-dotfiles.sh"
@@ -82,14 +90,6 @@ if [[ "$SHELL" != *"fish"* ]]; then
     sudo chsh -s "$(which fish)" "$USER"
 fi
 log_success "Shell setup complete"
-
-#### Mise ####
-show_progress "Installing mise"
-curl https://mise.run | sh
-if [[ "$WORK_MODE" == "true" ]]; then
-    mise trust --cd=/workspaces/app --quiet
-fi
-log_success "mise installed"
 
 #### Claude Code ####
 show_progress "Installing Claude Code"
