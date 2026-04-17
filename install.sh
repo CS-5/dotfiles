@@ -86,6 +86,9 @@ log_success "Shell setup complete"
 #### Mise ####
 show_progress "Installing mise"
 curl https://mise.run | sh
+if [[ "$WORK_MODE" == "true" ]]; then
+    mise trust --cd=/workspaces/app --quiet
+fi
 log_success "mise installed"
 
 #### Claude Code ####
