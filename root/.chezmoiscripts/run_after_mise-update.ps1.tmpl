@@ -1,0 +1,7 @@
+{{ if eq .chezmoi.os "windows" -}}
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    mise self-update --yes --quiet > $null
+} else {
+    Write-Host "mise not found, skipping update"
+}
+{{- end }}

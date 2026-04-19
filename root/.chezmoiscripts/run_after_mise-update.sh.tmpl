@@ -1,0 +1,10 @@
+{{ if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+
+if ! command -v mise >/dev/null 2>&1; then
+    echo "mise not found, skipping update"
+    exit 0
+fi
+
+mise self-update --yes --quiet >/dev/null
+{{- end }}
