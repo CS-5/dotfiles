@@ -45,6 +45,14 @@
       "Bash(wc:*)",
       "Bash(which:*)",
       "WebSearch"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(*.pem)",
+      "Read(*.key)",
+      "Read(~/.ssh/**)",
+      "Read(.dev.vars)"
     ]
   },
   "enabledPlugins": {
