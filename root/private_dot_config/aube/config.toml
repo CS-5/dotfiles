@@ -1,0 +1,5 @@
+# TODO: Seems like these get overridden by the user `~/.npmrc`. Need to look into that
+jailBuilds = true
+minimumReleaseAge = 4320
+strictStoreIntegrity = true
+strictDepBuilds = true

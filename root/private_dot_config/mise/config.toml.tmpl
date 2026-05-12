@@ -15,6 +15,7 @@ zoxide = "latest"
 rtk = "latest"
 "github:Ataraxy-Labs/sem" = "latest"
 cloudflared = "latest"
+aube = "latest"
 {{ if ne .chezmoi.os "windows" -}}
 zellij = "latest"
 {{- end }}
@@ -28,4 +29,15 @@ npm = "latest"
 {{- end }}
 
 [settings]
-idiomatic_version_file_enable_tools = ["node"]
+
+idiomatic_version_file_enable_tools = ["node", "go", "python", "bun"]
+
+# Tools must be published for at least N days before they will be installed
+minimum_release_age = "7d"
+
+# The upstream nodejs signing key's creation date drifts newer than the
+# tarball signature timestamp, which trips gpg with "Time conflict" and
+# fails `mise install`. Tarballs are still SHA-checksum verified against
+# mise's release metadata; we only skip the PGP layer.
+node.verify = false
+
