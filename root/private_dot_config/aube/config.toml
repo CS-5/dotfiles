@@ -1,4 +1,4 @@
 jailBuilds = true
-minimumReleaseAge = 4320
+minimumReleaseAge = 10080
 strictStoreIntegrity = true
 strictDepBuilds = true
