@@ -21,11 +21,10 @@ zellij = "latest"
 {{- end }}
 {{ if not .isDc -}}
 go = "latest"
-node = "latest"
+node = "lts"
 bun = "latest"
 python = "latest"
 pnpm = "latest"
-npm = "latest"
 {{- end }}
 
 [settings]
@@ -49,4 +48,7 @@ paranoid = true
 # fails `mise install`. Tarballs are still SHA-checksum verified against
 # mise's release metadata; we only skip the PGP layer.
 node.verify = false
+
+# Install corepack shims after installing node
+node.corepack = true
 
