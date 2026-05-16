@@ -16,6 +16,7 @@ Project-local scratchpad at `<repo-root>/.carson/`. Ignored by global gitignore 
 - Enter plan mode for tasks with architectural decisions or unclear scope
 - Simple, well-specified tasks (clear what + where + how) can skip plan mode
 - If something goes sideways, STOP and re-plan immediately — do not keep pushing
+- **Always plan first** for: framework migrations, dependency or build-tool replacements, refactors touching >3 files. Present 2-3 alternatives with tradeoffs and wait for direction before editing — even when the task seems clear
 
 ### 2. Subagent Strategy
 
