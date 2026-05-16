@@ -1,4 +1,8 @@
-jailBuilds = true
+# `paranoid` bundles: jailBuilds, strictStoreIntegrity, strictDepBuilds,
+# trustPolicy = "no-downgrade", minimumReleaseAgeStrict = true,
+# advisoryCheck = "required".
+paranoid = true
+
+# Override aube's default 24h release-age floor. Matches mise's 7d and the
+# `min-release-age=7` (days) entry in ~/.npmrc.
 minimumReleaseAge = 10080
-strictStoreIntegrity = true
-strictDepBuilds = true

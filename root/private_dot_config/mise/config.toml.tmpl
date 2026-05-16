@@ -35,6 +35,15 @@ idiomatic_version_file_enable_tools = ["node", "go", "python", "bun"]
 # Tools must be published for at least N days before they will be installed
 minimum_release_age = "7d"
 
+# Pin SHA256 + per-platform download URLs in mise.lock alongside this config.
+# Survives upstream tampering and avoids GitHub rate limits on reinstall.
+lockfile = true
+
+# Re-verify provenance/checksums on every install (auto-enables
+# locked_verify_provenance). Falls back to checksum-only when provenance
+# metadata is unavailable, so this stays safe with mixed backends.
+paranoid = true
+
 # The upstream nodejs signing key's creation date drifts newer than the
 # tarball signature timestamp, which trips gpg with "Time conflict" and
 # fails `mise install`. Tarballs are still SHA-checksum verified against
