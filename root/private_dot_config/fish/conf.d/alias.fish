@@ -14,6 +14,15 @@ abbr -a gd git diff
 abbr -a gds git diff --staged
 abbr -a gf git fetch
 
+abbr -a cma chezmoi apply
+abbr -a cmu chezmoi update
+abbr -a cmcd chezmoi cd
+
+abbr -a mls mise ls
+abbr -a mi mise install
+abbr -a mup mise upgrade
+abbr -a mus mise use
+
 alias l="ls -l"
 alias la="ls -a"
 alias lla="ls -la"
