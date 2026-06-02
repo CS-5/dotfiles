@@ -17,6 +17,7 @@ rtk = "latest"
 cloudflared = "latest"
 aube = "latest"
 {{ if ne .chezmoi.os "windows" -}}
+herdr = "latest"
 zellij = "latest"
 {{- end }}
 {{ if not .isDc -}}
