@@ -9,9 +9,11 @@
 .config/ghostty
 .config/zellij
 .config/pnpm
-.gitconfig-work
 .docker
 Library
+{{- if .isPersonal }}
+.gitconfig-work
+{{- end }}
 {{- else }}
 Documents
 AppData
