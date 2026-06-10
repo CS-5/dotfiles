@@ -23,8 +23,14 @@ DANGEROUS_PATTERNS=(
   "git stash clear"
 )
 
+# Only match a pattern when it begins an actual command — at the start of the
+# string or right after a shell separator (; & | ( newline). This avoids false
+# positives when a dangerous phrase appears inside a quoted argument, e.g.
+#   git commit -m "document the git push flow"
+BOUNDARY='(^|[;&|(]|&&|\|\|)[[:space:]]*'
+
 for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qE "$pattern"; then
+  if echo "$COMMAND" | grep -qE "${BOUNDARY}${pattern}"; then
     echo "BLOCKED: '$COMMAND' matches dangerous pattern '$pattern'. The user has prevented you from doing this." >&2
     exit 2
   fi

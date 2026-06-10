@@ -3,8 +3,9 @@
   "alwaysThinkingEnabled": true,
   "showThinkingSummaries": true,
   "effortLevel": "high",
+  "tui": "fullscreen",
+  "fileCheckpointingEnabled": true,
   "env": {
-    "CLAUDE_CODE_NO_FLICKER": "1",
     "ENABLE_TOOL_SEARCH": "1",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
@@ -20,7 +21,6 @@
     "allow": [
       "Bash(ast-grep:*)",
       "Bash(awk:*)",
-      "Bash(cat:*)",
       "Bash(command:*)",
       "Bash(fd:*)",
       "Bash(fdfind:*)",
@@ -35,24 +35,27 @@
       "Bash(git status:*)",
       "Bash(go doc:*)",
       "Bash(go vet:*)",
-      "Bash(head:*)",
       "Bash(jq:*)",
       "Bash(ls:*)",
       "Bash(rg:*)",
       "Bash(sed:*)",
       "Bash(sg:*)",
-      "Bash(tail:*)",
       "Bash(wc:*)",
       "Bash(which:*)",
       "WebSearch"
     ],
     "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Read(*.pem)",
-      "Read(*.key)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/.dev.vars)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/.git-credentials)",
       "Read(~/.ssh/**)",
-      "Read(.dev.vars)"
+      "Read(~/.aws/**)",
+      "Read(~/.config/gcloud/**)"
     ]
   },
   "extraKnownMarketplaces": {
@@ -80,7 +83,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/block-dangerous-git.sh"
+            "command": "~/.claude/hooks/block-dangerous-git.sh",
+            "if": "Bash(git *)"
           }
         ]
       },
