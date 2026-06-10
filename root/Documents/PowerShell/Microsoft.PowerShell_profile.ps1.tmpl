@@ -7,14 +7,17 @@ if (Test-Path $localBin) {
 # Environment variables
 {{ template "env-powershell" . }}
 
-# Starship prompt
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&starship init powershell)
-}
 
 # Mise activation
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     (&mise activate pwsh) | Out-String | Invoke-Expression
+}
+
+# Tools must be enabled after Mise is activated, since they are managed by Mise
+
+# Starship prompt
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+    Invoke-Expression (&starship init powershell)
 }
 
 # Zoxide

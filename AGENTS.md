@@ -8,12 +8,12 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 ### Installation Scripts
 
-- `./scripts/install-dotfiles.sh` - Standard installation script that installs chezmoi and applies dotfiles
-- `./install.sh` - Development container installation script with optional work mode
+- `./scripts/install-dotfiles.sh` - Standard installation script; prompts for identity interactively
+- `./install.sh [--identity personal|journalytic|kirbtech]` - Dev container install with auto-detected or explicit identity
 
 ### Development Scripts  
 
-- `./render.sh [template-file]` - Renders chezmoi templates to stdout for testing
+- `./render.sh [--identity IDENTITY] [--dc] [--codespaces] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` via env overrides so output matches a live apply
 
 ## Architecture
 
@@ -28,14 +28,36 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 The dotfiles adapt based on environment variables:
 
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
-- `DOTFILES_WORK_DC` - Forces work dev container configuration
-- `CODESPACES` - Detects GitHub Codespaces environment (disables SSH agent, GPG signing)
+- `CODESPACES` - Detects GitHub Codespaces environment
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
 
-### Configuration Variants
+### Identity System
 
-- **Personal**: Default configuration using personal email/SSH keys
-- **Work Dev Container**: Uses work email, includes additional tools, separate git config
+The `identity` data variable drives work-specific configuration. It is set once via `promptStringOnce` during `chezmoi init` and stored in the local chezmoi config.
+
+Valid values: `personal`, `journalytic`, `kirbtech`
+
+- **personal** — no work context; no `.gitconfig-work` included
+- **journalytic** — uses `carson@journalytic.com` as work email
+- **kirbtech** — uses `carson.seese@kirbtech.com` as work email
+
+On non-DC machines with a work identity, `.gitconfig-work` is included only for repos under `~/dev/work/` (via `includeIf`). On dev containers, it is included unconditionally.
+
+**Install script usage:**
+```bash
+./install.sh --identity kirbtech   # explicit
+./install.sh                       # auto-detect from repo org; else prompt (TTY)
+```
+
+`install.sh` resolves identity in this order: explicit `--identity` flag → auto-detection from the repo org (`GITHUB_REPOSITORY` / workspace remote, work orgs only) → interactive `select` prompt when stdin is a TTY → error requiring `--identity` when non-interactive (cloud-init, CI, dev container hooks).
+
+### Git Signing
+
+Commits are signed with an SSH key. The signing **public** key resolves at `chezmoi init` time with this precedence: `DOTFILES_SIGNING_KEY` env var → `~/.ssh/git_signing.pub` (per-host override) → a committed canonical default. Because the public key is non-secret and always available, signing works out of the box on every machine — including dev containers, which sign using the host's forwarded SSH agent (no local key file needed).
+
+The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is true everywhere **except Codespaces**, where GitHub signs commits server-side with its own web-flow key and the forwarded signing key is unavailable. The matching **private** key must be loaded in the SSH agent wherever commits are made.
+
+On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signing-key.sh` to create a per-host `~/.ssh/git_signing` key before applying. When that private key file is present, `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and signs directly from disk with no agent; otherwise it falls back to the `key::` public-key literal and the forwarded agent.
 
 ### Tool Management
 

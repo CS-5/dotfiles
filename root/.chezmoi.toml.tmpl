@@ -1,9 +1,46 @@
 sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | quote }}
 
-{{ $isWorkDc := env "DOTFILES_WORK_DC" | default false -}}
 {{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") -}}
 {{ $isCodespaces := env "CODESPACES" | not | not -}}
+{{ $isDc := or $probablyDc $isCodespaces -}}
 {{ $binDir := ".local/bin" -}}
+
+{{/* Identity: env override (dev containers/CI) or a one-time prompt. */}}
+{{ $identity := env "DOTFILES_IDENTITY" -}}
+{{ if not $identity -}}
+  {{ $identity = promptStringOnce . "identity" "Work identity (personal/journalytic/kirbtech)" "personal" -}}
+{{ end -}}
+
+{{/* identity -> work email. Single source of truth; add new jobs here. */}}
+{{ $workEmails := dict
+    "personal"    ""
+    "journalytic" "carson@journalytic.com"
+    "kirbtech"    "carson.seese@kirbtech.com" -}}
+{{ if not (hasKey $workEmails $identity) -}}
+  {{ fail (printf "Unknown identity %q (must be one of: personal, journalytic, kirbtech)" $identity) -}}
+{{ end -}}
+{{ $workEmail := index $workEmails $identity -}}
+{{ $isWork := ne $identity "personal" -}}
+
+{{/* Signing public key: committed canonical default, overridden by a
+     per-host file, overridden by an explicit env var. The key is public,
+     so committing it is safe; the matching private key lives in the SSH
+     agent wherever commits are made. */}}
+{{ $signingKey := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKEgjvCUvsO0qdi0D+H0ksk2HbfGhlQU7fQE4F817N+G" -}}
+{{ $signingKeyPath := joinPath .chezmoi.homeDir ".ssh/git_signing.pub" -}}
+{{ if stat $signingKeyPath -}}{{ $signingKey = include $signingKeyPath | trim -}}{{ end -}}
+{{ if env "DOTFILES_SIGNING_KEY" -}}{{ $signingKey = env "DOTFILES_SIGNING_KEY" -}}{{ end -}}
+
+{{/* Private signing key on disk (hosts/VMs/WSL). When present, git signs
+     directly from the file with no agent; otherwise it falls back to the
+     canonical public key via a forwarded agent (dev containers). */}}
+{{ $signingKeyFilePath := joinPath .chezmoi.homeDir ".ssh/git_signing" -}}
+{{ $signingKeyFile := "" -}}
+{{ if stat $signingKeyFilePath -}}{{ $signingKeyFile = $signingKeyFilePath -}}{{ end -}}
+
+{{/* Sign commits everywhere except Codespaces, which signs commits with
+     GitHub's own web-flow key and cannot reach the forwarded signing key. */}}
+{{ $gitSign := and (not $isCodespaces) (ne $signingKey "") -}}
 
 [data]
     # Environment Info
@@ -14,17 +51,25 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     isMac = {{ eq .chezmoi.os "darwin" }}
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ env "WSL_DISTRO_NAME" | not | not }}
-    isDc = {{ or $probablyDc $isWorkDc $isCodespaces }}
-    isWorkDc = {{ $isWorkDc }}
-    isCodespaces = {{ $isCodespaces }}
+    isDc = {{ $isDc }}
+
+    # Identity
+    identity = {{ $identity | quote }}
+    isPersonal = {{ not $isWork }}
+    isWork = {{ $isWork }}
+
+    # Emails
+    personalEmail = "carson@carsonseese.com"
+    workEmail = {{ $workEmail | quote }}
+
+    # Signing
+    gitSigningPubKey = {{ $signingKey | quote }}
+    gitSigningKeyFile = {{ $signingKeyFile | quote }}
+    gitSign = {{ $gitSign }}
 
     # Directory paths
     binDir = {{ $binDir | quote }}
     binDirAbs = {{ joinPath .chezmoi.homeDir $binDir | quote }}
-
-    workEmail = "carson@journalytic.com"
-    personalEmail = "carson@carsonseese.com"
-    gitSigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKEgjvCUvsO0qdi0D+H0ksk2HbfGhlQU7fQE4F817N+G"
 
 [github]
     refreshPeriod = "12h"
@@ -37,6 +82,3 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 [merge]
     command = "code"
     args = ["--wait", "--merge", "--diff"]
-
-[env]
-    HOMEBREW_NO_AUTO_UPDATE = "1"

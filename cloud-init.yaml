@@ -33,4 +33,5 @@ packages:
 
 runcmd:
   - su - carson -c "git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi"
-  - su - carson -c "DOTFILES_CLOUD_INIT=true ~/.local/share/chezmoi/install.sh"
+  # Non-interactive, so identity must be explicit. Change as needed per VM.
+  - su - carson -c "~/.local/share/chezmoi/install.sh --identity personal"

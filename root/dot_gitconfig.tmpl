@@ -1,17 +1,22 @@
 [user]
   name = Carson Seese
   email = {{ .personalEmail }}
-{{- if not .isCodespaces }}
+{{- if .gitSign }}
+{{- if .gitSigningKeyFile }}
+  signingkey = {{ .gitSigningKeyFile | replace "\\" "/" }}
+{{- else }}
   signingkey = key::{{ .gitSigningPubKey }}
 {{- end }}
+{{- end }}
 
-{{ if eq .hostname "CSMBP" -}}
+{{ if and .isWork (not .isDc) -}}
 [includeIf "gitdir:~/dev/work/"]
   path = .gitconfig-work
-{{- else if .isWorkDc }}
+{{ end -}}
+{{ if and .isWork .isDc -}}
 [include]
   path = .gitconfig-work
-{{- end }}
+{{ end -}}
 
 [core]
   fsmonitor = true
@@ -42,7 +47,7 @@
   helper =
   helper = !gh auth git-credential
 
-{{ if not .isCodespaces -}}
+{{ if .gitSign -}}
 [commit]
   gpgSign = true
 

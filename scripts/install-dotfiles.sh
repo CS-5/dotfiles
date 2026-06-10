@@ -4,6 +4,19 @@ set -eufo pipefail
 
 DOTFILES_BIN_DIR="${HOME}/.local/bin"
 
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    --identity)
+        export DOTFILES_IDENTITY="$2"
+        shift 2
+        ;;
+    *)
+        echo "Unknown option: $1" >&2
+        exit 1
+        ;;
+    esac
+done
+
 if ! chezmoi="$(command -v chezmoi)"; then
   chezmoi="${DOTFILES_BIN_DIR}/chezmoi"
   echo "Installing chezmoi to '${chezmoi}'" >&2
@@ -16,7 +29,7 @@ if ! chezmoi="$(command -v chezmoi)"; then
     echo "To install chezmoi, you must have curl or wget installed." >&2
     exit 1
   fi
-  
+
   sh -c "${chezmoi_install_script}" -- -b "${DOTFILES_BIN_DIR}"
   unset chezmoi_install_script
 fi
@@ -26,8 +39,6 @@ if [ -z "${DOTFILES_SOURCE_DIR:-}" ]; then
   export DOTFILES_SOURCE_DIR
 fi
 
-set -- init --apply --source="${DOTFILES_SOURCE_DIR}"
+echo "Running 'chezmoi init --apply --source=${DOTFILES_SOURCE_DIR}'" >&2
 
-echo "Running 'chezmoi $*'" >&2
-
-exec "$chezmoi" "$@"
+exec "$chezmoi" init --apply --source="${DOTFILES_SOURCE_DIR}"
