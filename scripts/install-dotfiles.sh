@@ -4,10 +4,14 @@ set -eufo pipefail
 
 DOTFILES_BIN_DIR="${HOME}/.local/bin"
 
+# --work-email writes ~/work.email before chezmoi runs, so the file-based
+# identity detection in .chezmoi.toml.tmpl picks it up at render time. Without
+# it, any existing ~/work.email is left as-is (no file => personal identity).
+WORK_EMAIL=""
 while [[ $# -gt 0 ]]; do
     case $1 in
-    --identity)
-        export DOTFILES_IDENTITY="$2"
+    --work-email)
+        WORK_EMAIL="$2"
         shift 2
         ;;
     *)
@@ -16,6 +20,10 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
+
+if [[ -n "$WORK_EMAIL" ]]; then
+    printf '%s' "$WORK_EMAIL" >"${HOME}/work.email"
+fi
 
 if ! chezmoi="$(command -v chezmoi)"; then
   chezmoi="${DOTFILES_BIN_DIR}/chezmoi"

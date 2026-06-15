@@ -33,5 +33,6 @@ packages:
 
 runcmd:
   - su - carson -c "git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi"
-  # Non-interactive, so identity must be explicit. Change as needed per VM.
-  - su - carson -c "~/.local/share/chezmoi/install.sh --identity personal"
+  # Personal by default (no ~/work.email). For a work VM, pass the address:
+  #   install.sh --work-email carson.seese@kirbtech.com
+  - su - carson -c "~/.local/share/chezmoi/install.sh"

@@ -5,21 +5,26 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $isDc := or $probablyDc $isCodespaces -}}
 {{ $binDir := ".local/bin" -}}
 
-{{/* Identity: env override (dev containers/CI) or a one-time prompt. */}}
-{{ $identity := env "DOTFILES_IDENTITY" -}}
-{{ if not $identity -}}
-  {{ $identity = promptStringOnce . "identity" "Work identity (personal/journalytic/kirbtech)" "personal" -}}
+{{/* Work identity is driven entirely by ~/work.email: a file whose sole
+     contents are one work email address. Its domain selects the identity;
+     a missing file or an unrecognized domain means personal. Mirrors the
+     per-host signing-key file below. Add new jobs to $identities. */}}
+{{ $identities := dict
+    "kirbtech.com"    "kirbtech"
+    "journalytic.com" "journalytic" -}}
+{{ $identity := "personal" -}}
+{{ $workEmail := "" -}}
+{{/* Defaults to ~/work.email; DOTFILES_WORK_EMAIL_FILE relocates it (render.sh). */}}
+{{ $workEmailPath := joinPath .chezmoi.homeDir "work.email" -}}
+{{ if env "DOTFILES_WORK_EMAIL_FILE" -}}{{ $workEmailPath = env "DOTFILES_WORK_EMAIL_FILE" -}}{{ end -}}
+{{ if stat $workEmailPath -}}
+  {{ $email := include $workEmailPath | trim -}}
+  {{ $domain := $email | splitList "@" | last -}}
+  {{ if hasKey $identities $domain -}}
+    {{ $identity = index $identities $domain -}}
+    {{ $workEmail = $email -}}
+  {{ end -}}
 {{ end -}}
-
-{{/* identity -> work email. Single source of truth; add new jobs here. */}}
-{{ $workEmails := dict
-    "personal"    ""
-    "journalytic" "carson@journalytic.com"
-    "kirbtech"    "carson.seese@kirbtech.com" -}}
-{{ if not (hasKey $workEmails $identity) -}}
-  {{ fail (printf "Unknown identity %q (must be one of: personal, journalytic, kirbtech)" $identity) -}}
-{{ end -}}
-{{ $workEmail := index $workEmails $identity -}}
 {{ $isWork := ne $identity "personal" -}}
 
 {{/* Signing public key: committed canonical default, overridden by a

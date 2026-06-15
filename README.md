@@ -11,20 +11,20 @@ Code, then applies the dotfiles:
 
 ```sh
 git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi
-~/.local/share/chezmoi/install.sh [--identity personal|journalytic|kirbtech]
+~/.local/share/chezmoi/install.sh [--work-email <address>]
 ```
 
-The identity is auto-detected from the repo/org in dev containers and
-Codespaces; override it with `--identity`. When it can't be detected, you're
-prompted interactively, or it's required as a flag when running
-non-interactively. Cloud VMs can provision unattended via
+The work identity comes from a single file, `~/work.email`, containing just your
+work email address; its domain selects the identity (e.g. `…@kirbtech.com`). No
+file means a personal machine. `--work-email` writes that file before applying;
+omit it for personal setups. Cloud VMs can provision unattended via
 [`cloud-init.yaml`](cloud-init.yaml).
 
 ### macOS / Windows — chezmoi only
 
-These platforms apply the dotfiles directly (no bootstrap script). `chezmoi
-init` prompts once for the work identity (`personal`, `journalytic`, or
-`kirbtech`):
+These platforms apply the dotfiles directly (no bootstrap script). For a work
+machine, create `~/work.email` (containing just your work email address) before
+running; otherwise it's treated as personal:
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply CS-5

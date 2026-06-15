@@ -8,12 +8,12 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 ### Installation Scripts
 
-- `./scripts/install-dotfiles.sh` - Standard installation script; prompts for identity interactively
-- `./install.sh [--identity personal|journalytic|kirbtech]` - Dev container install with auto-detected or explicit identity
+- `./scripts/install-dotfiles.sh [--work-email <addr>]` - Standard installation script; `--work-email` writes `~/work.email` before applying
+- `./install.sh [--work-email <addr>]` - Dev container / Linux bootstrap; `--work-email` writes `~/work.email` for non-interactive work setups
 
 ### Development Scripts  
 
-- `./render.sh [--identity IDENTITY] [--dc] [--codespaces] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` via env overrides so output matches a live apply
+- `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (seeding a temp work.email via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply
 
 ## Architecture
 
@@ -30,26 +30,30 @@ The dotfiles adapt based on environment variables:
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
 - `CODESPACES` - Detects GitHub Codespaces environment
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
+- `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
 
 ### Identity System
 
-The `identity` data variable drives work-specific configuration. It is set once via `promptStringOnce` during `chezmoi init` and stored in the local chezmoi config.
+The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). This mirrors the per-host signing-key file pattern (`~/.ssh/git_signing.pub`). `.chezmoi.toml.tmpl` reads it at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
 
-Valid values: `personal`, `journalytic`, `kirbtech`
+| `~/work.email` | `identity` | `isWork` | `workEmail` |
+| --- | --- | --- | --- |
+| absent | `personal` | false | (empty) |
+| `…@kirbtech.com` | `kirbtech` | true | the address |
+| `…@journalytic.com` | `journalytic` | true | the address |
+| unrecognized domain | `personal` | false | (empty) |
 
-- **personal** — no work context; no `.gitconfig-work` included
-- **journalytic** — uses `carson@journalytic.com` as work email
-- **kirbtech** — uses `carson.seese@kirbtech.com` as work email
+Add a new job by adding a `domain → identity` entry to the `$identities` dict in `.chezmoi.toml.tmpl`.
 
 On non-DC machines with a work identity, `.gitconfig-work` is included only for repos under `~/dev/work/` (via `includeIf`). On dev containers, it is included unconditionally.
 
-**Install script usage:**
+**Creating `~/work.email`:** write it directly (`printf '%s' you@work.com > ~/work.email`), or let the install scripts do it via `--work-email`:
 ```bash
-./install.sh --identity kirbtech   # explicit
-./install.sh                       # auto-detect from repo org; else prompt (TTY)
+./install.sh --work-email carson.seese@kirbtech.com   # writes ~/work.email, then applies
+./install.sh                                           # no file written => personal
 ```
 
-`install.sh` resolves identity in this order: explicit `--identity` flag → auto-detection from the repo org (`GITHUB_REPOSITORY` / workspace remote, work orgs only) → interactive `select` prompt when stdin is a TTY → error requiring `--identity` when non-interactive (cloud-init, CI, dev container hooks).
+There is no auto-detection or prompt: the file is the sole source of truth. Non-interactive environments (cloud-init, CI, dev containers) either pass `--work-email` or provision `~/work.email` out-of-band (e.g. cloud-init `write_files`). On macOS/Windows (which apply chezmoi directly, no install script), create `~/work.email` manually before `chezmoi init` for a work identity.
 
 ### Git Signing
 

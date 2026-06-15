@@ -19,22 +19,10 @@ if [[ -n "${REMOTE_CONTAINERS_IPC:-}" || "${USER:-}" == "vscode" || "${CODESPACE
     IS_DC=true
 fi
 
-# Auto-detect identity from repository context (work orgs only). Personal and
-# unknown contexts leave IDENTITY empty so they fall through to the prompt
-# (interactive) or the required --identity flag (non-interactive) below.
-IDENTITY=""
-if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
-    case "${GITHUB_REPOSITORY%%/*}" in
-    journalytic) IDENTITY="journalytic" ;;
-    kirbtech) IDENTITY="kirbtech" ;;
-    esac
-elif [[ -n "$WORKSPACE_DIR" ]]; then
-    repo_url=$(git -C "$WORKSPACE_DIR" remote get-url origin 2>/dev/null || true)
-    case "$repo_url" in
-    *journalytic*) IDENTITY="journalytic" ;;
-    *kirbtech*) IDENTITY="kirbtech" ;;
-    esac
-fi
+# Work identity is detected from ~/work.email at chezmoi render time. Pass
+# --work-email to write that file here (non-interactive provisioning); leave it
+# unset to keep any existing ~/work.email (no file => personal identity).
+WORK_EMAIL=""
 
 DOTFILES_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_SOURCE_DIR
@@ -45,15 +33,14 @@ source "$SCRIPT_DIR/lib.sh"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-    --identity)
-        IDENTITY="$2"
+    --work-email)
+        WORK_EMAIL="$2"
         shift 2
         ;;
     -h | --help)
-        echo "Usage: $0 [--identity personal|journalytic|kirbtech]"
-        echo "  --identity    Work identity. Auto-detected from the repo org when"
-        echo "                possible; otherwise prompted (interactive) or required"
-        echo "                (non-interactive)."
+        echo "Usage: $0 [--work-email <address>]"
+        echo "  --work-email  Work email address. Written to ~/work.email, which"
+        echo "                drives the work identity. Omit on personal machines."
         exit 0
         ;;
     *)
@@ -63,33 +50,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Resolve identity: flag/auto-detect already set it; otherwise prompt when
-# running interactively, or require the flag when not (cloud-init, CI, hooks).
-if [[ -z "$IDENTITY" ]]; then
-    if [[ -t 0 ]]; then
-        PS3="Select identity: "
-        select choice in personal journalytic kirbtech; do
-            [[ -n "$choice" ]] && IDENTITY="$choice" && break
-            echo "Invalid selection, try again." >&2
-        done
-    else
-        log_error "No identity detected. Pass --identity personal|journalytic|kirbtech"
-        exit 1
-    fi
-fi
-
-case "$IDENTITY" in
-personal | journalytic | kirbtech) ;;
-*)
-    log_error "Invalid identity '$IDENTITY' (must be personal, journalytic, or kirbtech)"
-    exit 1
-    ;;
-esac
-
 # Create necessary directories
 mkdir -p ~/.local/bin ~/.config/fish/{conf.d,completions}
 
-log_info "Setting up environment (identity: $IDENTITY)"
+log_info "Setting up environment${WORK_EMAIL:+ (work email: $WORK_EMAIL)}"
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -117,7 +81,11 @@ fi
 
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
-"$SCRIPT_DIR/install-dotfiles.sh" --identity "$IDENTITY"
+if [[ -n "$WORK_EMAIL" ]]; then
+    "$SCRIPT_DIR/install-dotfiles.sh" --work-email "$WORK_EMAIL"
+else
+    "$SCRIPT_DIR/install-dotfiles.sh"
+fi
 log_success "Dotfiles installed and applied"
 
 #### Shell ####
