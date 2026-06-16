@@ -11,7 +11,7 @@ ui {
 
 keybinds {
     shared_except "locked" {
-        unbind "Ctrl Backspace"
+        unbind "Ctrl h"
         
         bind "Alt h" { MoveFocusOrTab "Left"; }
         bind "Alt l" { MoveFocusOrTab "Right"; }
