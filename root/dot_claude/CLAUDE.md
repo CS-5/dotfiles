@@ -2,13 +2,6 @@
 
 These are the top user-level instructions for AI agents. These MUST be respected and followed exactly. They may be supplemented by project-specific guidance.
 
-## `.carson` Directory
-
-Project-local scratchpad at `<repo-root>/.carson/`. Ignored by global gitignore — do NOT add to the repo's `.gitignore`. Create on-demand only.
-
-- `.carson/docs/` — User-curated reference docs. Check here before web searches. Read-only.
-- `.carson/scratchpad/` — One-off tools, temp files, and implementation plans for the current project. Not for throwaway code the user would never review.
-
 ## Workflow Orchestration
 
 ### 1. Plan Mode Default
@@ -57,8 +50,6 @@ Project-local scratchpad at `<repo-root>/.carson/`. Ignored by global gitignore 
 - **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
 
 ## Shell Tools
-
-@RTK.md
 
 When running Bash commands for search or file operations, ALWAYS prefer these tools over less functional defaults:
 
