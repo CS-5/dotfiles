@@ -20,6 +20,7 @@
 
 [core]
   fsmonitor = true
+  pager = hunk pager
   excludesfile = {{ joinPath .chezmoi.homeDir ".gitignore-global" | replace "\\" "/" }}
 {{- if .isWsl }}
   sshCommand = ssh.exe
