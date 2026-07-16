@@ -1,0 +1,21 @@
+{{ if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+
+# claude plugins hash: {{ include ".chezmoidata/claude.toml" | sha256sum }}
+
+set -euo pipefail
+
+if ! command -v claude >/dev/null 2>&1; then
+    echo "claude not found, skipping plugin setup"
+    exit 0
+fi
+
+{{ range .claude.marketplaces -}}
+echo "Adding marketplace {{ . }}..."
+claude plugin marketplace add "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to add marketplace {{ . }}"
+{{ end -}}
+{{ range .claude.plugins -}}
+echo "Installing {{ . }}..."
+claude plugin install "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to install {{ . }}"
+{{ end -}}
+{{- end }}

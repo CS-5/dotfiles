@@ -1,0 +1,13 @@
+# To add or remove a plugin/marketplace, edit the arrays below and re-apply
+# (`chezmoi apply` / `chezmoi update`); the provisioner re-runs on any change.
+
+[claude]
+plugins = [
+  "gopls-lsp@claude-plugins-official",
+  "typescript-lsp@claude-plugins-official",
+  "code-simplifier@claude-plugins-official",
+  "plannotator@plannotator",
+  "mattpocock-skills@mattpocock",
+]
+
+marketplaces = ["backnotprop/plannotator", "mattpocock/skills"]
