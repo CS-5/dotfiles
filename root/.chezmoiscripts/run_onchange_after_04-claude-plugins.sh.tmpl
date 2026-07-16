@@ -1,22 +1,15 @@
 {{ if ne .chezmoi.os "windows" -}}
 #!/bin/bash
 
-# Install and enable the Claude Code plugins/marketplaces declared in
-# .chezmoidata/claude.toml. settings.json already sets the enabled state; this
-# script closes the gap that enabling a plugin does not install it.
-#
 # claude plugins hash: {{ include ".chezmoidata/claude.toml" | sha256sum }}
 
 set -euo pipefail
 
-# Claude Code may not be installed yet (install.sh installs it after the first
-# chezmoi apply). Skip cleanly; this run_onchange script re-runs on next apply.
 if ! command -v claude >/dev/null 2>&1; then
     echo "claude not found, skipping plugin setup"
     exit 0
 fi
 
-# Register marketplaces before installing so every plugin@marketplace resolves.
 {{ range .claude.marketplaces -}}
 echo "Adding marketplace {{ . }}..."
 claude plugin marketplace add "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to add marketplace {{ . }}"
