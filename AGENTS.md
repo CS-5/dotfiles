@@ -74,6 +74,38 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for `gh` and `docker`
+- `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
+
+### Claude Plugin Management
+
+Claude Code plugins and marketplaces are declared in a single source-only file,
+**`root/.chezmoidata/claude.toml`**. Because it lives under `.chezmoidata/`, it
+is loaded into chezmoi's template data (`.claude`) but is **never applied to
+`$HOME`** — the list is a component of the dotfiles, not a user file. It drives
+two consumers:
+
+- **`dot_claude/settings.json.tmpl`** renders `enabledPlugins` from
+  `.claude.plugins` (each listed spec becomes `"spec": true`).
+- **`run_onchange_after_04-claude-plugins.sh.tmpl`** runs `claude plugin
+  marketplace add` for each `.claude.marketplaces` entry, then `claude plugin
+  install` for each `.claude.plugins` entry. Enabling a plugin in settings does
+  not install it, so this script closes that gap; both commands are idempotent.
+
+The `.toml` holds two arrays: `plugins` (specs `"plugin@marketplace"`) and
+`marketplaces` (GitHub `"owner/repo"`). Built-in marketplaces like
+`claude-plugins-official` are always available and need not be listed.
+
+**To add** a plugin/marketplace, add a line to the relevant array. **To remove**
+one, delete its line: the plugin drops out of `enabledPlugins` and stops loading
+on the next apply (removal is handled declaratively by settings regeneration; the
+script never force-uninstalls). The provisioner re-runs whenever the file's hash
+changes, following the same `run_onchange` pattern as the mise script.
+
+The script skips cleanly when the `claude` CLI is not yet installed (e.g. the
+first `install.sh` run, which installs Claude Code after `chezmoi apply`) and
+picks the plugins up on the next apply. Hand-authored skills under
+`dot_claude/skills/` are unrelated — those are files applied directly to
+`~/.claude/skills/`.
 
 ### Environment Variables
 

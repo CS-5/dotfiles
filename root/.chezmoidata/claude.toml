@@ -1,0 +1,28 @@
+# Declarative Claude Code plugin/marketplace list.
+#
+# This file lives only in the chezmoi source tree (`.chezmoidata/` is never
+# applied to $HOME). It is the single source of truth for two things:
+#   - the `enabledPlugins` block rendered into dot_claude/settings.json.tmpl
+#   - the `claude plugin` commands run by
+#     .chezmoiscripts/run_onchange_after_04-claude-plugins.sh.tmpl
+#
+# To add or remove a plugin/marketplace, edit the arrays below and re-apply
+# (`chezmoi apply` / `chezmoi update`); the provisioner re-runs on any change.
+
+[claude]
+# Plugins to install and enable, keyed "plugin@marketplace". Presence enables
+# the plugin; delete a line to disable it (it stops loading on the next apply).
+plugins = [
+  "gopls-lsp@claude-plugins-official",
+  "typescript-lsp@claude-plugins-official",
+  "code-simplifier@claude-plugins-official",
+  "plannotator@plannotator",
+]
+
+# Marketplaces to register, as GitHub "owner/repo". The install script adds
+# these before installing plugins so every "plugin@marketplace" spec resolves.
+# Built-in marketplaces (e.g. claude-plugins-official) are always available and
+# do NOT need listing here.
+marketplaces = [
+  "backnotprop/plannotator",
+]

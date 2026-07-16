@@ -57,20 +57,9 @@
       "Read(~/.config/gcloud/**)"
     ]
   },
-  "extraKnownMarketplaces": {
-    "plannotator": {
-      "source": {
-        "source": "github",
-        "repo": "backnotprop/plannotator"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "gopls-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "plannotator@plannotator": true
-  },
+{{- $enabled := dict -}}
+{{- range .claude.plugins -}}{{- $_ := set $enabled . true -}}{{- end }}
+  "enabledPlugins": {{ $enabled | toPrettyJson | indent 2 | trim }},
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline.sh"

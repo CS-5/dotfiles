@@ -108,9 +108,13 @@ fi
 export DOTFILES_WORK_EMAIL_FILE="$TEMP_DIR/work.email"
 [[ -n "$EFFECTIVE_EMAIL" ]] && printf '%s' "$EFFECTIVE_EMAIL" >"$DOTFILES_WORK_EMAIL_FILE"
 
-# Render the real config template, then execute the target against it.
+# Render the real config template (--init: this is the init-phase config), then
+# execute the target against it. The target render omits --init on purpose: in
+# init mode chezmoi does not read source state, so .chezmoitemplates partials
+# and .chezmoidata are unavailable. Without --init both load, and the rendered
+# config's [data] is still supplied via --config.
 chezmoi execute-template --init --source="$SCRIPT_DIR/root" \
     < "$SCRIPT_DIR/root/.chezmoi.toml.tmpl" > "$TEMP_DIR/chezmoi.toml"
 
-chezmoi execute-template --init --config="$TEMP_DIR/chezmoi.toml" --source="$SCRIPT_DIR/root" \
+chezmoi execute-template --config="$TEMP_DIR/chezmoi.toml" --source="$SCRIPT_DIR/root" \
     < "$SCRIPT_DIR/$TEMPLATE_FILE"
