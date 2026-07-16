@@ -17,6 +17,7 @@ plugins = [
   "typescript-lsp@claude-plugins-official",
   "code-simplifier@claude-plugins-official",
   "plannotator@plannotator",
+  "mattpocock-skills@mattpocock",
 ]
 
 # Marketplaces to register, as GitHub "owner/repo". The install script adds
@@ -25,4 +26,5 @@ plugins = [
 # do NOT need listing here.
 marketplaces = [
   "backnotprop/plannotator",
+  "mattpocock/skills",
 ]
