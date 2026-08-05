@@ -1,4 +1,8 @@
-{{ if ne .chezmoi.os "windows" -}}
+{{/* Skipped in dev containers: there the image owns the mise version — commonly
+     pinned and asserted at build time — so self-updating on every apply defeats
+     that pin. Worth noting self-update is not bounded by the
+     minimum_release_age that governs every tool mise installs. */ -}}
+{{ if and (ne .chezmoi.os "windows") (not .isDc) -}}
 #!/bin/bash
 
 if ! command -v mise >/dev/null 2>&1; then

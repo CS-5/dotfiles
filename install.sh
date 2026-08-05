@@ -7,9 +7,18 @@ set -eufo pipefail
 
 # Discover dev container workspace if present (/workspaces/<repo-name> convention).
 # Uses find rather than a glob because `set -f` disables pathname expansion.
-WORKSPACE_DIR=""
-if [[ -d "/workspaces" ]]; then
-    WORKSPACE_DIR="$(find /workspaces -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -n1)"
+#
+# Codespaces names the folder outright in CODESPACE_VSCODE_FOLDER, so prefer it.
+# The find fallback has to skip dotdirs and sort: Codespaces also mounts
+# /workspaces/.codespaces, and find emits filesystem order, so an unsorted
+# `head -n1` picks .codespaces over the repo — and `mise trust` then trusts a
+# directory with no config in it.
+WORKSPACE_DIR="${CODESPACE_VSCODE_FOLDER:-}"
+if [[ -n "$WORKSPACE_DIR" && ! -d "$WORKSPACE_DIR" ]]; then
+    WORKSPACE_DIR=""
+fi
+if [[ -z "$WORKSPACE_DIR" && -d "/workspaces" ]]; then
+    WORKSPACE_DIR="$(find /workspaces -maxdepth 1 -mindepth 1 -type d ! -name '.*' 2>/dev/null | sort | head -n1)"
 fi
 
 # Dev containers sign commits via the host's forwarded SSH agent; real hosts
@@ -64,12 +73,20 @@ sudo apt-get install -y curl git wget unzip gnupg fish neovim
 log_success "Bootstrap dependencies installed"
 
 #### Mise ####
-show_progress "Installing mise"
-curl https://mise.run | sh
+# Leave an existing mise alone. Dev container images commonly install a pinned
+# mise and assert the pin at build time; reinstalling from mise.run would replace
+# it with latest and silently defeat that. Same shape as the guards in
+# .chezmoiscripts/*mise*.
+if command -v mise >/dev/null 2>&1; then
+    log_info "mise $(mise --version | cut -d' ' -f1) already installed, leaving it as-is"
+else
+    show_progress "Installing mise"
+    curl -fsSL https://mise.run | sh
+    log_success "mise installed"
+fi
 if [[ -n "$WORKSPACE_DIR" ]]; then
     mise trust --cd="$WORKSPACE_DIR" --quiet
 fi
-log_success "mise installed"
 
 #### Signing Key ####
 # Must run before chezmoi applies so the key is detected at render time.
