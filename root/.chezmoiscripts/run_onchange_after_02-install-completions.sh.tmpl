@@ -2,14 +2,48 @@
 #!/bin/bash
 
 # Regenerate whenever any pinned tool version changes, not just when this
-# script changes — otherwise completions go stale as gh/docker upgrade.
+# script changes — otherwise completions go stale as tools upgrade.
 # mise config hash: {{ include "private_dot_config/mise/config.toml.tmpl" | sha256sum }}
 
-if command -v gh >/dev/null 2>&1; then
-  gh completion -s fish > "{{ .chezmoi.homeDir }}/.config/fish/completions/gh.fish"
+# Freshly mise-installed tools aren't on this non-interactive script's PATH
+# during the first apply (01-mise-install runs just before this); the shims
+# dir makes them resolvable so completions generate on first bootstrap.
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+COMPLETIONS_DIR="{{ .chezmoi.homeDir }}/.config/fish/completions"
+mkdir -p "$COMPLETIONS_DIR"
+
+# gen <name> <command...>: write <command> output to <name>.fish. Skips
+# missing tools; on generation failure, warns and leaves any previous
+# completion file untouched instead of clobbering it with a partial one.
+gen() {
+    local name="$1"
+    shift
+    command -v "$1" >/dev/null 2>&1 || return 0
+    local out="$COMPLETIONS_DIR/$name.fish"
+    if "$@" >"$out.tmp" 2>/dev/null; then
+        mv "$out.tmp" "$out"
+    else
+        rm -f "$out.tmp"
+        echo "[WARN] failed to generate $name completions"
+    fi
+}
+
+gen gh gh completion -s fish
+gen mise mise completion fish # completion-time engine: usage (pinned in mise config)
+gen rg rg --generate complete-fish
+gen fd fd --gen-completions fish
+gen ast-grep ast-grep completions fish
+gen zellij zellij setup --generate-completion fish
+gen herdr herdr completion fish
+gen starship starship completions fish
+gen pnpm pnpm completion fish
+
+# docker additionally needs a working CLI context, not just a binary
+if command -v docker >/dev/null 2>&1 && docker >/dev/null 2>&1; then
+    gen docker docker completion fish
 fi
 
-if command -v docker >/dev/null 2>&1 && docker >/dev/null 2>&1; then
-  docker completion fish > "{{ .chezmoi.homeDir }}/.config/fish/completions/docker.fish"
-fi
+# worktrunk (wt) uses clap dynamic completions sourced at shell startup —
+# see fish/conf.d/wt.fish — so it has no static file to generate here.
 {{- end }}
