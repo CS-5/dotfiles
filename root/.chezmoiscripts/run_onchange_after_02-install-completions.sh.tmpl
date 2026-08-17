@@ -1,6 +1,10 @@
 {{ if ne .chezmoi.os "windows" -}}
 #!/bin/bash
 
+# Regenerate whenever any pinned tool version changes, not just when this
+# script changes — otherwise completions go stale as gh/docker upgrade.
+# mise config hash: {{ include "private_dot_config/mise/config.toml.tmpl" | sha256sum }}
+
 if command -v gh >/dev/null 2>&1; then
   gh completion -s fish > "{{ .chezmoi.homeDir }}/.config/fish/completions/gh.fish"
 fi

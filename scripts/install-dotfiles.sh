@@ -49,4 +49,7 @@ fi
 
 echo "Running 'chezmoi init --apply --source=${DOTFILES_SOURCE_DIR}'" >&2
 
-exec "$chezmoi" init --apply --source="${DOTFILES_SOURCE_DIR}"
+# --error-on-conflict: this script runs non-interactively (dev container /
+# Codespace builds have no TTY), so fail loudly naming the conflicting file
+# instead of hanging on chezmoi's interactive conflict prompt.
+exec "$chezmoi" init --apply --error-on-conflict --source="${DOTFILES_SOURCE_DIR}"

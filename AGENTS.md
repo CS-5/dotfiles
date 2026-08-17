@@ -13,7 +13,7 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 ### Development Scripts  
 
-- `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (seeding a temp work.email via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply
+- `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (supplying the identity via `DOTFILES_WORK_EMAIL` while neutralizing any real `~/work.email` via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply. `--data` passes a JSON object to chezmoi's `--override-data` to force `[data]` values (e.g. `'{"isMac":true}'` to preview macOS renders from Linux)
 
 ## Architecture
 
@@ -29,12 +29,14 @@ The dotfiles adapt based on environment variables:
 
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
 - `CODESPACES` - Detects GitHub Codespaces environment
+- A `/workspaces` directory - Also treated as a dev container signal (matches install.sh; covers containers whose user isn't `vscode` and where `REMOTE_CONTAINERS_IPC` isn't set at install time)
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
+- `DOTFILES_WORK_EMAIL` - Work email fallback when `~/work.email` is absent (the file wins; Codespaces user secrets surface as env vars)
 - `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
 
 ### Identity System
 
-The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). This mirrors the per-host signing-key file pattern (`~/.ssh/git_signing.pub`). `.chezmoi.toml.tmpl` reads it at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
+The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). This mirrors the per-host signing-key file pattern (`~/.ssh/git_signing.pub`). When the file is absent, the **`DOTFILES_WORK_EMAIL`** env var is consulted as a fallback (the file always wins when both exist) — this is how Codespaces get a work identity, since user secrets surface there as env vars. `.chezmoi.toml.tmpl` reads the email at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
 
 | `~/work.email` | `identity` | `isWork` | `workEmail` |
 | --- | --- | --- | --- |
@@ -47,13 +49,14 @@ Add a new job by adding a `domain → identity` entry to the `$identities` dict 
 
 On non-DC machines with a work identity, `.gitconfig-work` is included only for repos under `~/dev/work/` (via `includeIf`). On dev containers, it is included unconditionally.
 
-**Creating `~/work.email`:** write it directly (`printf '%s' you@work.com > ~/work.email`), or let the install scripts do it via `--work-email`:
+**Creating `~/work.email`:** write it directly (`printf '%s' you@work.com > ~/work.email`), use the `set-work-email` fish function (writes the file, then re-runs `chezmoi init --apply` — the post-install path for an already-provisioned machine or Codespace), or let the install scripts do it via `--work-email`:
 ```bash
 ./install.sh --work-email carson.seese@kirbtech.com   # writes ~/work.email, then applies
 ./install.sh                                           # no file written => personal
+set-work-email carson.seese@kirbtech.com               # after install: write file + re-apply
 ```
 
-There is no auto-detection or prompt: the file is the sole source of truth. Non-interactive environments (cloud-init, CI, dev containers) either pass `--work-email` or provision `~/work.email` out-of-band (e.g. cloud-init `write_files`). On macOS/Windows (which apply chezmoi directly, no install script), create `~/work.email` manually before `chezmoi init` for a work identity.
+There is no auto-detection or prompt: the file (or its env-var fallback) is the source of truth. Non-interactive environments (cloud-init, CI, dev containers) either pass `--work-email`, provision `~/work.email` out-of-band (e.g. cloud-init `write_files`), or set a `DOTFILES_WORK_EMAIL` secret (Codespaces). On macOS/Windows (which apply chezmoi directly, no install script), create `~/work.email` manually before `chezmoi init` for a work identity.
 
 ### Git Signing
 
@@ -126,8 +129,8 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 
 ### External File Management
 
-- `root/.chezmoiexternal.toml.tmpl` - Pulls external dependencies (fundle, eget binaries)
 - `root/.chezmoiignore.tmpl` - Controls which files chezmoi ignores per environment
+- There is no `.chezmoiexternal` file: fundle is vendored at `root/private_dot_config/fish/functions/fundle.fish` (update it by copying a newer upstream release in), and binaries like eget install through mise
 
 ### Key Files
 

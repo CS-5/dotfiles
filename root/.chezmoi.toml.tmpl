@@ -1,14 +1,16 @@
 sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | quote }}
 
-{{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") -}}
+{{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") (stat "/workspaces" | not | not) -}}
 {{ $isCodespaces := env "CODESPACES" | not | not -}}
 {{ $isDc := or $probablyDc $isCodespaces -}}
 {{ $binDir := ".local/bin" -}}
 
-{{/* Work identity is driven entirely by ~/work.email: a file whose sole
-     contents are one work email address. Its domain selects the identity;
-     a missing file or an unrecognized domain means personal. Mirrors the
-     per-host signing-key file below. Add new jobs to $identities. */}}
+{{/* Work identity is driven by ~/work.email: a file whose sole contents
+     are one work email address. When the file is absent, the
+     DOTFILES_WORK_EMAIL env var is consulted as a fallback (Codespaces
+     user secrets surface as env vars). The email's domain selects the
+     identity; no email or an unrecognized domain means personal. Mirrors
+     the per-host signing-key file below. Add new jobs to $identities. */}}
 {{ $identities := dict
     "kirbtech.com"    "kirbtech"
     "journalytic.com" "journalytic" -}}
@@ -17,8 +19,13 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{/* Defaults to ~/work.email; DOTFILES_WORK_EMAIL_FILE relocates it (render.sh). */}}
 {{ $workEmailPath := joinPath .chezmoi.homeDir "work.email" -}}
 {{ if env "DOTFILES_WORK_EMAIL_FILE" -}}{{ $workEmailPath = env "DOTFILES_WORK_EMAIL_FILE" -}}{{ end -}}
+{{ $email := "" -}}
 {{ if stat $workEmailPath -}}
-  {{ $email := include $workEmailPath | trim -}}
+  {{ $email = include $workEmailPath | trim -}}
+{{ else if env "DOTFILES_WORK_EMAIL" -}}
+  {{ $email = env "DOTFILES_WORK_EMAIL" | trim -}}
+{{ end -}}
+{{ if $email -}}
   {{ $domain := $email | splitList "@" | last -}}
   {{ if hasKey $identities $domain -}}
     {{ $identity = index $identities $domain -}}
@@ -75,6 +82,11 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     # Directory paths
     binDir = {{ $binDir | quote }}
     binDirAbs = {{ joinPath .chezmoi.homeDir $binDir | quote }}
+
+[add]
+    # This repo is public: refuse to add files containing detected secrets.
+    # Override deliberately with `chezmoi add --secrets=ignore` on false positives.
+    secrets = "error"
 
 [github]
     refreshPeriod = "12h"

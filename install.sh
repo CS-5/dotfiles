@@ -108,9 +108,9 @@ log_success "Dotfiles installed and applied"
 #### Shell ####
 show_progress "Setting up shell"
 fish -c "fundle install"
-if [[ "$SHELL" != *"fish"* ]]; then
+if [[ "${SHELL:-}" != *"fish"* ]]; then
     log_info "Changing default shell to fish"
-    sudo chsh -s "$(which fish)" "$USER"
+    sudo chsh -s "$(which fish)" "${USER:-$(id -un)}"
 fi
 log_success "Shell setup complete"
 
