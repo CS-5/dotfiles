@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Bootstrap script for Linux environments (dev containers, WSL, Debian/Ubuntu
-# and Arch hosts — including Omarchy).
+# Bootstrap script for Linux environments (dev containers, WSL, Debian/Ubuntu and Arch hosts).
 # Named `install.sh` for compatibility with GitHub Codespaces and VSCode Dev Containers.
 
 set -eufo pipefail
@@ -77,7 +76,7 @@ if command -v apt-get >/dev/null 2>&1; then
 elif command -v pacman >/dev/null 2>&1; then
     # -Syu, not -Sy: Arch doesn't support partial upgrades, so installing
     # against a synced-but-not-upgraded system can break shared libs.
-    # --needed skips packages already present (most of them, on Omarchy).
+    # --needed skips packages already present.
     sudo pacman -Syu --needed --noconfirm "${BOOTSTRAP_PKGS[@]}"
 else
     log_error "No supported package manager found (apt-get or pacman)."

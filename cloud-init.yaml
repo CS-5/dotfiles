@@ -5,9 +5,7 @@
 # packages, then clones this dotfiles repo and runs install.sh to set up
 # mise, chezmoi-managed dotfiles, fish, fundle, and Claude Code.
 #
-# Target distro for THIS file: Ubuntu/Debian (the packages list below uses
-# apt names like build-essential). install.sh itself also supports Arch
-# (pacman), so Arch hosts can skip cloud-init and run it directly.
+# Target distro: Ubuntu/Debian (apt-based). install.sh uses apt-get.
 
 hostname: csdev
 manage_etc_hosts: true
