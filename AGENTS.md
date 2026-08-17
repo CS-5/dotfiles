@@ -15,6 +15,14 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 - `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (supplying the identity via `DOTFILES_WORK_EMAIL` while neutralizing any real `~/work.email` via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply. `--data` passes a JSON object to chezmoi's `--override-data` to force `[data]` values (e.g. `'{"isMac":true}'` to preview macOS renders from Linux)
 
+### User Commands
+
+Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_local/bin/`), so one bash implementation serves fish, bash, and zsh. Not applied on Windows (ignored via `.chezmoiignore.tmpl`):
+
+- `update` - Updates everything: system packages (apt on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins
+- `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache
+- `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
+
 ## Architecture
 
 ### Template System
@@ -49,7 +57,7 @@ Add a new job by adding a `domain → identity` entry to the `$identities` dict 
 
 On non-DC machines with a work identity, `.gitconfig-work` is included only for repos under `~/dev/work/` (via `includeIf`). On dev containers, it is included unconditionally.
 
-**Creating `~/work.email`:** write it directly (`printf '%s' you@work.com > ~/work.email`), use the `set-work-email` fish function (writes the file, then re-runs `chezmoi init --apply` — the post-install path for an already-provisioned machine or Codespace), or let the install scripts do it via `--work-email`:
+**Creating `~/work.email`:** write it directly (`printf '%s' you@work.com > ~/work.email`), use the `set-work-email` command (writes the file, then re-runs `chezmoi init --apply` — the post-install path for an already-provisioned machine or Codespace; works from any shell, with a PowerShell function on Windows), or let the install scripts do it via `--work-email`:
 ```bash
 ./install.sh --work-email carson.seese@kirbtech.com   # writes ~/work.email, then applies
 ./install.sh                                           # no file written => personal
@@ -157,6 +165,10 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 chezmoi diff                 # Show pending changes
 chezmoi apply               # Apply changes
 chezmoi status              # Show status
+
+# Day-to-day maintenance (applied to ~/.local/bin, any shell)
+update                      # System packages + mise + chezmoi + dotfiles + tools
+clean                       # Prune orphaned packages, old tool versions, caches
 ```
 
 ## Development Guidelines

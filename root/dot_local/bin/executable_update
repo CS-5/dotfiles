@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Update everything on this machine: system packages (apt/brew), mise,
+# chezmoi, the dotfiles themselves, and mise-managed tools.
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+set -eufo pipefail
+
+step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
+
+# Everything lives inside main so bash parses the whole script before any of
+# it runs: `chezmoi update` below re-applies the dotfiles, which can rewrite
+# this very file mid-execution.
+main() {
+    step "Updating system packages"
+    case "$(uname -s)" in
+    Darwin)
+        brew update && brew upgrade
+        ;;
+    Linux)
+        if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get upgrade -y
+        fi
+        ;;
+    esac
+
+    if command -v mise >/dev/null 2>&1; then
+        step "Updating mise"
+        mise self-update --yes
+    fi
+
+    # Upgrade the chezmoi binary before pulling the dotfiles: newer templates
+    # may require a newer chezmoi (.chezmoiversion).
+    step "Updating chezmoi"
+    chezmoi upgrade
+
+    step "Pulling latest dotfiles and applying"
+    chezmoi update
+
+    # After the pull: the applied mise config may pin newer tool versions.
+    if command -v mise >/dev/null 2>&1; then
+        step "Upgrading mise tools"
+        mise upgrade
+    fi
+
+    step "Update complete"
+}
+
+main "$@"

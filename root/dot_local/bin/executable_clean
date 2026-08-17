@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Prune old and unused packages left behind by `update`: orphaned system
+# packages and package caches (apt/brew), and mise tool versions no longer
+# referenced by any config, plus mise's download cache.
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+set -eufo pipefail
+
+step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
+
+case "$(uname -s)" in
+Darwin)
+    step "Pruning Homebrew packages and caches"
+    brew autoremove
+    brew cleanup --prune=all
+    ;;
+Linux)
+    if command -v apt-get >/dev/null 2>&1; then
+        step "Pruning apt packages and caches"
+        sudo apt-get autoremove --purge -y
+        sudo apt-get clean
+    fi
+    ;;
+esac
+
+if command -v mise >/dev/null 2>&1; then
+    step "Pruning unused mise tool versions"
+    mise prune --yes
+
+    step "Clearing mise download cache"
+    mise cache clear
+fi
+
+step "Clean complete"
