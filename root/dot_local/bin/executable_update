@@ -21,6 +21,8 @@ main() {
     Linux)
         if command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update && sudo apt-get upgrade -y
+        elif command -v pacman >/dev/null 2>&1; then
+            sudo pacman -Syu --noconfirm
         fi
         ;;
     esac

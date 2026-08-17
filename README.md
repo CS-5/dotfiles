@@ -4,7 +4,7 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Install
 
-### Linux (Debian/Ubuntu) — dev containers, WSL, cloud VMs
+### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs, Omarchy
 
 Clone and run the bootstrap script. It installs mise, chezmoi, fish, and Claude
 Code, then applies the dotfiles:

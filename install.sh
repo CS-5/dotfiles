@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Bootstrap script for Linux environments (dev containers, WSL, Ubuntu hosts).
+# Bootstrap script for Linux environments (dev containers, WSL, Debian/Ubuntu
+# and Arch hosts — including Omarchy).
 # Named `install.sh` for compatibility with GitHub Codespaces and VSCode Dev Containers.
 
 set -eufo pipefail
@@ -68,8 +69,21 @@ export PATH="$HOME/.local/bin:$PATH"
 
 #### Bootstrap Dependencies ####
 show_progress "Installing bootstrap dependencies"
-sudo apt-get update
-sudo apt-get install -y curl git wget unzip gnupg fish neovim
+# Same package names in Debian/Ubuntu and Arch repos.
+BOOTSTRAP_PKGS=(curl git wget unzip gnupg fish neovim)
+if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}"
+elif command -v pacman >/dev/null 2>&1; then
+    # -Syu, not -Sy: Arch doesn't support partial upgrades, so installing
+    # against a synced-but-not-upgraded system can break shared libs.
+    # --needed skips packages already present (most of them, on Omarchy).
+    sudo pacman -Syu --needed --noconfirm "${BOOTSTRAP_PKGS[@]}"
+else
+    log_error "No supported package manager found (apt-get or pacman)."
+    log_error "Install these manually, then re-run: ${BOOTSTRAP_PKGS[*]}"
+    exit 1
+fi
 log_success "Bootstrap dependencies installed"
 
 #### Mise ####
