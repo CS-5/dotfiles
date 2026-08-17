@@ -4,7 +4,7 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Install
 
-### Linux (Debian/Ubuntu) — dev containers, WSL, cloud VMs
+### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs
 
 Clone and run the bootstrap script. It installs mise, chezmoi, fish, and Claude
 Code, then applies the dotfiles:
@@ -19,6 +19,12 @@ work email address; its domain selects the identity (e.g. `…@kirbtech.com`). N
 file means a personal machine. `--work-email` writes that file before applying;
 omit it for personal setups. Cloud VMs can provision unattended via
 [`cloud-init.yaml`](cloud-init.yaml).
+
+When the file is absent, the `DOTFILES_WORK_EMAIL` env var is used as a
+fallback — set it as a Codespaces user secret (scoped to work repos) to get the
+work identity in Codespaces automatically. On an already-provisioned machine or
+Codespace, `set-work-email you@work.com` writes the file and re-applies in one
+step (the file wins over the env var).
 
 ### macOS / Windows — chezmoi only
 

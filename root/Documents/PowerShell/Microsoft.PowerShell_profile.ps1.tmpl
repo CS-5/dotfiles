@@ -24,3 +24,11 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
 }
+
+# Write ~/work.email and re-apply dotfiles so the work identity takes effect.
+# Windows counterpart of the bash script at ~/.local/bin/set-work-email.
+function set-work-email {
+    param([Parameter(Mandatory)][string]$Address)
+    Set-Content -Path (Join-Path $HOME "work.email") -Value $Address -NoNewline
+    chezmoi init --apply
+}

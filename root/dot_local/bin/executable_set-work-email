@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Write ~/work.email and re-apply the dotfiles so the work identity takes
+# effect (e.g. inside a fresh Codespace). The file's domain selects the
+# identity; see the Identity System section of AGENTS.md.
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+set -eufo pipefail
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: set-work-email <address>" >&2
+    echo "Writes ~/work.email and re-runs 'chezmoi init --apply' so the" >&2
+    echo "work identity takes effect (e.g. inside a fresh Codespace)." >&2
+    exit 1
+fi
+
+printf '%s' "$1" >"$HOME/work.email"
+
+# exec: the re-apply can rewrite this very script; replacing the process
+# means bash never reads it again mid-run.
+exec chezmoi init --apply

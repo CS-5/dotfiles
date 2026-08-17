@@ -5,38 +5,46 @@
 # Drives the real .chezmoi.toml.tmpl so the output matches what `chezmoi apply`
 # would produce — no duplicated data block to drift.
 #
-# Work identity is detected from ~/work.email. To exercise that without touching
-# the real home, this script writes a temp work.email and points the template at
-# it via DOTFILES_WORK_EMAIL_FILE (HOME is left intact, so signing-key and other
-# homeDir-derived paths stay faithful to the host).
+# Work identity is detected from ~/work.email, falling back to the
+# DOTFILES_WORK_EMAIL env var. To exercise that without touching the real
+# home, this script points the file check at a nonexistent temp path (via
+# DOTFILES_WORK_EMAIL_FILE) and supplies the email through the env var, so
+# the template's real detection logic (env fallback + domain mapping) runs
+# (HOME is left intact, so signing-key and other homeDir-derived paths stay
+# faithful to the host).
 #
-# Usage: ./render.sh [--identity personal|journalytic|kirbtech] [--work-email <addr>] [--dc] [--codespaces] <template-file>
+# Usage: ./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
-    echo "Usage: $0 [--identity personal|journalytic|kirbtech] [--work-email <addr>] [--dc] [--codespaces] <template-file>"
+    echo "Usage: $0 [--identity personal|journalytic|kirbtech] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>"
     echo ""
     echo "Renders a chezmoi template file to stdout"
     echo ""
     echo "Options:"
-    echo "  --identity     Convenience for a known identity, written to ~/work.email"
-    echo "                 (personal => no file; default: personal)"
-    echo "  --work-email   Arbitrary work email written to ~/work.email (wins over"
-    echo "                 --identity; use for edge cases like unknown domains)"
+    echo "  --identity     Convenience for a known identity, supplied via"
+    echo "                 DOTFILES_WORK_EMAIL (personal => none; default: personal)"
+    echo "  --work-email   Arbitrary work email, supplied via DOTFILES_WORK_EMAIL"
+    echo "                 (wins over --identity; use for edge cases like unknown"
+    echo "                 domains)"
     echo "  --dc           Simulate a dev container environment"
     echo "  --codespaces   Simulate a GitHub Codespaces environment"
+    echo "  --data         JSON object of [data] overrides passed to chezmoi's"
+    echo "                 --override-data (e.g. '{\"isMac\":true}' to preview the"
+    echo "                 macOS render from any platform)"
     echo ""
     echo "Examples:"
     echo "  $0 root/dot_gitconfig.tmpl"
     echo "  $0 --identity journalytic root/dot_gitconfig.tmpl"
     echo "  $0 --identity kirbtech --dc root/dot_gitconfig.tmpl"
     echo "  $0 --work-email me@example.com root/.chezmoi.toml.tmpl"
+    echo "  $0 --data '{\"isMac\":true}' root/dot_zshrc.tmpl"
 }
 
-# Canonical emails for the --identity convenience flag. personal => no file.
+# Canonical emails for the --identity convenience flag. personal => no email.
 identity_email() {
     case "$1" in
     personal) echo "" ;;
@@ -52,6 +60,7 @@ identity_email() {
 IDENTITY_EMAIL=""
 WORK_EMAIL=""
 WORK_EMAIL_SET=false
+OVERRIDE_DATA=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -71,6 +80,10 @@ while [[ $# -gt 0 ]]; do
     --codespaces)
         export CODESPACES=true
         shift
+        ;;
+    --data)
+        OVERRIDE_DATA="$2"
+        shift 2
         ;;
     -h | --help)
         usage
@@ -97,16 +110,21 @@ fi
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-# Seed a temp work.email and point the template at it (instead of ~/work.email),
-# so detection is exercised without writing to the real home. --work-email wins
-# over --identity; absent both, the file stays absent => personal.
+# Neutralize the host's real ~/work.email by pointing the file check at a
+# path that never exists, then supply the requested email via the env var
+# fallback. --work-email wins over --identity; absent both, the env var is
+# cleared => personal.
+export DOTFILES_WORK_EMAIL_FILE="$TEMP_DIR/work.email"
 if $WORK_EMAIL_SET; then
     EFFECTIVE_EMAIL="$WORK_EMAIL"
 else
     EFFECTIVE_EMAIL="$IDENTITY_EMAIL"
 fi
-export DOTFILES_WORK_EMAIL_FILE="$TEMP_DIR/work.email"
-[[ -n "$EFFECTIVE_EMAIL" ]] && printf '%s' "$EFFECTIVE_EMAIL" >"$DOTFILES_WORK_EMAIL_FILE"
+if [[ -n "$EFFECTIVE_EMAIL" ]]; then
+    export DOTFILES_WORK_EMAIL="$EFFECTIVE_EMAIL"
+else
+    unset DOTFILES_WORK_EMAIL
+fi
 
 # Render the real config template (--init: this is the init-phase config), then
 # execute the target against it. The target render omits --init on purpose: in
@@ -116,5 +134,12 @@ export DOTFILES_WORK_EMAIL_FILE="$TEMP_DIR/work.email"
 chezmoi execute-template --init --source="$SCRIPT_DIR/root" \
     < "$SCRIPT_DIR/root/.chezmoi.toml.tmpl" > "$TEMP_DIR/chezmoi.toml"
 
+# --override-data (chezmoi >= 2.66) applies last, on top of the rendered
+# config's [data], so --data can force values like isMac or isDc directly.
+OVERRIDE_ARGS=()
+if [[ -n "$OVERRIDE_DATA" ]]; then
+    OVERRIDE_ARGS=(--override-data "$OVERRIDE_DATA")
+fi
+
 chezmoi execute-template --config="$TEMP_DIR/chezmoi.toml" --source="$SCRIPT_DIR/root" \
-    < "$SCRIPT_DIR/$TEMPLATE_FILE"
+    ${OVERRIDE_ARGS[@]+"${OVERRIDE_ARGS[@]}"} < "$SCRIPT_DIR/$TEMPLATE_FILE"
