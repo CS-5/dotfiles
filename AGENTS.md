@@ -138,7 +138,7 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 ### External File Management
 
 - `root/.chezmoiignore.tmpl` - Controls which files chezmoi ignores per environment
-- There is no `.chezmoiexternal` file: fundle is vendored at `root/private_dot_config/fish/functions/fundle.fish` (update it by copying a newer upstream release in), and binaries like eget install through mise
+- There is no `.chezmoiexternal` file: fundle is vendored at `root/private_dot_config/fish/functions/fundle.fish` (update it by copying a newer upstream release in, preserving the MIT license header at the top of the file), and binaries like eget install through mise
 
 ### Key Files
 
