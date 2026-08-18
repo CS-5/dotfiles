@@ -23,7 +23,12 @@ set -g fish_color_valid_path --underline
 fish_add_path ~/.local/share/mise/shims
 
 fundle plugin 'edc/bass'
+{{ if not .isOmarchy -}}
+{{/* Omarchy's omarchy-fish package vendors fzf.fish (and calls
+     fzf_configure_bindings from its own conf.d), so a fundle copy would be a
+     second install of the same plugin fighting over the same keybindings. */ -}}
 fundle plugin 'PatrickF1/fzf.fish'
+{{ end -}}
 fundle plugin 'jorgebucaran/autopair.fish'
 fundle init
 

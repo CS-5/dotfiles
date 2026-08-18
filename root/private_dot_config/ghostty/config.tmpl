@@ -1,0 +1,26 @@
+{{ if .isOmarchy -}}
+# Follow the Omarchy theme system instead of pinning a theme: omarchy-theme-set
+# rewrites this file on every theme change, and the `?` prefix makes ghostty
+# tolerate its absence before the first theme is applied. It sets colors only,
+# so everything below still applies.
+config-file = ?"~/.local/state/omarchy/current/theme/ghostty.conf"
+{{- else -}}
+theme = Raycast Dark
+{{- end }}
+cursor-invert-fg-bg = true
+
+{{ if .isOmarchy -}}
+# Unquoted on purpose: omarchy-font-set only rewrites a quoted font-family, so
+# leaving it bare keeps chezmoi the source of truth for the terminal font.
+{{ end -}}
+font-family = FiraCode Nerd Font
+
+quick-terminal-screen = mouse
+
+keybind = global:cmd+grave_accent=toggle_quick_terminal
+keybind = shift+enter=text:\n
+
+window-height = 40
+window-width = 140
+
+shell-integration-features = sudo,title,ssh-terminfo,ssh-env

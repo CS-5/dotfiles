@@ -5,6 +5,16 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $isDc := or $probablyDc $isCodespaces -}}
 {{ $binDir := ".local/bin" -}}
 
+{{/* Omarchy (https://omarchy.org) is an opinionated Arch/Hyprland setup that
+     owns a large part of $HOME and /usr/share/omarchy. It ships its own mise
+     (the mise-bin package, whose self-update is disabled), writes
+     ~/.config/mise/config.toml through `mise use -g`, blocks direct
+     `pacman -Syu`, and keeps bash as the login shell on purpose. The templates
+     branch on this flag rather than fighting any of it.
+     /etc/omarchy.conf only exists on the dev channel, where OMARCHY_PATH points
+     at a git checkout instead of /usr/share/omarchy. */}}
+{{ $isOmarchy := or (stat "/usr/share/omarchy" | not | not) (stat "/etc/omarchy.conf" | not | not) -}}
+
 {{/* Work identity is driven by ~/work.email: a file whose sole contents
      are one work email address. When the file is absent, the
      DOTFILES_WORK_EMAIL env var is consulted as a fallback (Codespaces
@@ -64,6 +74,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ env "WSL_DISTRO_NAME" | not | not }}
     isDc = {{ $isDc }}
+    isOmarchy = {{ $isOmarchy }}
 
     # Identity
     identity = {{ $identity | quote }}

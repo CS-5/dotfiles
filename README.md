@@ -4,7 +4,7 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Install
 
-### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs
+### Linux (Debian/Ubuntu/Arch/Omarchy) — dev containers, WSL, cloud VMs
 
 Clone and run the bootstrap script. It installs mise, chezmoi, fish, and Claude
 Code, then applies the dotfiles:
@@ -13,6 +13,12 @@ Code, then applies the dotfiles:
 git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi
 ~/.local/share/chezmoi/install.sh [--work-email <address>]
 ```
+
+On [Omarchy](https://omarchy.org) the same command adapts to what Omarchy
+already owns: it leaves bash as the login shell (`~/.bashrc` execs fish
+instead), installs `omarchy-fish`, keeps out of `~/.config/mise/config.toml`,
+skips tools Omarchy already packages, and routes `update` through
+`omarchy update`. See [AGENTS.md](AGENTS.md#omarchy) for the details.
 
 The work identity comes from a single file, `~/work.email`, containing just your
 work email address; its domain selects the identity (e.g. `…@kirbtech.com`). No

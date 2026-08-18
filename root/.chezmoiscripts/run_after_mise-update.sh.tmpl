@@ -6,5 +6,11 @@ if ! command -v mise >/dev/null 2>&1; then
     exit 0
 fi
 
-mise self-update --yes --quiet >/dev/null
+# Package-manager builds ship mise's self-update marker and exit nonzero
+# ("mise is installed via a package manager, cannot update") — Omarchy's
+# mise-bin, Arch's mise, Homebrew. Updating mise there belongs to the packager,
+# so don't fail the whole apply over it. mise prints its own reason on stderr.
+if ! mise self-update --yes --quiet >/dev/null; then
+    echo "mise self-update unavailable or failed, leaving mise to its packager"
+fi
 {{- end }}

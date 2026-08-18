@@ -28,6 +28,15 @@ if [[ -n "${REMOTE_CONTAINERS_IPC:-}" || "${USER:-}" == "vscode" || "${CODESPACE
     IS_DC=true
 fi
 
+# Omarchy already owns package updates, mise, and the login shell, so several
+# steps below hand off to it instead of doing their own thing. Matches the
+# isOmarchy detection in .chezmoi.toml.tmpl (/etc/omarchy.conf is the dev
+# channel, where OMARCHY_PATH is a git checkout instead of /usr/share/omarchy).
+IS_OMARCHY=false
+if [[ -d /usr/share/omarchy || -f /etc/omarchy.conf ]]; then
+    IS_OMARCHY=true
+fi
+
 # Work identity is detected from ~/work.email at chezmoi render time. Pass
 # --work-email to write that file here (non-interactive provisioning); leave it
 # unset to keep any existing ~/work.email (no file => personal identity).
@@ -73,6 +82,15 @@ BOOTSTRAP_PKGS=(curl git wget unzip gnupg fish neovim)
 if command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update
     sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}"
+elif [[ "$IS_OMARCHY" == "true" ]]; then
+    # Not `pacman -Syu`: a libalpm hook aborts direct system upgrades, because
+    # `omarchy update` owns the snapshot and migrations that go with them.
+    # omarchy-pkg-add is Omarchy's own `pacman -S --needed`, and it verifies
+    # afterwards that every package actually landed.
+    #
+    # omarchy-fish puts Omarchy's fish config (and fzf.fish) in fish's vendor
+    # dirs; ttf-firacode-nerd is our terminal font, which Omarchy doesn't ship.
+    omarchy-pkg-add "${BOOTSTRAP_PKGS[@]}" omarchy-fish ttf-firacode-nerd
 elif command -v pacman >/dev/null 2>&1; then
     # -Syu, not -Sy: Arch doesn't support partial upgrades, so installing
     # against a synced-but-not-upgraded system can break shared libs.
@@ -121,7 +139,14 @@ log_success "Dotfiles installed and applied"
 #### Shell ####
 show_progress "Setting up shell"
 fish -c "fundle install"
-if [[ "${SHELL:-}" != *"fish"* ]]; then
+if [[ "$IS_OMARCHY" == "true" ]]; then
+    # Omarchy keeps bash as the login shell on purpose: SDDM, /etc/profile.d,
+    # and the uwsm session are bash, and chsh'ing to fish breaks the graphical
+    # login. ~/.bashrc execs fish for interactive terminals instead, which is
+    # what omarchy-setup-fish does -- but chezmoi owns ~/.bashrc here, so that
+    # command must not be run (it would overwrite the applied file).
+    log_info "Omarchy: leaving bash as the login shell (~/.bashrc execs fish)"
+elif [[ "${SHELL:-}" != *"fish"* ]]; then
     log_info "Changing default shell to fish"
     sudo chsh -s "$(which fish)" "${USER:-$(id -un)}"
 fi

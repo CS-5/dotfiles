@@ -1,4 +1,31 @@
-{{ if .isMac -}}
+{{ if .isOmarchy -}}
+# Omarchy owns the bash side of this machine, and bash stays the login shell on
+# purpose: SDDM, /etc/profile.d, and the uwsm session are all bash. env-bootstrap
+# (OMARCHY_PATH, plus the mise-shims and ~/.local/bin entries on PATH) has to run
+# even for non-interactive shells, so it goes above the interactivity guard.
+# Mirrors Omarchy's own /etc/skel/.bashrc.
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] &&
+    source /usr/share/omarchy/default/bash/env-bootstrap
+
+# If not running interactively, don't do anything else.
+[[ $- != *i* ]] && return
+
+# Hand interactive terminals to fish the way omarchy-setup-fish does, rather
+# than chsh'ing the login shell out from under the session. The guards keep
+# `bash -c`, nested shells, and a fish parent from re-entering.
+if command -v fish >/dev/null 2>&1 &&
+    [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" ]] &&
+    [[ -z ${BASH_EXECUTION_STRING:-} && ${SHLVL} == 1 ]]; then
+    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=''
+    exec fish $LOGIN_OPTION
+fi
+
+# Omarchy's aliases, functions, history settings, and tool activations
+# (mise, starship, zoxide, fzf). Overrides for these belong below.
+[[ -r "${OMARCHY_PATH:-/usr/share/omarchy}/default/bash/rc" ]] &&
+    source "${OMARCHY_PATH:-/usr/share/omarchy}/default/bash/rc"
+{{ else }}
+{{- if .isMac -}}
 # Homebrew completion (macOS)
 if command -v brew >/dev/null 2>&1; then
     eval "$(brew shellenv)"
@@ -7,10 +34,10 @@ if command -v brew >/dev/null 2>&1; then
     fi
 fi
 {{- end }}
-
+{{ end }}
 export PATH="{{ .binDirAbs }}:$PATH"
 {{ template "env-posix" . }}
-
+{{ if not .isOmarchy }}
 # Initialize starship prompt
 if command -v starship >/dev/null 2>&1; then
     eval "$(starship init bash)"
@@ -28,13 +55,13 @@ fi
 if command -v mcfly >/dev/null 2>&1; then
     eval "$(mcfly init bash)"
 fi
-
+{{ end }}
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
 
 fzkill() {
     ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
 }
-
+{{ if not .isOmarchy }}
 # History settings
 HISTFILE=~/.bash_history
 HISTSIZE=20000
@@ -42,3 +69,4 @@ HISTFILESIZE=20000
 HISTCONTROL=ignoreboth:erasedups
 shopt -s histappend
 shopt -s cmdhist
+{{- end }}

@@ -19,8 +19,8 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_local/bin/`), so one bash implementation serves fish, bash, and zsh. Not applied on Windows (ignored via `.chezmoiignore.tmpl`):
 
-- `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins
-- `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache
+- `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins. On Omarchy the system-package and mise-self-update steps hand off to `omarchy-update -y`, which runs last (see [Omarchy](#omarchy))
+- `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache. On Omarchy the cache is trimmed with `paccache -rk2` rather than emptied
 - `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
 
 ## Architecture
@@ -38,6 +38,7 @@ The dotfiles adapt based on environment variables:
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
 - `CODESPACES` - Detects GitHub Codespaces environment
 - A `/workspaces` directory - Also treated as a dev container signal (matches install.sh; covers containers whose user isn't `vscode` and where `REMOTE_CONTAINERS_IPC` isn't set at install time)
+- A `/usr/share/omarchy` directory or `/etc/omarchy.conf` file - Sets `isOmarchy` (see [Omarchy](#omarchy)); the latter covers Omarchy's dev channel, where `OMARCHY_PATH` is a git checkout instead
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
 - `DOTFILES_WORK_EMAIL` - Work email fallback when `~/work.email` is absent (the file wins; Codespaces user secrets surface as env vars)
 - `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
@@ -76,13 +77,17 @@ On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signin
 
 ### Tool Management
 
-CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/config.toml.tmpl`. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
+CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl`. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`), and tools Omarchy already provides are excluded on Omarchy (`not .isOmarchy`). Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
+
+It is a **`conf.d` drop-in, not `~/.config/mise/config.toml`**, so that `mise use -g` keeps a file of its own to write to. mise structurally refuses to write into `conf.d`, so neither side clobbers the other. The trade-off is precedence: within a global config dir `conf.d` is the *lowest* precedence, so `config.toml` wins wherever both name the same tool (on Omarchy that includes `node`, which its installer pins with `mise use -g`). `run_once_before_00-migrate-mise-config.sh.tmpl` moves a pre-existing dotfiles-owned `config.toml` aside once per machine; it leaves a `mise use -g` one alone.
 
 ### Chezmoi Automation Scripts
 
 Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
 
+- `run_once_before_00-migrate-mise-config.sh.tmpl` - One-time move of a former dotfiles-owned `~/.config/mise/config.toml` to `config.toml.pre-conf.d.bak` (see Tool Management); recognises the old file by its `minimum_release_age` line so an Omarchy/`mise use -g` config survives
 - `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
+- `run_after_mise-update.sh.tmpl` - Runs `mise self-update`. Tolerates failure: package-manager builds (Omarchy's `mise-bin`, Arch's `mise`, Homebrew) ship mise's self-update marker and exit nonzero, and updating mise there belongs to the packager
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
@@ -118,6 +123,56 @@ picks the plugins up on the next apply. Hand-authored skills under
 `dot_claude/skills/` are unrelated — those are files applied directly to
 `~/.claude/skills/`.
 
+### Omarchy
+
+[Omarchy](https://omarchy.org) is an opinionated Arch/Hyprland setup that owns a
+large part of `$HOME`, so the templates defer to it rather than fight it. The
+`isOmarchy` data flag (see Environment Detection) gates every branch; `install.sh`
+mirrors it with `IS_OMARCHY`. Like `isDc` and the identity, it is resolved at
+`chezmoi init` time — installing Omarchy afterwards needs a re-`init`
+(`set-work-email` does one, or `chezmoi init --apply`).
+
+What changes on Omarchy, and why:
+
+| Area | Behavior | Reason |
+| --- | --- | --- |
+| **Login shell** (`install.sh`) | No `chsh`; `~/.bashrc` execs fish for interactive terminals instead | SDDM, `/etc/profile.d`, and the uwsm session are bash scripts. `chsh -s fish` breaks the graphical login. This is what `omarchy-setup-fish` does — but do **not** run that command, it overwrites the chezmoi-managed `~/.bashrc` |
+| **`~/.bashrc`** | Sources Omarchy's `default/bash/env-bootstrap` above the interactivity guard, then `default/bash/rc`; our own starship/mise/zoxide/mcfly activations and history settings are skipped | `env-bootstrap` sets `OMARCHY_PATH` and the mise-shims/`~/.local/bin` PATH entries that non-interactive shells and the uwsm session need; `default/bash/rc` already activates those tools |
+| **Bootstrap packages** (`install.sh`) | `omarchy-pkg-add` instead of `pacman -Syu`, plus `omarchy-fish` and `ttf-firacode-nerd` | A libalpm hook (`00-omarchy-update-guard.hook`) aborts direct system upgrades. `omarchy-fish` vendors Omarchy's fish config; Omarchy ships JetBrainsMono Nerd, not FiraCode |
+| **fish** | `fundle plugin 'PatrickF1/fzf.fish'` is dropped; `conf.d/{mise,zoxide,starship}.fish` skip activation when something already did it | `omarchy-fish` vendors fzf.fish (so fundle's copy would be a second install fighting over the same keybindings) and activates mise/zoxide/starship from `/usr/share/fish/vendor_conf.d`. Re-activating those three is harmless but spawns a redundant subprocess on every shell start, so each checks for the function its activation defines (`mise`, `__zoxide_z`, `__starship_set_job_count`) — per-shell state, so a nested fish still activates. omarchy-fish also turns on `fish_vi_key_bindings`; override in `config.fish`, which runs after all `conf.d` files |
+| **mise config** | Lives in `conf.d/10-dotfiles.toml`, and the tools Omarchy provides are omitted | See Tool Management. Omitted: `starship`, `lazygit`, `lazydocker`, `fd`, `fzf`, `jq`, `ripgrep`, `zoxide`, `usage`, `herdr` (pacman) and `gh`, `hunk` (Omarchy's lazy `~/.local/bin` mise stubs). A duplicate `herdr` is the worst of these — Omarchy has a migration that deletes mise copies because a stale client shadows `/usr/bin/herdr` with an older wire protocol |
+| **`mise self-update`** | Tolerated failure, not an error | Omarchy installs `mise-bin`, which ships mise's self-update marker |
+| **`update`** | System packages, `mise self-update`, and orphan pruning hand off to `omarchy-update -y`, which runs **last** | Omarchy's entrypoint pairs the upgrade with a Snapper snapshot, keyring refresh, migrations, AUR packages, and `mise up`. It runs last because it owns the reboot prompt, and a confirmed reboot would otherwise skip the dotfiles steps |
+| **`clean`** | `paccache -rk2` instead of `pacman -Sc` | Omarchy treats the package cache as its only offline downgrade path and keeps two versions per package (`omarchy-update-pkg-prune`) |
+| **`~/.config/ghostty/config`** | `config-file = ?"~/.local/state/omarchy/current/theme/ghostty.conf"` instead of a pinned `theme` | `omarchy-theme-set` themes every app together; a pinned theme leaves the terminal visibly out of sync. The theme file sets colors only, so the rest of the config still applies |
+
+Known overlaps left alone deliberately:
+
+- **`~/.config/starship.toml`, `~/.config/herdr/config.toml`** replace Omarchy's.
+  Omarchy documents `~/.config` as the user's, and only *seeds* the herdr config
+  when absent, so this is the intended direction. Omarchy's herdr config mirrors
+  its tmux keybindings; ours does not.
+- **`~/.gitconfig`** is read *after* Omarchy's `~/.config/git/config`, so
+  anything we don't set is inherited from it — notably
+  `init.defaultBranch = master`, `column.ui`, `branch.sort`, `tag.sort`.
+- **`~/.local/bin/claude`** is installed natively by `install.sh` on every
+  platform, but Omarchy also ships a lazy mise stub there, and
+  `omarchy-refresh-applications` (which some migrations run) restores it. Both
+  yield a working `claude`. `omarchy remove preinstalls` is Omarchy's own way to
+  drop its agent stubs for good.
+- **`font-family` in the ghostty config is unquoted on purpose.**
+  `omarchy-font-set` only rewrites a *quoted* `font-family`, so leaving it bare
+  keeps chezmoi the source of truth for the terminal font (`omarchy font set`
+  will not change ghostty).
+- **`paranoid = true`** in the mise settings applies to Omarchy's `mise use -g`
+  installs too. It blocks short-name community-plugin installs and requires
+  project configs to be re-trusted when their contents change.
+- **`VISUAL=nvim`** (from `.chezmoitemplates/env-fish`) wins over Omarchy's
+  `EDITOR=omarchy-launch-editor --inline` in tools that prefer `VISUAL`. Omarchy's
+  own menu flows call `omarchy-launch-editor` directly, so they are unaffected.
+  `BROWSER` is deliberately never exported session-wide by Omarchy, and
+  omarchy-fish does not set it, so it is unset in fish sessions.
+
 ### Environment Variables
 
 Simple key-value environment variables (e.g., `VISUAL`, `HOMEBREW_NO_AUTO_UPDATE`) are centralized in template partials under `root/.chezmoitemplates/`. Each partial renders the same variables in the syntax for its target shell:
@@ -145,6 +200,7 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 - `root/.chezmoi.toml.tmpl` - Main chezmoi configuration with environment variables
 - `root/dot_gitconfig.tmpl` - Git configuration with conditional work includes
 - `root/dot_gitconfig-work.tmpl` - Work-specific git configuration
+- `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl` - mise tool pins and settings (a conf.d drop-in; see Tool Management)
 - `root/private_dot_config/fish/config.fish.tmpl` - Fish shell configuration
 - `root/dot_bashrc.tmpl` - Bash configuration (Homebrew, starship, mise, zoxide, mcfly)
 - `root/dot_zshrc.tmpl` - Zsh configuration

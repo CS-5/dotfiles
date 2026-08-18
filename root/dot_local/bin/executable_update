@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Update everything on this machine: system packages (apt/brew), mise,
+# Update everything on this machine: system packages (apt/pacman/brew), mise,
 # chezmoi, the dotfiles themselves, and mise-managed tools.
 #
 # Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
@@ -9,27 +9,36 @@ set -eufo pipefail
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
 
+# Omarchy owns system updates end to end: a libalpm hook aborts any direct
+# `pacman -Syu`, and its own entrypoint pairs the upgrade with a Snapper
+# snapshot, keyring refresh, migrations, AUR packages, and mise.
+is_omarchy() { command -v omarchy-update >/dev/null 2>&1; }
+
 # Everything lives inside main so bash parses the whole script before any of
 # it runs: `chezmoi update` below re-applies the dotfiles, which can rewrite
 # this very file mid-execution.
 main() {
-    step "Updating system packages"
-    case "$(uname -s)" in
-    Darwin)
-        brew update && brew upgrade
-        ;;
-    Linux)
-        if command -v apt-get >/dev/null 2>&1; then
-            sudo apt-get update && sudo apt-get upgrade -y
-        elif command -v pacman >/dev/null 2>&1; then
-            sudo pacman -Syu --noconfirm
-        fi
-        ;;
-    esac
+    if ! is_omarchy; then
+        step "Updating system packages"
+        case "$(uname -s)" in
+        Darwin)
+            brew update && brew upgrade
+            ;;
+        Linux)
+            if command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update && sudo apt-get upgrade -y
+            elif command -v pacman >/dev/null 2>&1; then
+                sudo pacman -Syu --noconfirm
+            fi
+            ;;
+        esac
 
-    if command -v mise >/dev/null 2>&1; then
-        step "Updating mise"
-        mise self-update --yes
+        if command -v mise >/dev/null 2>&1; then
+            step "Updating mise"
+            # Package-manager builds (Arch, Homebrew) disable self-update and
+            # exit nonzero; the step above already upgraded those.
+            mise self-update --yes || echo "mise self-update unavailable"
+        fi
     fi
 
     # Upgrade the chezmoi binary before pulling the dotfiles: newer templates
@@ -44,6 +53,14 @@ main() {
     if command -v mise >/dev/null 2>&1; then
         step "Upgrading mise tools"
         mise upgrade
+    fi
+
+    # Last on Omarchy, because it owns the reboot prompt: a confirmed reboot
+    # ends this script, and the dotfiles steps above must not be skipped by it.
+    # This also covers mise itself (the mise-bin package) and mise's tools.
+    if is_omarchy; then
+        step "Updating Omarchy and system packages"
+        omarchy-update -y
     fi
 
     step "Update complete"

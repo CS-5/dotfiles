@@ -1,0 +1,14 @@
+{{ if eq .chezmoi.os "windows" -}}
+# Windows half of run_once_before_00-migrate-mise-config.sh.tmpl: these dotfiles
+# used to own ~/.config/mise/config.toml and now ship
+# .config/mise/conf.d/10-dotfiles.toml instead. chezmoi does not delete a target
+# whose source file went away, and config.toml outranks conf.d, so a leftover
+# copy would keep winning. Only a config.toml that is recognisably the old
+# dotfiles one is moved aside; anything `mise use -g` wrote must survive.
+$config = Join-Path $HOME ".config" "mise" "config.toml"
+if ((Test-Path -LiteralPath $config) -and
+    (Select-String -LiteralPath $config -Pattern '^minimum_release_age = ' -Quiet)) {
+    Move-Item -LiteralPath $config -Destination "$config.pre-conf.d.bak" -Force
+    Write-Host "Moved former dotfiles mise config to $config.pre-conf.d.bak"
+}
+{{- end }}

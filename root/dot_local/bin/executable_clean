@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Prune old and unused packages left behind by `update`: orphaned system
-# packages and package caches (apt/brew), and mise tool versions no longer
-# referenced by any config, plus mise's download cache.
+# packages and package caches (apt/pacman/brew), and mise tool versions no
+# longer referenced by any config, plus mise's download cache.
 #
 # Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
 
@@ -30,8 +30,16 @@ Linux)
             # shellcheck disable=SC2086 # orphan names are word-split on purpose
             sudo pacman -Rns --noconfirm $orphans
         fi
-        # Drop cached packages for anything no longer installed.
-        sudo pacman -Sc --noconfirm
+        # Omarchy treats the package cache as its only offline downgrade path
+        # and trims it to two versions per package rather than emptying it
+        # (omarchy-update-pkg-prune); paccache trims to the same depth.
+        # Elsewhere, drop cached packages for anything no longer installed.
+        if command -v omarchy-update >/dev/null 2>&1 &&
+            command -v paccache >/dev/null 2>&1; then
+            sudo paccache -rk2
+        else
+            sudo pacman -Sc --noconfirm
+        fi
     fi
     ;;
 esac

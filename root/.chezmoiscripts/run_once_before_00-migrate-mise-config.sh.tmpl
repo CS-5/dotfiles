@@ -1,0 +1,23 @@
+{{ if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+
+# One-time migration: these dotfiles used to own ~/.config/mise/config.toml and
+# now ship .config/mise/conf.d/10-dotfiles.toml instead. chezmoi does not delete
+# a target whose source file went away, and config.toml *outranks* conf.d, so a
+# leftover copy would keep winning with whatever versions it was last applied
+# with.
+#
+# Only a config.toml that is recognisably the old dotfiles one is moved aside:
+# on Omarchy that file belongs to `mise use -g` (its lazy tool stubs write
+# there), and it must survive untouched. Renamed rather than deleted — mise
+# reads a fixed set of filenames, so the backup is inert but recoverable.
+
+set -eufo pipefail
+
+config="{{ .chezmoi.homeDir }}/.config/mise/config.toml"
+
+if [[ -f $config ]] && grep -q '^minimum_release_age = ' "$config"; then
+    mv -- "$config" "$config.pre-conf.d.bak"
+    echo "Moved former dotfiles mise config to $config.pre-conf.d.bak"
+fi
+{{- end }}
