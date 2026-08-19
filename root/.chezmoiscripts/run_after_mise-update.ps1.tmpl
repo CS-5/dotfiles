@@ -1,7 +1,17 @@
 {{ if eq .chezmoi.os "windows" -}}
 if (Get-Command mise -ErrorAction SilentlyContinue) {
+    # See run_after_mise-update.sh.tmpl: a package-managed mise (scoop, winget,
+    # chocolatey) has self-update disabled and exits nonzero. mise prints its
+    # own reason; don't fail the apply over it.
     mise self-update --yes --quiet > $null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "mise self-update skipped (unavailable for this install, or it failed)"
+    }
 } else {
     Write-Host "mise not found, skipping update"
 }
+
+# Without this the script's exit code follows the last native command, which
+# would fail the apply on a self-update that was never going to be possible.
+exit 0
 {{- end }}
