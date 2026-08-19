@@ -29,7 +29,10 @@ main() {
 
     if command -v mise >/dev/null 2>&1; then
         step "Updating mise"
-        mise self-update --yes
+        # A package-managed mise (Homebrew, Arch, distro packages) has
+        # self-update disabled and exits nonzero; the system-package step above
+        # is what updates those. See .chezmoiscripts/run_after_mise-update.sh.
+        mise self-update --yes || echo "mise self-update skipped"
     fi
 
     # Upgrade the chezmoi binary before pulling the dotfiles: newer templates

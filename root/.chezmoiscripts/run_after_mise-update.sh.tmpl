@@ -6,5 +6,20 @@ if ! command -v mise >/dev/null 2>&1; then
     exit 0
 fi
 
-mise self-update --yes --quiet >/dev/null
+# Not every mise is ours to replace:
+#
+#   - Packagers can disable self-update so that mise is updated through the
+#     package manager instead. Those builds ship a marker file and exit nonzero
+#     with "mise is installed via a package manager, cannot update" — Homebrew,
+#     Arch's mise, Omarchy's mise-bin, distro packages generally.
+#   - A root-owned mise (an image that installs it system-wide at build time)
+#     cannot be replaced by an unprivileged user either.
+#
+# Neither case is detected up front on purpose: which paths carry the disable
+# marker is mise's own business, and a plain network failure shouldn't fail an
+# apply either. Keeping mise current is a convenience here, so a failure is
+# reported and stepped over. mise prints its own reason on stderr.
+if ! mise self-update --yes --quiet >/dev/null; then
+    echo "mise self-update skipped (unavailable for this install, or it failed)"
+fi
 {{- end }}
