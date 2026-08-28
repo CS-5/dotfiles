@@ -3,7 +3,13 @@
 # One-line JSON summary of the dotfiles' state, shared by the carson.dotfiles
 # bar widget, the Omarchy menu's Dotfiles submenu, and dotfiles-sync.
 #
-#   {"applyNeeded":3,"localEdits":1,"behind":2,"ahead":0,"uncommitted":4,"ok":true}
+#   {"applyNeeded":3,"localEdits":1,"behind":2,"ahead":0,"uncommitted":4,
+#    "ok":true,"files":[{"path":".config/hypr/input.lua","status":"MM",
+#                        "added":12,"removed":3}]}
+#
+# "files" lists what an apply would change, newest information first for the bar
+# widget's tooltip. Counts come from a single `chezmoi diff` (~60ms here, and
+# binaries are summarized rather than embedded, so it stays small).
 #
 # Three hard rules, because a bar widget polls this unattended:
 #   - never prompt (a credential prompt would hang the shell's Process forever)
@@ -36,9 +42,11 @@ behind=0
 ahead=0
 ok=true
 
+files_json="[]"
+
 emit() {
-    printf '{"applyNeeded":%d,"localEdits":%d,"behind":%d,"ahead":%d,"uncommitted":%d,"ok":%s}\n' \
-        "$apply_needed" "$local_edits" "$behind" "$ahead" "$uncommitted" "$ok"
+    printf '{"applyNeeded":%d,"localEdits":%d,"behind":%d,"ahead":%d,"uncommitted":%d,"ok":%s,"files":%s}\n' \
+        "$apply_needed" "$local_edits" "$behind" "$ahead" "$uncommitted" "$ok" "$files_json"
     exit 0
 }
 
@@ -51,15 +59,75 @@ command -v chezmoi >/dev/null 2>&1 || {
 # having changed out from under chezmoi since it last wrote it (an Omarchy
 # migration, `omarchy refresh`, a hand edit), column 2 is the source state being
 # ahead of the target (an apply would change something).
+declare -A status_code=()
 if status="$(chezmoi status 2>/dev/null)"; then
     while IFS= read -r line; do
         [[ -n $line ]] || continue
+        # Scripts are reported as a run ('R' in column 2) rather than a file
+        # change. They are not drift and there is nothing to show a diff for.
+        [[ ${line:3} == .chezmoiscripts/* ]] && continue
         [[ ${line:0:1} != " " ]] && ((++local_edits))
         [[ ${line:1:1} != " " ]] && ((++apply_needed))
+        status_code["${line:3}"]="${line:0:2}"
     done <<<"$status"
 else
     ok=false
 fi
+
+# Per-file added/removed line counts, from one `chezmoi diff`. Parsed here
+# rather than shelled out to git, so this works outside a work tree and cannot
+# be tripped by a patch git declines to apply.
+build_files_json() {
+    local diff_out
+    diff_out="$(chezmoi diff 2>/dev/null)" || return 1
+    [[ -n $diff_out ]] || return 0
+
+    local counts
+    # Only lines inside a hunk are counted. Matching on "^--- " instead would
+    # misread a removed Lua comment ("-- three-finger swipe") as a diff header,
+    # and the Hyprland configs are full of those.
+    counts="$(awk '
+        /^diff --git a\// {
+            path = $3; sub(/^a\//, "", path)
+            order[++n] = path
+            in_hunk = 0
+            next
+        }
+        # Binary payloads are summarized by chezmoi, not embedded, so there are
+        # no +/- lines to count for them.
+        /^Binary files / { binary[path] = 1; next }
+        # A directory is a mode 40xxx entry. Creating one is a real change, but
+        # it has no line diff and listing it only pushes real files out of the
+        # tooltip, so drop it from the list.
+        /^(new|deleted) file mode 40[0-7][0-7][0-7]$/ { isdir[path] = 1; next }
+        /^@@ / { in_hunk = 1; next }
+        !in_hunk { next }
+        /^\+/ { added[path]++ ; next }
+        /^-/  { removed[path]++ }
+        END {
+            for (i = 1; i <= n; i++) {
+                p = order[i]
+                if (seen[p]++ || isdir[p]) continue
+                printf "%s\t%d\t%d\t%d\n", p, added[p] + 0, removed[p] + 0, binary[p] + 0
+            }
+        }
+    ' <<<"$diff_out")"
+
+    local json="" path added removed binary code sep=""
+    while IFS=$'\t' read -r path added removed binary; do
+        [[ -n $path ]] || continue
+        [[ $path == .chezmoiscripts/* ]] && continue
+        code="${status_code[$path]:-  }"
+        # Escape the two characters that can appear in a path and break JSON.
+        path="${path//\\/\\\\}"
+        path="${path//\"/\\\"}"
+        json+="${sep}{\"path\":\"${path}\",\"status\":\"${code}\",\"added\":${added},\"removed\":${removed},\"binary\":$([[ $binary == 1 ]] && echo true || echo false)}"
+        sep=","
+    done <<<"$counts"
+    files_json="[${json}]"
+}
+
+build_files_json || ok=false
 
 if porcelain="$(chezmoi git -- status --porcelain 2>/dev/null)"; then
     [[ -n $porcelain ]] && uncommitted="$(grep -c '^' <<<"$porcelain")"

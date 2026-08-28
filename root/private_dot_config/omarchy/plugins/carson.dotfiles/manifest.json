@@ -19,7 +19,8 @@
     "allowMultiple": false,
     "defaultSection": "center",
     "defaults": {
-      "refreshIntervalSec": 1800
+      "refreshIntervalSec": 1800,
+      "tooltipFiles": 8
     },
     "schema": [
       {
@@ -31,6 +32,16 @@
         "step": 60,
         "defaultValue": 1800,
         "description": "How often to re-check status. Each check contacts the git remote."
+      },
+      {
+        "key": "tooltipFiles",
+        "type": "integer",
+        "label": "Files listed in the tooltip",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+        "defaultValue": 8,
+        "description": "How many changed files to name before collapsing the rest into a count. 0 hides the list."
       }
     ]
   }

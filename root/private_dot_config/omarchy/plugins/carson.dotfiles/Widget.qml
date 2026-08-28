@@ -23,6 +23,8 @@ BarWidget {
   property int uncommitted: 0
   property bool ok: true
   property bool loaded: false
+  // [{path, status, added, removed, binary}] -- what an apply would change.
+  property var files: []
 
   readonly property string glyph: "󰊢"
 
@@ -49,15 +51,38 @@ BarWidget {
     return root.vertical ? badge : glyph + "  " + badge
   }
 
+  // How many files to name before collapsing the rest into a count.
+  readonly property int fileLimit: Math.max(0, root.setting("tooltipFiles", 8))
+
+  function describeFile(f) {
+    var change = f.binary ? "(binary)"
+      : "+" + (f.added || 0) + " -" + (f.removed || 0)
+    // Column 1 of `chezmoi status`: the target changed after chezmoi last
+    // wrote it. Worth calling out inline, since those are the ones an apply
+    // will refuse to overwrite.
+    var mark = (f.status && f.status.charAt(0) !== " ") ? "! " : "  "
+    return mark + f.path + "   " + change
+  }
+
   readonly property string tooltip: {
     var lines = []
-    if (localEdits > 0) lines.push(localEdits + " target(s) changed outside chezmoi — needs a decision")
+    if (localEdits > 0) lines.push(localEdits + " changed outside chezmoi — needs a decision")
     if (applyNeeded > 0) lines.push(applyNeeded + " pending apply")
     if (behind > 0) lines.push(behind + " commit(s) behind")
     if (ahead > 0) lines.push(ahead + " commit(s) ahead")
     if (uncommitted > 0) lines.push(uncommitted + " uncommitted change(s)")
     if (!ok) lines.push("(status may be stale — could not reach the remote)")
     if (lines.length === 0) lines.push("Dotfiles are in step")
+
+    var list = root.files || []
+    if (list.length > 0 && root.fileLimit > 0) {
+      lines.push("")
+      for (var i = 0; i < list.length && i < root.fileLimit; i++)
+        lines.push(root.describeFile(list[i]))
+      if (list.length > root.fileLimit)
+        lines.push("  … and " + (list.length - root.fileLimit) + " more")
+    }
+
     lines.push("")
     lines.push("Left: open sync menu · Right: pull & apply · Middle: refresh")
     return lines.join("\n")
@@ -76,6 +101,7 @@ BarWidget {
       root.ahead = d.ahead || 0
       root.uncommitted = d.uncommitted || 0
       root.ok = d.ok === true
+      root.files = Array.isArray(d.files) ? d.files : []
       root.loaded = true
     } catch (e) {
       console.warn("carson.dotfiles: could not parse dotfiles-status output:", e)
