@@ -9,6 +9,12 @@ set -eufo pipefail
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
 
+# Omarchy routes every system update through `omarchy update`, and enforces it:
+# a libalpm hook (00-omarchy-update-guard) aborts any direct `pacman -Syu`.
+is_omarchy() {
+    [[ -r /etc/os-release ]] && grep -q '^ID=omarchy$' /etc/os-release
+}
+
 # Everything lives inside main so bash parses the whole script before any of
 # it runs: `chezmoi update` below re-applies the dotfiles, which can rewrite
 # this very file mid-execution.
@@ -19,7 +25,13 @@ main() {
         brew update && brew upgrade
         ;;
     Linux)
-        if command -v apt-get >/dev/null 2>&1; then
+        if is_omarchy; then
+            # Hand the whole step over: `omarchy update` takes a snapshot,
+            # refreshes keyrings, upgrades packages, runs its migrations and
+            # post-update hooks, and owns the restart prompt. A bare
+            # `pacman -Syu` here is refused by Omarchy's libalpm guard hook.
+            omarchy update -y
+        elif command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update && sudo apt-get upgrade -y
         elif command -v pacman >/dev/null 2>&1; then
             sudo pacman -Syu --noconfirm
@@ -37,13 +49,26 @@ main() {
 
     # Upgrade the chezmoi binary before pulling the dotfiles: newer templates
     # may require a newer chezmoi (.chezmoiversion).
+    #
+    # `chezmoi upgrade` replaces the binary in place, so it only works on a copy
+    # this user owns. A package-managed chezmoi (Omarchy and Arch install it
+    # from extra/, Homebrew from its own prefix) is root-owned and updated by
+    # the system-package step above -- same reasoning as the mise step. Testing
+    # writability rather than the distro covers every packager at once.
     step "Updating chezmoi"
-    chezmoi upgrade
+    chezmoi_bin="$(command -v chezmoi)"
+    if [[ -w $chezmoi_bin ]]; then
+        chezmoi upgrade
+    else
+        echo "chezmoi is package-managed ($chezmoi_bin), updated with system packages"
+    fi
 
     step "Pulling latest dotfiles and applying"
     chezmoi update
 
     # After the pull: the applied mise config may pin newer tool versions.
+    # On Omarchy `omarchy update` has already run `mise up`, but that was before
+    # the pull, so a freshly pulled pin still needs this.
     if command -v mise >/dev/null 2>&1; then
         step "Upgrading mise tools"
         mise upgrade

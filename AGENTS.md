@@ -19,7 +19,7 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_local/bin/`), so one bash implementation serves fish, bash, and zsh. Not applied on Windows (ignored via `.chezmoiignore.tmpl`):
 
-- `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins. The mise step is skipped over when mise is package-managed — the system-package step above already covered it
+- `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS, `omarchy update -y` on Omarchy), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins. The mise step is skipped over when mise is package-managed — the system-package step above already covered it. `chezmoi upgrade` is likewise skipped when the binary is not writable by the user, which is the real precondition for an in-place self-upgrade and covers every packager (Omarchy/Arch `extra/`, Homebrew) at once
 - `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache
 - `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
 
@@ -52,6 +52,16 @@ Two data flags are derived from the machine itself rather than from env vars:
 Omarchy provisions `$HOME` on first run and keeps it current through migrations, so the governing rule is: **only manage a file that differs from its `$OMARCHY_PATH/config` default.** A file that matches the default is left to Omarchy, which keeps its own tooling (`omarchy font set`, `omarchy refresh`, the theme system) working with zero drift. `~/.config/ghostty/config` is managed on other platforms but deliberately ignored on Omarchy for exactly this reason.
 
 Every Omarchy-only path is listed in one block in `.chezmoiignore.tmpl` so the rule stays auditable, and every Omarchy-only script in `.chezmoiscripts/` opens with `{{ if .isOmarchy -}}` so it renders empty elsewhere (the same pattern as the existing Windows guards).
+
+Things worth knowing before changing anything here:
+
+- **Never `pacman -Syu`.** Omarchy's `00-omarchy-update-guard` libalpm hook aborts any direct system upgrade. `update` hands the whole step to `omarchy update -y`, and `install.sh` bootstraps with `omarchy pkg add` (which installs only what is missing and needs no `-Syu`).
+- **mise wrappers.** Omarchy's first run provisions ~13 wrappers in `~/.local/bin` via `omarchy mise install`; each runs `mise use -g <tool>` on *every invocation*, rewriting `~/.config/mise/config.toml`. That file is Omarchy's — the dotfiles use `conf.d/10-dotfiles.toml` instead. `env-bootstrap` also puts the mise shim dir on PATH, so a tool declared to mise is served by its shim regardless of what sits in `~/.local/bin`.
+- **Compile before files.** `run_before_*` scripts run before chezmoi writes anything, so anything that can fail a build belongs there: a failed compile then aborts the apply with nothing half-written. `run_before` scripts cannot read `~/.local/src`, which chezmoi has not written yet — build from `{{ .chezmoi.sourceDir }}` instead.
+- **Privilege escalation** in scripts: `sudo` when there is a TTY, `pkexec` otherwise (an apply triggered from the bar widget has no terminal, and Omarchy's polkit agent puts up a dialog). Always compare before escalating so a no-op apply never prompts.
+- **`/etc`** is out of chezmoi's reach ($HOME only). Root-owned files live in `system/etc/` at the repo root and are installed by `run_onchange_after_05-omarchy-etc.sh.tmpl`.
+- **Third-party plugins and packages** are declared in `root/.chezmoidata/omarchy.toml` and installed by `run_before_00-omarchy-packages.sh.tmpl`. See the manifest's own header comment.
+- **The sync widget.** `carson.dotfiles` surfaces chezmoi drift on the bar. Its data comes from `dotfiles-status`, which is also what `dotfiles-sync` and the menu's Dotfiles submenu read, so the three cannot disagree. The distinction that matters: `chezmoi status` column 2 is a pending apply, column 1 is a target edited *outside* chezmoi (an Omarchy migration, `omarchy refresh`, a hand edit) which chezmoi will not overwrite unprompted — that is the state the widget colours urgent.
 
 ### Identity System
 

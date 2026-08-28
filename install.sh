@@ -28,6 +28,15 @@ if [[ -n "${REMOTE_CONTAINERS_IPC:-}" || "${USER:-}" == "vscode" || "${CODESPACE
     IS_DC=true
 fi
 
+# Omarchy (ID=omarchy in /etc/os-release) provides several of the things this
+# script would otherwise install, and blocks others outright: a libalpm hook
+# refuses any direct `pacman -Syu`. Matches the isOmarchy flag the chezmoi
+# templates key on.
+IS_OMARCHY=false
+if [[ -r /etc/os-release ]] && grep -q '^ID=omarchy$' /etc/os-release; then
+    IS_OMARCHY=true
+fi
+
 # Work identity is detected from ~/work.email at chezmoi render time. Pass
 # --work-email to write that file here (non-interactive provisioning); leave it
 # unset to keep any existing ~/work.email (no file => personal identity).
@@ -70,7 +79,11 @@ export PATH="$HOME/.local/bin:$PATH"
 show_progress "Installing bootstrap dependencies"
 # Same package names in Debian/Ubuntu and Arch repos.
 BOOTSTRAP_PKGS=(curl git wget unzip gnupg fish neovim)
-if command -v apt-get >/dev/null 2>&1; then
+if [[ "$IS_OMARCHY" == "true" ]]; then
+    # `omarchy pkg add` installs only what is missing, and avoids the -Syu that
+    # Omarchy's libalpm update-guard hook aborts.
+    omarchy pkg add "${BOOTSTRAP_PKGS[@]}"
+elif command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update
     sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}"
 elif command -v pacman >/dev/null 2>&1; then
@@ -109,6 +122,17 @@ if [[ "$IS_DC" != "true" ]]; then
     log_success "Signing key ready"
 fi
 
+#### Chezmoi ####
+# On Omarchy, take chezmoi from the repos rather than the curl installer, so it
+# is upgraded by `omarchy update` along with everything else (extra/ carries
+# 2.72, comfortably past .chezmoiversion). install-dotfiles.sh only fetches a
+# binary when chezmoi is absent, so putting it on PATH here is enough.
+if [[ "$IS_OMARCHY" == "true" ]] && ! command -v chezmoi >/dev/null 2>&1; then
+    show_progress "Installing chezmoi from the Arch repos"
+    omarchy pkg add chezmoi
+    log_success "chezmoi installed"
+fi
+
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
 if [[ -n "$WORK_EMAIL" ]]; then
@@ -128,8 +152,16 @@ fi
 log_success "Shell setup complete"
 
 #### Claude Code ####
-show_progress "Installing Claude Code"
-curl -fsSL https://claude.ai/install.sh | bash
-log_success "Claude Code installed"
+# Omarchy owns Claude Code there: its first-run provisions a mise wrapper
+# (`omarchy mise install claude`) backed by ~/.config/mise/config.toml, and the
+# mise shims sit ahead of ~/.local/bin on PATH. The native installer would drop
+# a second copy that the shim shadows anyway.
+if [[ "$IS_OMARCHY" == "true" ]]; then
+    log_info "Skipping the Claude Code installer: Omarchy manages it through mise"
+else
+    show_progress "Installing Claude Code"
+    curl -fsSL https://claude.ai/install.sh | bash
+    log_success "Claude Code installed"
+fi
 
 log_success "Setup complete"
