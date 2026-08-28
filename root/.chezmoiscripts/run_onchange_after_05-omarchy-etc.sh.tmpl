@@ -1,0 +1,39 @@
+{{ if and .isOmarchy .isThinkPad -}}
+#!/bin/bash
+
+# Install the root-owned files under system/etc/. chezmoi only manages $HOME,
+# so these live outside root/ and are placed here instead.
+#
+# The content is embedded below rather than read from the source tree, so this
+# works the same whether or not the source directory is still around.
+#
+# etc-hash: {{ include (joinPath .chezmoi.sourceDir "../system/etc/modprobe.d/99-thinkpad-touchpad.conf") | sha256sum }}
+
+set -euo pipefail
+
+target=/etc/modprobe.d/99-thinkpad-touchpad.conf
+staged="$(mktemp)"
+trap 'rm -f "$staged"' EXIT
+
+cat >"$staged" <<'CONF'
+{{ include (joinPath .chezmoi.sourceDir "../system/etc/modprobe.d/99-thinkpad-touchpad.conf") -}}
+CONF
+
+# Only escalate when something actually differs -- an unchanged apply should
+# never put up a password prompt.
+if cmp -s "$staged" "$target" 2>/dev/null; then
+    exit 0
+fi
+
+# A visible terminal can take a password; an apply triggered from the bar
+# widget cannot, and Omarchy's polkit agent puts up a dialog for pkexec.
+if [[ -t 0 ]]; then
+    escalate=(sudo)
+else
+    escalate=(pkexec)
+fi
+
+echo "etc: installing $target"
+"${escalate[@]}" install -Dm644 "$staged" "$target"
+echo "etc: $target updated -- reboot for the touchpad to switch transport"
+{{ end -}}

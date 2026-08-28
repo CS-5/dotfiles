@@ -1,0 +1,23 @@
+[Unit]
+Description=macOS-style keyboard backlight (on while typing, off when idle or lid closed)
+Documentation=file:%h/.local/src/kbd-backlight-auto/kbd-backlight-auto.c
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/kbd-backlight-auto
+Restart=always
+RestartSec=2
+
+# Seconds of no typing before the light drops, and the level used before one has
+# ever been chosen (0-2 on this panel). After that, Fn+Space owns the level and
+# the daemon persists whatever you pick to ~/.local/state/kbd-backlight/level.
+Environment=KBD_BACKLIGHT_IDLE=8
+Environment=KBD_BACKLIGHT_LEVEL=1
+
+# It reads two evdev nodes and writes one sysfs attribute. ProtectHome is off
+# deliberately: the daemon persists the chosen level under ~/.local/state.
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=default.target

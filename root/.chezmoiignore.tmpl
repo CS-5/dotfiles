@@ -41,8 +41,6 @@ Library
 {{- if not .isOmarchy }}
 .config/hypr
 .config/omarchy
-.config/systemd
-.local/src
 {{- else }}
 {{/* ~/.config/ghostty/config on this machine is byte-identical to Omarchy's
      default. Leaving it unmanaged keeps `omarchy font set` (which rewrites
@@ -54,6 +52,14 @@ Library
 .config/sh/rc.d/41-mise.sh
 .config/sh/rc.d/42-zoxide.sh
 .config/sh/rc.d/70-history.sh
+{{- end }}
+
+{{/* Hardware-specific: the keyboard-backlight daemon and its user unit. Gated
+     on the machine, not the distro, so a future Omarchy desktop doesn't get a
+     laptop keyboard-LED service. */}}
+{{- if not (and .isOmarchy .isThinkPad) }}
+.config/systemd
+.local/src
 {{- end }}
 
 {{- if .isPersonal }}

@@ -1,0 +1,30 @@
+{{ if and .isOmarchy .isThinkPad -}}
+#!/bin/bash
+
+# Compile the keyboard-backlight daemon before any file is applied.
+#
+# This is a run_before on purpose: if the C source stops compiling, the apply
+# aborts here with nothing half-written, rather than after the unit file has
+# already been replaced. gcc and make are present on every Omarchy install
+# (base-devel).
+#
+# The build runs out of a temporary copy of the source rather than out of
+# ~/.local/src, because run_before scripts execute before chezmoi has written
+# that directory -- on a fresh machine it does not exist yet.
+#
+# source-hash: {{ include (joinPath .chezmoi.sourceDir "dot_local/src/kbd-backlight-auto/kbd-backlight-auto.c") | sha256sum }}
+# makefile-hash: {{ include (joinPath .chezmoi.sourceDir "dot_local/src/kbd-backlight-auto/Makefile") | sha256sum }}
+
+set -euo pipefail
+
+src={{ joinPath .chezmoi.sourceDir "dot_local/src/kbd-backlight-auto" | quote }}
+build="$(mktemp -d)"
+trap 'rm -rf "$build"' EXIT
+
+cp "$src"/kbd-backlight-auto.c "$src"/Makefile "$build/"
+make -C "$build" install PREFIX="$HOME/.local"
+
+# No-op until 06-systemd-user has enabled the unit (first run); afterwards this
+# is what picks up a newly built binary.
+systemctl --user try-restart kbd-backlight-auto.service 2>/dev/null || true
+{{ end -}}
