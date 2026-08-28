@@ -122,6 +122,7 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
+- `run_onchange_after_08-fish-plugins.sh.tmpl` - Runs `fundle install` for the plugins declared in `config.fish`, re-running when that list changes. It lives here rather than in `install.sh` so macOS — which applies chezmoi directly with no bootstrap script — gets fish plugins too; previously they silently never installed there. Note that **the per-host signing key cannot move here**: `gitSigningKeyFile` is resolved when `.chezmoi.toml.tmpl` renders, which happens at `chezmoi init`, before any script runs. It stays in `install.sh`, and macOS is documented to run `scripts/generate-signing-key.sh` beforehand
 
 ### Claude Plugin Management
 

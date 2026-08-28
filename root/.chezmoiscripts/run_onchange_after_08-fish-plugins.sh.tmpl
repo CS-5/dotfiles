@@ -1,0 +1,35 @@
+{{ if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+
+# Install the fish plugins declared in config.fish (via fundle).
+#
+# This lives here rather than in install.sh so that every platform gets it.
+# install.sh is Linux-only, so on macOS -- which applies chezmoi directly --
+# `fundle install` was never run at all and the plugins listed in config.fish
+# silently never appeared.
+#
+# Re-runs whenever the plugin list changes, since that list lives in the fish
+# config itself:
+# fish config hash: {{ include "private_dot_config/fish/config.fish.tmpl" | sha256sum }}
+
+set -uo pipefail
+
+if ! command -v fish >/dev/null 2>&1; then
+    echo "fish not found, skipping plugin install"
+    exit 0
+fi
+
+# fundle is vendored to fish/functions/fundle.fish, which chezmoi has written by
+# the time an after-script runs — but not on a machine where .config/fish is
+# ignored, so check rather than assume.
+if [[ ! -f "{{ .chezmoi.homeDir }}/.config/fish/functions/fundle.fish" ]]; then
+    echo "fundle not present, skipping plugin install"
+    exit 0
+fi
+
+# Cloning plugins needs the network. A failure here should not abort an apply
+# that has otherwise succeeded; the next apply retries.
+if ! fish -c "fundle install" 2>&1; then
+    echo "[WARN] fundle install failed (offline?); plugins will retry on the next apply" >&2
+fi
+{{ end -}}

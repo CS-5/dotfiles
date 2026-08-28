@@ -143,8 +143,11 @@ fi
 log_success "Dotfiles installed and applied"
 
 #### Shell ####
+# Fish plugins are installed by .chezmoiscripts/run_onchange_after_08-fish-plugins.sh,
+# which just ran as part of the apply above — it lives there rather than here so
+# that macOS, which applies chezmoi directly with no bootstrap script, gets them
+# too.
 show_progress "Setting up shell"
-fish -c "fundle install"
 if [[ "${SHELL:-}" != *"fish"* ]]; then
     log_info "Changing default shell to fish"
     sudo chsh -s "$(which fish)" "${USER:-$(id -un)}"

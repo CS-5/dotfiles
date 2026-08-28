@@ -56,6 +56,17 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply CS-5
 iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 ```
 
+Everything the dotfiles can do for themselves happens during that apply — mise
+tools, fish plugins, completions, Claude Code and its plugins. Two things a
+bootstrap script does on Linux have no equivalent here:
+
+- **A per-host signing key.** Without one, commits sign through the SSH agent
+  using the committed public key, which works. To get a key on disk instead,
+  run `scripts/generate-signing-key.sh` **before** `chezmoi init` — the key path
+  is read when the config template renders, so generating it afterwards has no
+  effect until the next `chezmoi init`.
+- **Making fish the login shell** (`chsh -s $(which fish)` on macOS).
+
 ## Commit signing
 
 Commits are signed with an SSH key. The signing **public** key is baked into the
