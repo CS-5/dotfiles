@@ -1,0 +1,9 @@
+# Load PowerShell drop-ins. Mirrors ~/.config/sh/rc.d for bash and zsh: every
+# piece of this configuration is one numbered file, so this profile stays a
+# loader that never needs to change again.
+$rcDir = Join-Path $HOME ".config" "pwsh" "rc.d"
+if (Test-Path $rcDir) {
+    foreach ($rc in Get-ChildItem -Path $rcDir -Filter *.ps1 | Sort-Object Name) {
+        . $rc.FullName
+    }
+}

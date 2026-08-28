@@ -19,6 +19,7 @@ Library
 {{- else }}
 Documents
 AppData
+.config/pwsh
 
 {{- if .isMac }}
 .config/pnpm
@@ -48,8 +49,8 @@ Library
 .config/ghostty
 {{/* Omarchy's default/bash/rc already activates each of these, and sets its own
      history sizes. Ours would be a redundant second activation per shell. */}}
+.config/sh/rc.d/25-mise.sh
 .config/sh/rc.d/40-starship.sh
-.config/sh/rc.d/41-mise.sh
 .config/sh/rc.d/42-zoxide.sh
 .config/sh/rc.d/70-history.sh
 {{- end }}

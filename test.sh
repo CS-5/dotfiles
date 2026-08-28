@@ -215,6 +215,42 @@ stage_lint() {
         fi
     fi
 
+    # PowerShell has no shellcheck equivalent, but its own parser will reject a
+    # syntax error, which is the failure mode that matters for files nothing on
+    # this machine ever loads. GitHub's ubuntu and macos runners ship pwsh.
+    if ! command -v pwsh >/dev/null 2>&1; then
+        skip "pwsh not installed (PowerShell files unchecked)"
+    else
+        local config ps rendered_ps
+        config="$(base_config)" || config=""
+        for ps in "$SOURCE_DIR"/private_dot_config/pwsh/rc.d/*.ps1 \
+            "$SOURCE_DIR"/.chezmoiscripts/*.ps1.tmpl \
+            "$SOURCE_DIR"/private_dot_config/pwsh/rc.d/*.ps1.tmpl \
+            "$SOURCE_DIR"/Documents/PowerShell/*.ps1.tmpl; do
+            [[ -f $ps ]] || continue
+            if [[ $ps == *.tmpl ]]; then
+                [[ -n $config ]] || continue
+                rendered_ps="$TMPROOT/$(basename "$ps" .tmpl)"
+                # Windows-guarded scripts render empty off Windows, so ask for
+                # the Windows branch by overriding the os the templates read.
+                chezmoi execute-template --config="$config" --source="$SOURCE_DIR" \
+                    <"$ps" >"$rendered_ps" 2>/dev/null
+                [[ -s $rendered_ps ]] || continue
+                ps="$rendered_ps"
+            fi
+            if out=$(pwsh -NoProfile -Command "
+                \$ErrorActionPreference = 'Stop'
+                \$tokens = \$null; \$errors = \$null
+                [System.Management.Automation.Language.Parser]::ParseFile('$ps', [ref]\$tokens, [ref]\$errors) | Out-Null
+                if (\$errors) { \$errors | ForEach-Object { \$_.ToString() }; exit 1 }
+            " 2>&1); then
+                pass
+            else
+                fail "pwsh parse ${ps#"$SCRIPT_DIR"/}" "$out"
+            fi
+        done
+    fi
+
     if ! command -v shfmt >/dev/null 2>&1; then
         skip "shfmt not installed (mise install shfmt)"
     else

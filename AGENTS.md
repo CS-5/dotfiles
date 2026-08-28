@@ -25,7 +25,9 @@ Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_
 
 - `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins. On Omarchy the system-package step is `omarchy update -y` and it runs **last** instead of first: that command ends in a `gum confirm` reboot prompt which `-y` does not suppress (it exports `OMARCHY_UPDATE_UNATTENDED`, which nothing reads), so going first meant a kernel upgrade could reboot the machine before the dotfiles were ever pulled. The mise step is skipped over when mise is package-managed — the system-package step above already covered it. `chezmoi upgrade` is likewise skipped when the binary is not writable by the user, which is the real precondition for an in-place self-upgrade and covers every packager (Omarchy/Arch `extra/`, Homebrew) at once
 - `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache. On Omarchy both package steps differ and the difference is destructive if ignored — see the Omarchy notes below
-- `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
+- `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect
+
+Windows gets all three as PowerShell functions in `pwsh/rc.d/60-commands.ps1`, because `.chezmoiignore` drops `.local/bin` there (those are bash scripts). Without them a Windows machine has no way to update itself.
 
 ## Architecture
 
@@ -163,12 +165,19 @@ numbered file per concern, loaded in sorted order, from a predictable location.
 | Consumer | Drop-in directory | Loaded by |
 | --- | --- | --- |
 | bash, zsh | `~/.config/sh/rc.d/*.sh` | a four-line loop in `~/.bashrc` / `~/.zshrc` (partial: `.chezmoitemplates/shell-rcd`) |
+| PowerShell | `~/.config/pwsh/rc.d/*.ps1` | the same loop in `Microsoft.PowerShell_profile.ps1` (partial: `.chezmoitemplates/pwsh-rcd`) |
 | fish | `~/.config/fish/conf.d/*.fish` | fish, natively |
 | mise | `~/.config/mise/conf.d/*.toml` | mise, natively |
 | systemd (user) | `~/.config/systemd/user/` | systemd, natively |
 
-`~/.bashrc` and `~/.zshrc` are therefore **thin loaders that should not need to
-change again**. Everything shell-agnostic lives in `root/private_dot_config/sh/rc.d/`,
+The numbering is shared across shells, and one position in it is load-bearing:
+**`25-mise` runs before every tool activation**, because starship, zoxide and
+mcfly can all be mise-managed and mise's shim directory is not on PATH until it
+runs. Probing for them first silently skips their setup on a host where mise is
+the only thing providing them.
+
+`~/.bashrc`, `~/.zshrc` and the PowerShell profile are therefore **thin loaders
+that should not need to change again**. Everything shell-agnostic lives in `root/private_dot_config/sh/rc.d/`,
 where `00-shell.sh` sets `DOTFILES_SHELL` (`bash`|`zsh`) and later files use it
 to pick the right argument for `starship init`, `mise activate` and friends. One
 drop-in per concern is what lets a single `.chezmoiignore` line disable exactly
