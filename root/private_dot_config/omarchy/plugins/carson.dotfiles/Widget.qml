@@ -14,7 +14,8 @@ BarWidget {
   id: root
   moduleName: "carson.dotfiles"
 
-  // Straight from dotfiles-status. -1 for "not yet asked".
+  // Straight from dotfiles-status; `loaded` distinguishes "all zero" from
+  // "not asked yet", which is what keeps the widget hidden on first paint.
   property int applyNeeded: 0
   property int localEdits: 0
   property int behind: 0
