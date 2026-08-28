@@ -83,12 +83,18 @@ jobs:
             DOTFILES_SOURCE_DIR=/home/tester/dotfiles \
             chezmoi init --apply --error-on-conflict --source=/home/tester/dotfiles'
 
-      # A second apply must be a no-op. This is what catches a script that
-      # rewrites a managed file, or a run_onchange whose hash is unstable.
-      - name: Re-apply is idempotent
+      # A second apply must leave no FILE out of sync. This is what catches a
+      # script that rewrites a file chezmoi manages, or a run_onchange whose
+      # hash is not stable across runs.
+      #
+      # Script entries (' R ') are filtered out deliberately: plain run_ and
+      # run_after_ scripts are always-run by design, so they are listed by
+      # `chezmoi status` even immediately after executing. Their presence says
+      # nothing about idempotency.
+      - name: Re-apply leaves no file out of sync
         run: |
           su tester -c 'export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$PATH"; \
             chezmoi apply --source=/home/tester/dotfiles'
           su tester -c 'export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$PATH"; \
-            status=$(chezmoi status --source=/home/tester/dotfiles); \
-            if [ -n "$status" ]; then echo "not idempotent:"; echo "$status"; exit 1; fi'
+            drift=$(chezmoi status --source=/home/tester/dotfiles | grep -v "^ R " || true); \
+            if [ -n "$drift" ]; then echo "not idempotent:"; echo "$drift"; exit 1; fi'
