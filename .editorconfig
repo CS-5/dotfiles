@@ -1,0 +1,42 @@
+# Matches what the repo already does, and what ./test.sh enforces for shell
+# (shfmt -i 4, default case indentation).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{sh,bash}]
+indent_size = 4
+
+# chezmoi source names carry attribute prefixes rather than extensions, so the
+# shell scripts installed to ~/.local/bin match on the prefix instead.
+[executable_*]
+indent_size = 4
+
+[*.{ps1,psm1}]
+indent_size = 4
+
+[*.{json,jsonc,toml,yaml,yml,md}]
+indent_size = 2
+
+[*.fish]
+indent_size = 4
+
+[*.lua]
+indent_size = 2
+
+[*.qml]
+indent_size = 2
+
+# Go templates wrap whatever they render; leave their indentation alone.
+[*.tmpl]
+trim_trailing_whitespace = false
+
+# Vendored upstream, kept byte-identical for easy diffing against new releases.
+[root/private_dot_config/fish/functions/fundle.fish]
+trim_trailing_whitespace = false
+insert_final_newline = false

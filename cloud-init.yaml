@@ -22,14 +22,14 @@ users:
 package_update: true
 package_upgrade: true
 
+# Only what cloud-init itself needs to fetch the repo. Everything else --
+# build-essential, fish, neovim, wget/unzip/gnupg, mise, chezmoi and the
+# dotfiles' own tool list -- is install.sh's job. Duplicating its BOOTSTRAP_PKGS
+# list here only gave the two a way to drift apart.
 packages:
-  - build-essential
   - ca-certificates
   - curl
   - git
-  - wget
-  - unzip
-  - gnupg
 
 runcmd:
   - su - carson -c "git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi"

@@ -77,20 +77,23 @@ export PATH="$HOME/.local/bin:$PATH"
 
 #### Bootstrap Dependencies ####
 show_progress "Installing bootstrap dependencies"
-# Same package names in Debian/Ubuntu and Arch repos.
+# Same package names in Debian/Ubuntu and Arch repos. A compiler toolchain is
+# needed too -- mise builds some tools from source, and the Omarchy branch
+# compiles the keyboard-backlight daemon -- but that one is named differently
+# per distro, so each branch appends its own.
 BOOTSTRAP_PKGS=(curl git wget unzip gnupg fish neovim)
 if [[ "$IS_OMARCHY" == "true" ]]; then
     # `omarchy pkg add` installs only what is missing, and avoids the -Syu that
     # Omarchy's libalpm update-guard hook aborts.
-    omarchy pkg add "${BOOTSTRAP_PKGS[@]}"
+    omarchy pkg add "${BOOTSTRAP_PKGS[@]}" base-devel
 elif command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update
-    sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}"
+    sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}" build-essential
 elif command -v pacman >/dev/null 2>&1; then
     # -Syu, not -Sy: Arch doesn't support partial upgrades, so installing
     # against a synced-but-not-upgraded system can break shared libs.
     # --needed skips packages already present.
-    sudo pacman -Syu --needed --noconfirm "${BOOTSTRAP_PKGS[@]}"
+    sudo pacman -Syu --needed --noconfirm "${BOOTSTRAP_PKGS[@]}" base-devel
 else
     log_error "No supported package manager found (apt-get or pacman)."
     log_error "Install these manually, then re-run: ${BOOTSTRAP_PKGS[*]}"
