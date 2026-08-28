@@ -1,0 +1,36 @@
+# Portland Head — built from a photograph of Portland Head Light, Cape Elizabeth.
+# Every hue below is sampled from the image in backgrounds/ and then lifted for
+# contrast: the sky over the headland is the accent, the harbor water in shadow
+# is the background, and the whitewashed tower is the brightest foreground.
+
+mode = "dark"
+
+accent = "#6595cd"              # sky over the headland
+selection = "#1b3b52"
+muted = "#3f5f75"
+
+background = "#0c1a24"          # deep water in shadow
+dark_background = "#091420"
+darker_background = "#060e17"
+lighter_background = "#132836"
+
+foreground = "#aec0cf"          # sea haze
+dark_foreground = "#5a7285"
+light_foreground = "#bfcedb"
+bright_foreground = "#dce6ee"   # the whitewashed tower
+
+red = "#b3766a"                 # the keeper's-house roof
+yellow = "#c2a468"              # sunlit granite
+orange = "#b57a55"
+green = "#7a8a52"               # headland scrub
+cyan = "#4d8ba3"                # surf over the ledge
+blue = "#6595cd"
+magenta = "#9080b0"
+brown = "#7a6a5c"               # the rock itself
+
+bright_red = "#c4826f"
+bright_yellow = "#dcc084"
+bright_green = "#9aab6c"
+bright_cyan = "#6fb0c7"
+bright_blue = "#82afdb"         # the paler sky nearer the water
+bright_magenta = "#ab9bc9"

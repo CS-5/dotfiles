@@ -1,0 +1,41 @@
+{{ if .isOmarchy -}}
+#!/bin/bash
+
+# Install/refresh the custom Omarchy theme after its files are applied.
+#
+# chezmoi has already written ~/.config/omarchy/themes/portland-head/ by the
+# time this runs; Omarchy discovers user themes from that directory but only
+# regenerates the per-application colour files (ghostty.conf, claude.json,
+# btop.theme, ...) when a theme is set or refreshed. Re-runs whenever anything
+# under the theme folder changes:
+# theme-hash: {{ output "sh" "-c" (printf "find %s -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1" (joinPath .chezmoi.sourceDir "private_dot_config/omarchy/themes/portland-head" | squote)) | trim }}
+
+set -euo pipefail
+
+theme="portland-head"
+
+# A TTY bootstrap or a container has no shell to talk to and no compositor to
+# reload. The theme files are on disk either way; the first graphical login
+# picks them up.
+if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    echo "omarchy-theme: no Hyprland session, leaving '$theme' to be applied at next login"
+    exit 0
+fi
+
+# `omarchy theme current` prints the display name ("Portland Head"), not the
+# directory slug, so compare on a normalized form.
+current="$(omarchy theme current 2>/dev/null | tr '[:upper:] ' '[:lower:]-')" || current=""
+
+if [[ $current != "$theme" ]]; then
+    echo "omarchy-theme: switching to '$theme' (was '${current:-unknown}')"
+    omarchy theme set "$theme" || true
+else
+    # Already selected: regenerate the derived colour files from the templates
+    # this apply may just have changed.
+    echo "omarchy-theme: refreshing '$theme'"
+    omarchy theme refresh || true
+fi
+
+hyprctl reload >/dev/null 2>&1 || true
+omarchy-shell -q shell rescanPlugins || true
+{{ end -}}
