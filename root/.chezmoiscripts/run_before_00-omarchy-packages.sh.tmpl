@@ -1,0 +1,94 @@
+{{ if .isOmarchy -}}
+#!/bin/bash
+
+# Install everything in .chezmoidata/omarchy.toml that isn't already here.
+#
+# This is a plain run_ script rather than run_onchange_ on purpose. The work is
+# guarded by presence checks, so on a settled machine it is a handful of
+# `pacman -Q` calls and exits without touching anything -- while a run_onchange
+# keyed on the manifest hash would record itself as done even on a run that had
+# to skip (no terminal for the sudo prompt, AUR unreachable), and never retry.
+# Always-run plus cheap checks is both simpler and harder to leave half-applied.
+#
+# It runs before any file is written so that a fresh machine has the packages
+# its config refers to by the time the config lands.
+
+set -euo pipefail
+
+step() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
+
+repo_packages=({{ range .omarchy.packages }}{{ . | quote }} {{ end }})
+aur_packages=({{ range .omarchy.aur }}{{ . | quote }} {{ end }})
+
+missing_repo=()
+for pkg in "${repo_packages[@]}"; do
+    pacman -Q "$pkg" &>/dev/null || missing_repo+=("$pkg")
+done
+
+missing_aur=()
+for pkg in "${aur_packages[@]}"; do
+    pacman -Q "$pkg" &>/dev/null || missing_aur+=("$pkg")
+done
+
+pending_installers=()
+{{ range .omarchy.installers -}}
+omarchy pkg present {{ .package | quote }} || pending_installers+=({{ .command | quote }})
+{{ end }}
+# Plugins are just git clones into ~/.config/omarchy/plugins and need no
+# privileges, so they are handled below regardless of whether there is a
+# terminal for a password prompt.
+missing_plugins=()
+{{ range .omarchy.plugins -}}
+[[ -d "$HOME/.config/omarchy/plugins/{{ .id }}" ]] || missing_plugins+=({{ .url | quote }})
+{{ end }}
+if (( ${#missing_plugins[@]} )); then
+    step "Installing ${#missing_plugins[@]} Omarchy shell plugin(s)"
+    for url in "${missing_plugins[@]}"; do
+        # shell.json (managed by chezmoi) is what enables and places these, so
+        # --enable is deliberately not passed: it would edit shell.json and be
+        # overwritten moments later when chezmoi applies its copy.
+        omarchy plugin add "$url" --yes || echo "warning: could not add plugin $url" >&2
+    done
+fi
+
+if (( ${#missing_repo[@]} + ${#missing_aur[@]} + ${#pending_installers[@]} == 0 )); then
+    exit 0
+fi
+
+# Everything below needs root. Omarchy has no passwordless pacman rule, so
+# without a terminal there is nowhere to type the password; warn and leave it
+# for the next interactive apply (this script runs every time, so it retries).
+if [[ ! -t 0 ]]; then
+    echo "omarchy-packages: no terminal for a sudo prompt, skipping:" >&2
+    printf '  repo:      %s\n' "${missing_repo[*]:-none}" >&2
+    printf '  aur:       %s\n' "${missing_aur[*]:-none}" >&2
+    printf '  installer: %s\n' "${pending_installers[*]:-none}" >&2
+    echo "omarchy-packages: run 'chezmoi apply' from a terminal to finish" >&2
+    exit 0
+fi
+
+# One prompt for the whole run rather than one per package.
+step "Package installation needs sudo"
+sudo -v
+
+if (( ${#missing_repo[@]} )); then
+    step "Installing ${#missing_repo[@]} package(s): ${missing_repo[*]}"
+    omarchy pkg add "${missing_repo[@]}"
+fi
+
+if (( ${#missing_aur[@]} )); then
+    step "Installing ${#missing_aur[@]} AUR package(s): ${missing_aur[*]}"
+    if omarchy pkg aur accessible; then
+        omarchy pkg aur add "${missing_aur[@]}"
+    else
+        echo "warning: AUR is unreachable, skipping ${missing_aur[*]}" >&2
+    fi
+fi
+
+for installer in "${pending_installers[@]}"; do
+    step "Running: omarchy install $installer"
+    # Word-split on purpose: these are two-word routes ("terminal ghostty").
+    # shellcheck disable=SC2086
+    omarchy install $installer || echo "warning: 'omarchy install $installer' failed" >&2
+done
+{{ end -}}

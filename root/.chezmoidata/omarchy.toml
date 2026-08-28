@@ -1,0 +1,69 @@
+# Everything this machine needs that is not a file: packages, Omarchy's
+# opinionated installers, and third-party shell plugins. Source-only (it lives
+# under .chezmoidata/, so it is template data and is never applied to $HOME),
+# and consumed by .chezmoiscripts/run_before_00-omarchy-packages.sh.tmpl.
+#
+# To add something, add a line here. Removal is deliberately NOT handled: this
+# manifest says what must be present, not what must be absent, so deleting a
+# line stops the machine from installing it on a rebuild but never uninstalls
+# it from a running system.
+
+[omarchy]
+
+# Arch repo packages (including Omarchy's own mirror). `fish` is also in
+# install.sh's bootstrap list, which is what covers non-Omarchy hosts and the
+# window before chezmoi first runs.
+packages = [
+  "fish",
+  "bitwarden",
+  "bitwarden-cli",
+  "efibootmgr",
+  "fprintd",
+  "fwupd",
+  "libfprint",
+  "omazed",
+  "usbutils",
+]
+
+# AUR packages with no Omarchy installer of their own. google-chrome is absent
+# on purpose -- `omarchy install browser chrome` below owns it.
+aur = ["claude-desktop", "hyprmoncfg"]
+
+# Omarchy's opinionated installers do more than install a package: they set the
+# app as the Omarchy default and wire it into the theme system. `package` is the
+# sentinel checked to decide whether the installer still needs to run.
+[[omarchy.installers]]
+command = "terminal ghostty"
+package = "ghostty"
+
+[[omarchy.installers]]
+command = "editor zed"
+package = "zed"
+
+[[omarchy.installers]]
+command = "service spotify"
+package = "spotify"
+
+[[omarchy.installers]]
+command = "browser chrome"
+package = "google-chrome"
+
+# Third-party Omarchy shell plugins. shell.json (managed) is what enables and
+# places them; this only makes sure the code is on disk first, so a
+# restore-from-scratch doesn't leave the bar referencing plugins that aren't
+# there. `omarchy plugin update` keeps them current afterwards.
+[[omarchy.plugins]]
+id = "bobbynicholas.omaland"
+url = "https://github.com/bobby-nicholas/omaland.git"
+
+[[omarchy.plugins]]
+id = "crmne.hyprmoncfg"
+url = "https://github.com/crmne/omarchy-hyprmoncfg.git"
+
+[[omarchy.plugins]]
+id = "io.github.sirjul1337.lock-explorer"
+url = "https://github.com/SirJul1337/omarchy-lock-explorer.git"
+
+[[omarchy.plugins]]
+id = "jkoestinger.vpn"
+url = "https://github.com/jkoestinger/omarchy-vpn.git"
