@@ -13,11 +13,12 @@
 {{ if not .isOmarchy -}}
 {{/* Omarchy ships this first group already: starship, lazygit, fd, fzf, jq,
      ripgrep, zoxide, usage and herdr as pacman packages from its own mirror,
-     gh and hunk as `omarchy mise install` wrappers. A second copy either
-     shadows Omarchy's or is shadowed by it depending on where the shim dir
-     lands on PATH — and for herdr specifically Omarchy ships a migration that
-     deletes mise copies, because a stale client and /usr/bin's daemon share a
-     wire protocol. */ -}}
+     claude, gh and hunk as `omarchy mise install` wrappers. A second copy
+     either shadows Omarchy's or is shadowed by it depending on where the shim
+     dir lands on PATH — and for herdr specifically Omarchy ships a migration
+     that deletes mise copies, because a stale client and /usr/bin's daemon
+     share a wire protocol. */ -}}
+claude = "2.1.247"
 starship = "1.26.0"
 lazygit = "0.64.1"
 fd = "10.4.2"

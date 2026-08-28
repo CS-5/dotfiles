@@ -151,17 +151,4 @@ if [[ "${SHELL:-}" != *"fish"* ]]; then
 fi
 log_success "Shell setup complete"
 
-#### Claude Code ####
-# Omarchy owns Claude Code there: its first-run provisions a mise wrapper
-# (`omarchy mise install claude`) backed by ~/.config/mise/config.toml, and the
-# mise shims sit ahead of ~/.local/bin on PATH. The native installer would drop
-# a second copy that the shim shadows anyway.
-if [[ "$IS_OMARCHY" == "true" ]]; then
-    log_info "Skipping the Claude Code installer: Omarchy manages it through mise"
-else
-    show_progress "Installing Claude Code"
-    curl -fsSL https://claude.ai/install.sh | bash
-    log_success "Claude Code installed"
-fi
-
 log_success "Setup complete"

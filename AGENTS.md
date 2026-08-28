@@ -99,6 +99,10 @@ On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signin
 
 CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl`. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
 
+**Anything mise can install, mise installs.** A tool with a mise backend does not get a bespoke curl-into-bash installer, on any platform — one declaration in the tool list replaces an install step, a version that nobody tracks, and an update path that differs per machine. Claude Code (`aqua:anthropics/claude-code`) is managed this way rather than through `claude.ai/install.sh`. The two deliberate exceptions are the bootstrappers that have to exist before the tool list can be read: **mise itself**, and **chezmoi** (installed from `pacman` on Omarchy, else the official installer — `update` refreshes it in place only when the binary is user-writable). System packages that must exist before mise runs, or that a login shell depends on (fish, neovim, git), stay with the platform package manager.
+
+Before adding an installer for anything, check `mise registry <tool>`.
+
 ### Chezmoi Automation Scripts
 
 Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
@@ -135,9 +139,10 @@ on the next apply (removal is handled declaratively by settings regeneration; th
 script never force-uninstalls). The provisioner re-runs whenever the file's hash
 changes, following the same `run_onchange` pattern as the mise script.
 
-The script skips cleanly when the `claude` CLI is not yet installed (e.g. the
-first `install.sh` run, which installs Claude Code after `chezmoi apply`) and
-picks the plugins up on the next apply. Hand-authored skills under
+The script still skips cleanly when the `claude` CLI is absent, but that is now
+a fallback rather than the normal first-run path: Claude Code is a mise tool, so
+`run_onchange_after_01-mise-install.sh.tmpl` has installed it by the time this
+script runs. Hand-authored skills under
 `dot_claude/skills/` are unrelated — those are files applied directly to
 `~/.claude/skills/`.
 
