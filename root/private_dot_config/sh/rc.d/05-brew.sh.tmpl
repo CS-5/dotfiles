@@ -1,0 +1,10 @@
+# Homebrew (macOS). Runs before 10-path.sh so our own bin dir still wins.
+if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    if [ "$DOTFILES_SHELL" = bash ] && [ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]; then
+        . "$(brew --prefix)/etc/profile.d/bash_completion.sh"
+    fi
+    if [ "$DOTFILES_SHELL" = zsh ] && [ -r "$(brew --prefix)/share/zsh/site-functions" ]; then
+        fpath=("$(brew --prefix)/share/zsh/site-functions" $fpath)
+    fi
+fi

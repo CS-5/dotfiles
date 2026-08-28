@@ -42,6 +42,17 @@ The dotfiles adapt based on environment variables:
 - `DOTFILES_WORK_EMAIL` - Work email fallback when `~/work.email` is absent (the file wins; Codespaces user secrets surface as env vars)
 - `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
 
+Two data flags are derived from the machine itself rather than from env vars:
+
+- **`isOmarchy`** - true when `/etc/os-release` has `ID=omarchy`. [Omarchy](https://omarchy.org) is an opinionated Arch/Hyprland distribution that owns a large part of `$HOME`. Because the check is on the distro ID, it is false by construction in WSL (`ID=arch`/`ubuntu`), dev containers, macOS and Windows, so no Omarchy-only file can leak onto another host. Preview an Omarchy render from anywhere with `./render.sh --data '{"isOmarchy":true}' <template>`
+- **`isThinkPad`** - true when `/sys/class/dmi/id/product_family` starts with `ThinkPad`. Gates the hardware-specific pieces (keyboard-backlight daemon, touchpad modprobe drop-in) so a future Omarchy desktop does not get a laptop keyboard-LED service
+
+### Working with Omarchy
+
+Omarchy provisions `$HOME` on first run and keeps it current through migrations, so the governing rule is: **only manage a file that differs from its `$OMARCHY_PATH/config` default.** A file that matches the default is left to Omarchy, which keeps its own tooling (`omarchy font set`, `omarchy refresh`, the theme system) working with zero drift. `~/.config/ghostty/config` is managed on other platforms but deliberately ignored on Omarchy for exactly this reason.
+
+Every Omarchy-only path is listed in one block in `.chezmoiignore.tmpl` so the rule stays auditable, and every Omarchy-only script in `.chezmoiscripts/` opens with `{{ if .isOmarchy -}}` so it renders empty elsewhere (the same pattern as the existing Windows guards).
+
 ### Identity System
 
 The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). This mirrors the per-host signing-key file pattern (`~/.ssh/git_signing.pub`). When the file is absent, the **`DOTFILES_WORK_EMAIL`** env var is consulted as a fallback (the file always wins when both exist) — this is how Codespaces get a work identity, since user secrets surface there as env vars. `.chezmoi.toml.tmpl` reads the email at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
@@ -82,6 +93,7 @@ CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_con
 
 Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
 
+- `run_once_before_00-migrate-mise-config.sh.tmpl` / `.ps1.tmpl` - One-time move of a pre-existing dotfiles-owned `~/.config/mise/config.toml` aside, now that the tool pins live in a `conf.d` drop-in. `config.toml` outranks `conf.d`, so a leftover copy would keep winning; the `minimum_release_age` line identifies the file as ours, leaving a `mise use -g` config untouched
 - `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
 - `run_after_mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is reported and stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
@@ -119,13 +131,48 @@ picks the plugins up on the next apply. Hand-authored skills under
 `dot_claude/skills/` are unrelated — those are files applied directly to
 `~/.claude/skills/`.
 
+### Shell Configuration: drop-in directories
+
+Configuration is organized around **drop-in directories** wherever the tool
+supports one, so that a file another owner also writes to (a distro's rc file,
+`mise use -g`'s config) never has to be contested. The rule is uniform: one
+numbered file per concern, loaded in sorted order, from a predictable location.
+
+| Consumer | Drop-in directory | Loaded by |
+| --- | --- | --- |
+| bash, zsh | `~/.config/sh/rc.d/*.sh` | a four-line loop in `~/.bashrc` / `~/.zshrc` (partial: `.chezmoitemplates/shell-rcd`) |
+| fish | `~/.config/fish/conf.d/*.fish` | fish, natively |
+| mise | `~/.config/mise/conf.d/*.toml` | mise, natively |
+| systemd (user) | `~/.config/systemd/user/` | systemd, natively |
+
+`~/.bashrc` and `~/.zshrc` are therefore **thin loaders that should not need to
+change again**. Everything shell-agnostic lives in `root/private_dot_config/sh/rc.d/`,
+where `00-shell.sh` sets `DOTFILES_SHELL` (`bash`|`zsh`) and later files use it
+to pick the right argument for `starship init`, `mise activate` and friends. One
+drop-in per concern is what lets a single `.chezmoiignore` line disable exactly
+the pieces a given host already provides — on Omarchy, `40-starship.sh`,
+`41-mise.sh`, `42-zoxide.sh` and `70-history.sh` are ignored because Omarchy's
+own `default/bash/rc` already does all four.
+
+To add a shell setting, add a numbered file to `sh/rc.d/` (or the fish `conf.d/`
+equivalent). Only reach for `~/.bashrc` itself when the thing genuinely must run
+before the interactivity guard.
+
+**mise** uses a `conf.d` drop-in for the same reason: Omarchy's tool wrappers run
+`mise use -g` on every invocation, which rewrites `~/.config/mise/config.toml`.
+chezmoi owns `conf.d/10-dotfiles.toml` and mise structurally refuses to write
+into `conf.d`, so the two can never clobber each other. The trade-off is
+precedence — within a global config dir `config.toml` **outranks** `conf.d`, so
+the Omarchy branch of that template drops every tool Omarchy already provides
+rather than pinning a version that would be silently ignored.
+
 ### Environment Variables
 
 Simple key-value environment variables (e.g., `VISUAL`, `HOMEBREW_NO_AUTO_UPDATE`) are centralized in template partials under `root/.chezmoitemplates/`. Each partial renders the same variables in the syntax for its target shell:
 
 | Partial | Syntax | Consumed by |
 | --- | --- | --- |
-| `env-posix` | `export VAR=val` | `dot_bashrc.tmpl`, `dot_zshrc.tmpl` |
+| `env-posix` | `export VAR=val` | `private_dot_config/sh/rc.d/20-env.sh.tmpl` |
 | `env-fish` | `set -gx VAR val` | `config.fish.tmpl` |
 | `env-powershell` | `$env:VAR = "val"` | `Microsoft.PowerShell_profile.ps1.tmpl` |
 | `env-windows-persist` | `[Environment]::SetEnvironmentVariable(...)` | `run_onchange_after_03-windows-env.ps1.tmpl` |
@@ -147,8 +194,9 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 - `root/dot_gitconfig.tmpl` - Git configuration with conditional work includes
 - `root/dot_gitconfig-work.tmpl` - Work-specific git configuration
 - `root/private_dot_config/fish/config.fish.tmpl` - Fish shell configuration
-- `root/dot_bashrc.tmpl` - Bash configuration (Homebrew, starship, mise, zoxide, mcfly)
-- `root/dot_zshrc.tmpl` - Zsh configuration
+- `root/dot_bashrc.tmpl` / `root/dot_zshrc.tmpl` - Thin loaders for `~/.config/sh/rc.d/`
+- `root/private_dot_config/sh/rc.d/` - The actual bash/zsh configuration, one numbered file per concern
+- `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl` - mise tool pins
 
 ## Common Commands
 

@@ -1,44 +1,17 @@
-{{ if .isMac -}}
-# Homebrew completion (macOS)
-if command -v brew >/dev/null 2>&1; then
-    eval "$(brew shellenv)"
-    if [[ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]]; then
-        source "$(brew --prefix)/etc/profile.d/bash_completion.sh"
-    fi
-fi
-{{- end }}
+{{ if .isOmarchy -}}
+# Omarchy environment (OMARCHY_PATH + PATH), needed even for non-interactive shells.
+# Kept byte-for-byte from Omarchy's /etc/skel/.bashrc: `bash -lc`, SSH commands
+# and omarchy-launch-floating-terminal (a `bash -c`) all lose OMARCHY_PATH and
+# the mise/~/.local/bin PATH entries without it, and it has to sit above the
+# interactivity guard to reach them.
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
 
-export PATH="{{ .binDirAbs }}:$PATH"
-{{ template "env-posix" . }}
+# If not running interactively, don't do anything else (leave this above the rc source)
+[[ $- != *i* ]] && return
 
-# Initialize starship prompt
-if command -v starship >/dev/null 2>&1; then
-    eval "$(starship init bash)"
-fi
+# All the default Omarchy aliases and functions
+# (don't mess with these directly, just overwrite them here!)
+source "$OMARCHY_PATH/default/bash/rc"
 
-# Initialize tools
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate bash --shims)"
-fi
-
-if command -v zoxide >/dev/null 2>&1; then
-    eval "$(zoxide init bash)"
-fi
-
-if command -v mcfly >/dev/null 2>&1; then
-    eval "$(mcfly init bash)"
-fi
-
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
-
-fzkill() {
-    ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
-}
-
-# History settings
-HISTFILE=~/.bash_history
-HISTSIZE=20000
-HISTFILESIZE=20000
-HISTCONTROL=ignoreboth:erasedups
-shopt -s histappend
-shopt -s cmdhist
+{{ end -}}
+{{ template "shell-rcd" . }}

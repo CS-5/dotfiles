@@ -1,0 +1,24 @@
+{{ if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+
+# The dotfiles' mise tool config moved from ~/.config/mise/config.toml to a
+# conf.d drop-in so that `mise use -g` (which Omarchy's tool wrappers run on
+# every invocation) keeps a file of its own to write to. Within a global config
+# dir config.toml OUTRANKS conf.d, so a leftover dotfiles-owned config.toml
+# would keep winning and silently pin the old versions forever.
+#
+# chezmoi does not delete a file it merely stopped managing, so move it aside
+# here. The minimum_release_age line identifies it as ours: a config.toml that
+# `mise use -g` wrote has no [settings] block and is left untouched.
+
+set -euo pipefail
+
+config="$HOME/.config/mise/config.toml"
+
+[[ -f $config ]] || exit 0
+grep -q '^minimum_release_age' "$config" || exit 0
+
+backup="$config.pre-conf.d.bak"
+echo "mise: moving dotfiles-owned config.toml aside to $(basename "$backup")" >&2
+mv -f "$config" "$backup"
+{{ end -}}

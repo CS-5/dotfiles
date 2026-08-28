@@ -5,6 +5,23 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $isDc := or $probablyDc $isCodespaces -}}
 {{ $binDir := ".local/bin" -}}
 
+{{/* Omarchy (https://omarchy.org) is an opinionated Arch/Hyprland distribution
+     that owns a large part of $HOME: it writes ~/.config/mise/config.toml via
+     `mise use -g` wrappers, ships its own bash rc chain, theme system and
+     package-update entrypoint. Detect it from /etc/os-release (ID=omarchy),
+     which is false by construction in WSL (ID=arch/ubuntu), dev containers,
+     macOS and Windows. */}}
+{{ $isOmarchy := and (eq .chezmoi.os "linux") (eq (get .chezmoi.osRelease "id" | default "") "omarchy") -}}
+
+{{/* ThinkPad-only hardware bits (the keyboard-backlight daemon and the
+     touchpad modprobe drop-in) gate on this rather than on $isOmarchy, so a
+     future Omarchy desktop doesn't get a laptop keyboard-LED service. */}}
+{{ $isThinkPad := false -}}
+{{ $dmiFamilyPath := "/sys/class/dmi/id/product_family" -}}
+{{ if stat $dmiFamilyPath -}}
+  {{ $isThinkPad = include $dmiFamilyPath | trim | hasPrefix "ThinkPad" -}}
+{{ end -}}
+
 {{/* Work identity is driven by ~/work.email: a file whose sole contents
      are one work email address. When the file is absent, the
      DOTFILES_WORK_EMAIL env var is consulted as a fallback (Codespaces
@@ -64,6 +81,8 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ env "WSL_DISTRO_NAME" | not | not }}
     isDc = {{ $isDc }}
+    isOmarchy = {{ $isOmarchy }}
+    isThinkPad = {{ $isThinkPad }}
 
     # Identity
     identity = {{ $identity | quote }}
