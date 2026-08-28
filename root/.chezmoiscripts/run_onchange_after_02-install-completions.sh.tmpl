@@ -3,7 +3,7 @@
 
 # Regenerate whenever any pinned tool version changes, not just when this
 # script changes — otherwise completions go stale as tools upgrade.
-# mise config hash: {{ include "private_dot_config/mise/config.toml.tmpl" | sha256sum }}
+# mise config hash: {{ include "private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl" | sha256sum }}
 
 # Freshly mise-installed tools aren't on this non-interactive script's PATH
 # during the first apply (01-mise-install runs just before this); the shims

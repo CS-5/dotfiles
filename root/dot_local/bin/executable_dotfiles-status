@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# One-line JSON summary of the dotfiles' state, shared by the carson.dotfiles
+# bar widget, the Omarchy menu's Dotfiles submenu, and dotfiles-sync.
+#
+#   {"applyNeeded":3,"localEdits":1,"behind":2,"ahead":0,"uncommitted":4,"ok":true}
+#
+# Three hard rules, because a bar widget polls this unattended:
+#   - never prompt (a credential prompt would hang the shell's Process forever)
+#   - never block on the network for long (hence the fetch timeout)
+#   - never exit nonzero; a failure sets "ok":false and still prints valid JSON
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+set -uo pipefail
+
+fetch=false
+case "${1:-}" in
+--fetch) fetch=true ;;
+"") ;;
+-h | --help)
+    echo "Usage: dotfiles-status [--fetch]"
+    echo "  --fetch  contact the remote to compute behind/ahead (adds latency)"
+    exit 0
+    ;;
+*)
+    echo "dotfiles-status: unknown option $1" >&2
+    exit 2
+    ;;
+esac
+
+apply_needed=0
+local_edits=0
+uncommitted=0
+behind=0
+ahead=0
+ok=true
+
+emit() {
+    printf '{"applyNeeded":%d,"localEdits":%d,"behind":%d,"ahead":%d,"uncommitted":%d,"ok":%s}\n' \
+        "$apply_needed" "$local_edits" "$behind" "$ahead" "$uncommitted" "$ok"
+    exit 0
+}
+
+command -v chezmoi >/dev/null 2>&1 || {
+    ok=false
+    emit
+}
+
+# `chezmoi status` is shaped like `git status --short`: column 1 is the target
+# having changed out from under chezmoi since it last wrote it (an Omarchy
+# migration, `omarchy refresh`, a hand edit), column 2 is the source state being
+# ahead of the target (an apply would change something).
+if status="$(chezmoi status 2>/dev/null)"; then
+    while IFS= read -r line; do
+        [[ -n $line ]] || continue
+        [[ ${line:0:1} != " " ]] && ((++local_edits))
+        [[ ${line:1:1} != " " ]] && ((++apply_needed))
+    done <<<"$status"
+else
+    ok=false
+fi
+
+if porcelain="$(chezmoi git -- status --porcelain 2>/dev/null)"; then
+    [[ -n $porcelain ]] && uncommitted="$(grep -c '^' <<<"$porcelain")"
+else
+    ok=false
+fi
+
+if $fetch; then
+    # GIT_TERMINAL_PROMPT=0 turns a credential prompt into an immediate failure
+    # rather than a hang; timeout covers a network that accepts but never answers.
+    GIT_TERMINAL_PROMPT=0 timeout 15 chezmoi git -- fetch --quiet >/dev/null 2>&1 || ok=false
+fi
+
+# Left side of the range is the upstream, right side is HEAD: "<behind> <ahead>".
+# Fails when there is no upstream configured, which is genuinely unknown rather
+# than zero, so it counts as not-ok.
+if counts="$(chezmoi git -- rev-list --left-right --count '@{u}...HEAD' 2>/dev/null)" &&
+    [[ $counts =~ ^([0-9]+)[[:space:]]+([0-9]+)$ ]]; then
+    behind="${BASH_REMATCH[1]}"
+    ahead="${BASH_REMATCH[2]}"
+else
+    ok=false
+fi
+
+emit
