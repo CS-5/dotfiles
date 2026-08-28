@@ -132,7 +132,7 @@ fi
 # and .chezmoidata are unavailable. Without --init both load, and the rendered
 # config's [data] is still supplied via --config.
 chezmoi execute-template --init --source="$SCRIPT_DIR/root" \
-    < "$SCRIPT_DIR/root/.chezmoi.toml.tmpl" > "$TEMP_DIR/chezmoi.toml"
+    <"$SCRIPT_DIR/root/.chezmoi.toml.tmpl" >"$TEMP_DIR/chezmoi.toml"
 
 # --override-data (chezmoi >= 2.66) applies last, on top of the rendered
 # config's [data], so --data can force values like isMac or isDc directly.
@@ -142,4 +142,4 @@ if [[ -n "$OVERRIDE_DATA" ]]; then
 fi
 
 chezmoi execute-template --config="$TEMP_DIR/chezmoi.toml" --source="$SCRIPT_DIR/root" \
-    ${OVERRIDE_ARGS[@]+"${OVERRIDE_ARGS[@]}"} < "$SCRIPT_DIR/$TEMPLATE_FILE"
+    ${OVERRIDE_ARGS[@]+"${OVERRIDE_ARGS[@]}"} <"$SCRIPT_DIR/$TEMPLATE_FILE"

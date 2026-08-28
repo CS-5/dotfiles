@@ -1,0 +1,94 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A second push to the same PR makes the first run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # test.sh drives the real .chezmoi.toml.tmpl, so the chezmoi here has to
+      # satisfy .chezmoiversion the same way a real machine's does.
+      - name: Install chezmoi
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+      - name: Install linters
+        uses: jdx/mise-action@v2
+        with:
+          tool_versions: |
+            shellcheck 0.11.0
+            shfmt 3.13.1
+
+      # Renders every template in every environment, applies each to a
+      # throwaway destination, lints every shell script, and parses every
+      # data file. Nothing touches the runner's real $HOME.
+      - name: Run test suite
+        run: ./test.sh
+
+  # The one thing test.sh deliberately does not do: run the scripts. This does
+  # a genuine end-to-end `chezmoi init --apply` in a container, so the
+  # .chezmoiscripts actually execute against a real package manager.
+  bootstrap:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: debian:stable-slim
+            setup: apt-get update && apt-get install -y --no-install-recommends curl git ca-certificates sudo
+          - image: archlinux:latest
+            setup: pacman -Sy --noconfirm --needed curl git sudo
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - name: Install prerequisites
+        run: ${{ matrix.setup }}
+
+      - uses: actions/checkout@v4
+
+      # chezmoi apply refuses to run scripts as root in some setups, and a root
+      # $HOME is not what the templates are written against.
+      - name: Create an unprivileged user
+        run: |
+          useradd -m -s /bin/bash tester
+          echo 'tester ALL=(ALL) NOPASSWD:ALL' >/etc/sudoers.d/tester
+          cp -r "$GITHUB_WORKSPACE" /home/tester/dotfiles
+          chown -R tester:tester /home/tester/dotfiles
+
+      - name: Install mise and chezmoi
+        run: |
+          su tester -c 'curl -fsSL https://mise.run | sh'
+          su tester -c 'sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"'
+
+      # The real thing: init + apply with scripts enabled, as the user would.
+      - name: chezmoi init --apply
+        run: |
+          su tester -c 'export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$PATH"; \
+            cd /home/tester/dotfiles && \
+            DOTFILES_SOURCE_DIR=/home/tester/dotfiles \
+            chezmoi init --apply --error-on-conflict --source=/home/tester/dotfiles'
+
+      # A second apply must be a no-op. This is what catches a script that
+      # rewrites a managed file, or a run_onchange whose hash is unstable.
+      - name: Re-apply is idempotent
+        run: |
+          su tester -c 'export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$PATH"; \
+            chezmoi apply --source=/home/tester/dotfiles'
+          su tester -c 'export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$PATH"; \
+            status=$(chezmoi status --source=/home/tester/dotfiles); \
+            if [ -n "$status" ]; then echo "not idempotent:"; echo "$status"; exit 1; fi'

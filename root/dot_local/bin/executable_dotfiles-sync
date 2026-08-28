@@ -99,14 +99,35 @@ if [[ ${1:-} != "-h" && ${1:-} != "--help" ]]; then
 fi
 
 case "${1:-}" in
-pull) do_pull; exit $? ;;
-apply) do_apply; exit $? ;;
-diff) do_diff; exit $? ;;
-re-add | readd) do_readd; exit $? ;;
-commit) do_commit; exit $? ;;
-update) do_update; exit $? ;;
+pull)
+    do_pull
+    exit $?
+    ;;
+apply)
+    do_apply
+    exit $?
+    ;;
+diff)
+    do_diff
+    exit $?
+    ;;
+re-add | readd)
+    do_readd
+    exit $?
+    ;;
+commit)
+    do_commit
+    exit $?
+    ;;
+update)
+    do_update
+    exit $?
+    ;;
 status) exec dotfiles-status --fetch ;;
--h | --help) usage; exit 0 ;;
+-h | --help)
+    usage
+    exit 0
+    ;;
 "") ;;
 *)
     usage >&2

@@ -26,8 +26,8 @@ bar_width=15
 filled=$((context_percent * bar_width / 100))
 empty=$((bar_width - filled))
 bar=""
-for ((i=0; i<filled; i++)); do bar+="█"; done
-for ((i=0; i<empty; i++)); do bar+="░"; done
+for ((i = 0; i < filled; i++)); do bar+="█"; done
+for ((i = 0; i < empty; i++)); do bar+="░"; done
 
 # Extract cost information
 session_cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
@@ -51,24 +51,24 @@ cd "$current_dir" 2>/dev/null || cd /
 # Get git branch
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     branch=$(git branch --show-current 2>/dev/null || echo "detached")
-    
+
     # Get git status with file counts
     status_output=$(git status --porcelain 2>/dev/null)
-    
+
     if [ -n "$status_output" ]; then
         # Count files and get basic line stats
         total_files=$(echo "$status_output" | wc -l | xargs)
         line_stats=$(git diff --numstat HEAD 2>/dev/null | awk '{added+=$1; removed+=$2} END {print added+0, removed+0}')
-        
+
         added=$(echo $line_stats | cut -d' ' -f1)
         removed=$(echo $line_stats | cut -d' ' -f2)
-        
+
         # Build status display
         git_info=" ${YELLOW}($branch${NC} ${YELLOW}|${NC} ${GRAY}${total_files} files${NC}"
-        
+
         [ "$added" -gt 0 ] && git_info="${git_info} ${GREEN}+${added}${NC}"
         [ "$removed" -gt 0 ] && git_info="${git_info} ${RED}-${removed}${NC}"
-        
+
         git_info="${git_info} ${YELLOW})${NC}"
     else
         git_info=" ${YELLOW}($branch)${NC}"

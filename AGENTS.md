@@ -13,6 +13,10 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 ### Development Scripts  
 
+- `./test.sh [stage...]` - The test suite. Four stages, cheapest first: **render** (every `*.tmpl` against every environment), **apply** (a real `chezmoi apply` into a throwaway destination per environment, scripts excluded), **lint** (shellcheck + shfmt over every shell script, including rendered templates), **parse** (every JSON/TOML/JSONC file, templated ones in every environment). Run a subset with e.g. `./test.sh render lint`. Nothing touches `$HOME` — every apply gets its own temp destination and its own chezmoi persistent state. **Run this before considering a change done.**
+
+  The apply stage is the one that earns its keep: rendering only proves a template is valid Go template syntax, while an apply resolves cross-file references like the `include` calls in `.chezmoiscripts`. That is how a stale path to a moved file gets caught, which rendering alone misses entirely.
+
 - `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (supplying the identity via `DOTFILES_WORK_EMAIL` while neutralizing any real `~/work.email` via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply. `--data` passes a JSON object to chezmoi's `--override-data` to force `[data]` values (e.g. `'{"isMac":true}'` to preview macOS renders from Linux)
 
 ### User Commands
@@ -250,4 +254,6 @@ clean                       # Prune orphaned packages, old tool versions, caches
 
 4. **Template formatting** - Template files containing Go template strings must be formatted carefully to preserve correct whitespace and avoid trimming issues.
 
-5. **NEVER test on host machine** - Changes must never be tested on the host machine. `chezmoi apply` should be considered dangerous unless run within a Docker container.
+5. **NEVER test on host machine** - Changes must never be tested on the host machine. `chezmoi apply` should be considered dangerous unless run within a Docker container, or pointed at a throwaway `--destination` with its own `--persistent-state` (which is what `./test.sh` does).
+
+6. **Run `./test.sh` before calling a change done.** CI runs the same script on Ubuntu and macOS, plus an end-to-end `chezmoi init --apply` in Debian and Arch containers where the `.chezmoiscripts` actually execute and a second apply must be a no-op.

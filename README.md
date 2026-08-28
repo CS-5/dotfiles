@@ -2,6 +2,14 @@
 
 My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
+## Development
+
+```sh
+./test.sh                    # render + apply + lint + parse, across every platform
+./test.sh render lint        # just those stages
+./render.sh <template>       # render one template to stdout
+```
+
 ## Install
 
 ### Linux (Debian/Ubuntu/Arch/Omarchy) — dev containers, WSL, cloud VMs, desktops
