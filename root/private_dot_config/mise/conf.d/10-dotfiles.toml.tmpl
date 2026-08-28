@@ -11,9 +11,9 @@
      pinning a version that would be silently ignored. */ -}}
 [tools]
 {{ if not .isOmarchy -}}
-{{/* Omarchy ships this first group already: starship, lazygit, fd, fzf, jq,
-     ripgrep, zoxide, usage and herdr as pacman packages from its own mirror,
-     claude, gh and hunk as `omarchy mise install` wrappers. A second copy
+{{/* Omarchy ships this first group already: starship, lazygit, fd, fzf, gum,
+     jq, ripgrep, zoxide, usage and herdr as pacman packages from its own
+     mirror, claude, gh and hunk as `omarchy mise install` wrappers. A second copy
      either shadows Omarchy's or is shadowed by it depending on where the shim
      dir lands on PATH — and for herdr specifically Omarchy ships a migration
      that deletes mise copies, because a stale client and /usr/bin's daemon
@@ -23,6 +23,9 @@ starship = "1.26.0"
 lazygit = "0.64.1"
 fd = "10.4.2"
 fzf = "0.74.3"
+# dotfiles-sync's interactive picker. Omarchy has it as a package; everywhere
+# else it has to come from here or `dotfiles-sync` bare cannot run.
+gum = "2.0.0"
 jq = "1.8.2"
 ripgrep = "15.2.0"
 zoxide = "0.10.0"
@@ -32,6 +35,10 @@ gh = "2.98.0"
 {{ end -}}
 lazydocker = "0.25.2"
 ast-grep = "0.45.2"
+# Repo tooling: test.sh lints every shell script with these, so CI and a local
+# run check the same thing with the same version.
+shellcheck = "0.11.0"
+shfmt = "3.13.1"
 hyperfine = "1.20.0"
 duf = "0.9.1"
 lsd = "1.2.0"
