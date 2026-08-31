@@ -6,6 +6,7 @@
 .bashrc
 .zshrc
 .hushlogin
+.config/sh
 .config/fish
 .config/ghostty
 .config/zellij
@@ -18,6 +19,7 @@ Library
 {{- else }}
 Documents
 AppData
+.config/pwsh
 
 {{- if .isMac }}
 .config/pnpm
@@ -25,8 +27,29 @@ AppData
 Library
 {{- end }}
 
+{{- if not .isMac }}
+.config/sh/rc.d/05-brew.sh
+{{- end }}
+
 {{- if .isDc }}
 .config/ghostty
+{{- end }}
+
+{{- if not .isOmarchy }}
+.config/hypr
+.config/omarchy
+{{- else }}
+.config/ghostty
+.config/sh/rc.d/25-mise.sh
+.config/sh/rc.d/40-starship.sh
+.config/sh/rc.d/42-zoxide.sh
+.config/sh/rc.d/70-history.sh
+.config/hypr/monitors.lua
+{{- end }}
+
+{{- if not (and .isOmarchy .isThinkPad) }}
+.config/systemd
+.local/src
 {{- end }}
 
 {{- if .isPersonal }}

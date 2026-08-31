@@ -4,15 +4,23 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Install
 
-### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs
+### Linux (Debian/Ubuntu/Arch/Omarchy) — dev containers, WSL, cloud VMs, desktops
 
-Clone and run the bootstrap script. It installs mise, chezmoi, fish, and Claude
-Code, then applies the dotfiles:
+Clone and run the bootstrap script. It installs mise, chezmoi and fish, then
+applies the dotfiles — which is what installs the CLI tools, Claude Code
+included:
 
 ```sh
 git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi
 ~/.local/share/chezmoi/install.sh [--work-email <address>]
 ```
+
+On [Omarchy](https://omarchy.org) the same command also brings up the desktop:
+Hyprland config, the Omarchy shell layout, the custom theme, declared packages
+and shell plugins, and the ThinkPad keyboard-backlight daemon. It defers to
+Omarchy wherever Omarchy already owns something — packages go through `omarchy
+pkg add`, chezmoi comes from the Arch repos, and Claude Code is left to
+Omarchy's own mise wrapper. Expect one sudo prompt, then log out and back in.
 
 The work identity comes from a single file, `~/work.email`, containing just your
 work email address; its domain selects the identity (e.g. `…@kirbtech.com`). No
@@ -39,6 +47,17 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply CS-5
 ```powershell
 iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 ```
+
+Everything the dotfiles can do for themselves happens during that apply — mise
+tools, fish plugins, completions, Claude Code and its plugins. Two things a
+bootstrap script does on Linux have no equivalent here:
+
+- **A per-host signing key.** Without one, commits sign through the SSH agent
+  using the committed public key, which works. To get a key on disk instead,
+  run `scripts/generate-signing-key.sh` **before** `chezmoi init` — the key path
+  is read when the config template renders, so generating it afterwards has no
+  effect until the next `chezmoi init`.
+- **Making fish the login shell** (`chsh -s $(which fish)` on macOS).
 
 ## Commit signing
 

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "carson.dotfiles",
+  "name": "Dotfiles",
+  "version": "1.0.0",
+  "author": "Carson Seese",
+  "description": "Shows when the chezmoi dotfiles and this machine have drifted apart, and offers the commands to put them back in step.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "Dotfiles",
+    "description": "Pending applies, out-of-band edits, and unpushed or unpulled commits in the dotfiles repo. Hidden while everything is in step.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "refreshIntervalSec": 1800,
+      "tooltipFiles": 8
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 60,
+        "max": 21600,
+        "step": 60,
+        "defaultValue": 1800,
+        "description": "How often to re-check status. Each check contacts the git remote."
+      },
+      {
+        "key": "tooltipFiles",
+        "type": "integer",
+        "label": "Files listed in the tooltip",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+        "defaultValue": 8,
+        "description": "How many changed files to name before collapsing the rest into a count. 0 hides the list."
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{{- if .isOmarchy }}
+{{/* Omarchy's first-run writes ~/.config/git/config with a personal user.email
+     and init.defaultBranch=master. git reads it BEFORE ~/.gitconfig, and the
+     dotfiles only win on keys they actually set — so anything they leave unset
+     leaks through from Omarchy's copy. Omarchy writes the file only on
+     first-run (install/user/git.sh), so removing it here is permanent. */}}
+.config/git/config
+{{- end }}

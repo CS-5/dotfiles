@@ -1,0 +1,62 @@
+{{ if .isOmarchy -}}
+{{- $themeRoot := joinPath .chezmoi.sourceDir "private_dot_config/omarchy/themes" -}}
+{{- $themes := list -}}
+{{- range (output "sh" "-c" (printf "ls -1 %s 2>/dev/null || true" ($themeRoot | squote)) | trim | splitList "\n") -}}
+{{-   if . }}{{ $themes = append $themes . }}{{ end -}}
+{{- end -}}
+#!/bin/bash
+
+# Regenerate a managed theme's derived files — without ever choosing the theme.
+#
+# The split is deliberate: theme *definitions* are synced, so every machine has
+# them available in the switcher, but the *active selection* is not. That is
+# what lets two machines running these same dotfiles look completely different,
+# and it means `omarchy theme set` is yours alone — nothing here will ever
+# switch a theme out from under you.
+#
+# There is still one thing to do. Omarchy compiles a theme's colors.toml into
+# per-application files (ghostty.conf, claude.json, btop.theme, …) at the moment
+# a theme is set or refreshed, not on demand. So when chezmoi changes the
+# colors.toml of the theme this particular machine happens to be using, those
+# derived files are stale until something regenerates them. Hence: refresh if
+# and only if the active theme is one we manage, and otherwise do nothing.
+#
+# Re-runs whenever any managed theme's files change:
+# themes-hash: {{ output "sh" "-c" (printf "find %s -type f -print0 2>/dev/null | sort -z | xargs -0 sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1" ($themeRoot | squote)) | trim }}
+
+set -euo pipefail
+
+# Theme directories this repo ships, enumerated from the source tree at render
+# time — adding a custom theme needs no change to this script.
+managed_themes=({{ range $themes }}{{ . | quote }} {{ end }})
+((${#managed_themes[@]})) || exit 0
+
+# A TTY bootstrap or a container has no compositor to reload and no shell to
+# talk to. The theme files are on disk either way, and the next graphical
+# session compiles them when a theme is next set.
+if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    echo "omarchy-theme: no Hyprland session, nothing to refresh"
+    exit 0
+fi
+
+# `omarchy theme current` prints the display name ("Portland Head"), not the
+# directory slug, so compare on a normalized form.
+current="$(omarchy theme current 2>/dev/null | tr '[:upper:] ' '[:lower:]-')" || current=""
+if [[ -z $current ]]; then
+    echo "omarchy-theme: could not determine the active theme, leaving it alone"
+    exit 0
+fi
+
+for theme in "${managed_themes[@]}"; do
+    if [[ $current == "$theme" ]]; then
+        # `omarchy theme refresh` re-runs theme-set against the *currently
+        # selected* theme, which recompiles every derived file and restarts what
+        # needs restarting. It never changes which theme is selected.
+        echo "omarchy-theme: '$theme' is active and its files changed, refreshing"
+        omarchy theme refresh || true
+        exit 0
+    fi
+done
+
+echo "omarchy-theme: active theme '$current' is not managed here, leaving it alone"
+{{ end -}}

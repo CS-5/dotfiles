@@ -4,6 +4,7 @@
     "timonwong.shellcheck",
     "foxundermoon.shell-format",
     "mads-hartmann.bash-ide-vscode",
-    "bmalehorn.vscode-fish"
+    "bmalehorn.vscode-fish",
+    "theqtcompany.qt-qml"
   ]
 }

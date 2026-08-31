@@ -10,6 +10,12 @@ set -eufo pipefail
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
 
+# Omarchy prunes packages its own way, and the differences are not cosmetic --
+# see the pacman branch below. Same detection as `update`.
+is_omarchy() {
+    [[ -r /etc/os-release ]] && grep -q '^ID=omarchy$' /etc/os-release
+}
+
 case "$(uname -s)" in
 Darwin)
     step "Pruning Homebrew packages and caches"
@@ -17,7 +23,23 @@ Darwin)
     brew cleanup --prune=all
     ;;
 Linux)
-    if command -v apt-get >/dev/null 2>&1; then
+    if is_omarchy; then
+        # Omarchy differs from plain Arch on both halves of this, and getting
+        # either wrong is destructive rather than merely untidy:
+        #
+        #   - The package cache is Omarchy's ONLY offline downgrade path, so it
+        #     keeps two versions per package (omarchy-update-pkg-prune runs
+        #     `paccache -rk2`). `pacman -Sc` would empty it and take the ability
+        #     to roll back a bad update with it.
+        #   - Orphans are reviewed, not assumed: omarchy-update-orphan-pkgs
+        #     lists them and asks, defaulting to no. Removing them unattended
+        #     here would undo that deliberate choice.
+        step "Pruning the package cache (keeping 2 versions per package)"
+        sudo paccache -rk2
+
+        step "Reviewing orphaned packages"
+        omarchy-update-orphan-pkgs
+    elif command -v apt-get >/dev/null 2>&1; then
         step "Pruning apt packages and caches"
         sudo apt-get autoremove --purge -y
         sudo apt-get clean

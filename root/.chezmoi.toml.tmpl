@@ -3,21 +3,24 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") (stat "/workspaces" | not | not) -}}
 {{ $isCodespaces := env "CODESPACES" | not | not -}}
 {{ $isDc := or $probablyDc $isCodespaces -}}
+{{ $isOmarchy := and (eq .chezmoi.os "linux") (eq (get .chezmoi.osRelease "id" | default "") "omarchy") -}}
+{{ $isThinkPad := false -}}
+
 {{ $binDir := ".local/bin" -}}
 
-{{/* Work identity is driven by ~/work.email: a file whose sole contents
-     are one work email address. When the file is absent, the
-     DOTFILES_WORK_EMAIL env var is consulted as a fallback (Codespaces
-     user secrets surface as env vars). The email's domain selects the
-     identity; no email or an unrecognized domain means personal. Mirrors
-     the per-host signing-key file below. Add new jobs to $identities. */}}
+{{ $dmiFamilyPath := "/sys/class/dmi/id/product_family" -}}
+{{ if stat $dmiFamilyPath -}}
+  {{ $isThinkPad = include $dmiFamilyPath | trim | hasPrefix "ThinkPad" -}}
+{{ end -}}
+
 {{ $identities := dict
     "kirbtech.com"    "kirbtech"
     "journalytic.com" "journalytic" -}}
 {{ $identity := "personal" -}}
+
 {{ $workEmail := "" -}}
-{{/* Defaults to ~/work.email; DOTFILES_WORK_EMAIL_FILE relocates it (render.sh). */}}
 {{ $workEmailPath := joinPath .chezmoi.homeDir "work.email" -}}
+
 {{ if env "DOTFILES_WORK_EMAIL_FILE" -}}{{ $workEmailPath = env "DOTFILES_WORK_EMAIL_FILE" -}}{{ end -}}
 {{ $email := "" -}}
 {{ if stat $workEmailPath -}}
@@ -34,24 +37,15 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ end -}}
 {{ $isWork := ne $identity "personal" -}}
 
-{{/* Signing public key: committed canonical default, overridden by a
-     per-host file, overridden by an explicit env var. The key is public,
-     so committing it is safe; the matching private key lives in the SSH
-     agent wherever commits are made. */}}
 {{ $signingKey := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKEgjvCUvsO0qdi0D+H0ksk2HbfGhlQU7fQE4F817N+G" -}}
 {{ $signingKeyPath := joinPath .chezmoi.homeDir ".ssh/git_signing.pub" -}}
 {{ if stat $signingKeyPath -}}{{ $signingKey = include $signingKeyPath | trim -}}{{ end -}}
 {{ if env "DOTFILES_SIGNING_KEY" -}}{{ $signingKey = env "DOTFILES_SIGNING_KEY" -}}{{ end -}}
 
-{{/* Private signing key on disk (hosts/VMs/WSL). When present, git signs
-     directly from the file with no agent; otherwise it falls back to the
-     canonical public key via a forwarded agent (dev containers). */}}
 {{ $signingKeyFilePath := joinPath .chezmoi.homeDir ".ssh/git_signing" -}}
 {{ $signingKeyFile := "" -}}
 {{ if stat $signingKeyFilePath -}}{{ $signingKeyFile = $signingKeyFilePath -}}{{ end -}}
 
-{{/* Sign commits everywhere except Codespaces, which signs commits with
-     GitHub's own web-flow key and cannot reach the forwarded signing key. */}}
 {{ $gitSign := and (not $isCodespaces) (ne $signingKey "") -}}
 
 [data]
@@ -64,6 +58,8 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ env "WSL_DISTRO_NAME" | not | not }}
     isDc = {{ $isDc }}
+    isOmarchy = {{ $isOmarchy }}
+    isThinkPad = {{ $isThinkPad }}
 
     # Identity
     identity = {{ $identity | quote }}

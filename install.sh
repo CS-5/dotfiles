@@ -6,13 +6,6 @@
 set -eufo pipefail
 
 # Discover dev container workspace if present (/workspaces/<repo-name> convention).
-# Uses find rather than a glob because `set -f` disables pathname expansion.
-#
-# Codespaces names the folder outright in CODESPACE_VSCODE_FOLDER, so prefer it.
-# The find fallback has to skip dotdirs and sort: Codespaces also mounts
-# /workspaces/.codespaces, and find emits filesystem order, so an unsorted
-# `head -n1` picks .codespaces over the repo — and `mise trust` then trusts a
-# directory with no config in it.
 WORKSPACE_DIR="${CODESPACE_VSCODE_FOLDER:-}"
 if [[ -n "$WORKSPACE_DIR" && ! -d "$WORKSPACE_DIR" ]]; then
     WORKSPACE_DIR=""
@@ -21,11 +14,16 @@ if [[ -z "$WORKSPACE_DIR" && -d "/workspaces" ]]; then
     WORKSPACE_DIR="$(find /workspaces -maxdepth 1 -mindepth 1 -type d ! -name '.*' 2>/dev/null | sort | head -n1)"
 fi
 
-# Dev containers sign commits via the host's forwarded SSH agent; real hosts
-# (WSL, VMs, bare metal) own a signing key on disk.
+# Is Dev Container?
 IS_DC=false
 if [[ -n "${REMOTE_CONTAINERS_IPC:-}" || "${USER:-}" == "vscode" || "${CODESPACES:-}" == "true" || -n "$WORKSPACE_DIR" ]]; then
     IS_DC=true
+fi
+
+# Is Omarchy?
+IS_OMARCHY=false
+if [[ -r /etc/os-release ]] && grep -q '^ID=omarchy$' /etc/os-release; then
+    IS_OMARCHY=true
 fi
 
 # Work identity is detected from ~/work.email at chezmoi render time. Pass
@@ -68,16 +66,17 @@ export PATH="$HOME/.local/bin:$PATH"
 
 #### Bootstrap Dependencies ####
 show_progress "Installing bootstrap dependencies"
-# Same package names in Debian/Ubuntu and Arch repos.
+
+# Same package names in Debian/Ubuntu and Arch repos
 BOOTSTRAP_PKGS=(curl git wget unzip gnupg fish neovim)
-if command -v apt-get >/dev/null 2>&1; then
+
+if [[ "$IS_OMARCHY" == "true" ]]; then
+    omarchy pkg add "${BOOTSTRAP_PKGS[@]}" base-devel
+elif command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update
-    sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}"
+    sudo apt-get install -y "${BOOTSTRAP_PKGS[@]}" build-essential
 elif command -v pacman >/dev/null 2>&1; then
-    # -Syu, not -Sy: Arch doesn't support partial upgrades, so installing
-    # against a synced-but-not-upgraded system can break shared libs.
-    # --needed skips packages already present.
-    sudo pacman -Syu --needed --noconfirm "${BOOTSTRAP_PKGS[@]}"
+    sudo pacman -Syu --needed --noconfirm "${BOOTSTRAP_PKGS[@]}" base-devel
 else
     log_error "No supported package manager found (apt-get or pacman)."
     log_error "Install these manually, then re-run: ${BOOTSTRAP_PKGS[*]}"
@@ -86,10 +85,8 @@ fi
 log_success "Bootstrap dependencies installed"
 
 #### Mise ####
-# Leave an existing mise alone. Dev container images commonly install a pinned
-# mise and assert the pin at build time; reinstalling from mise.run would replace
-# it with latest and silently defeat that. Same shape as the guards in
-# .chezmoiscripts/*mise*.
+
+# Leave an existing mise alone. Omarchy ships with Mise and Dev Container images may also 
 if command -v mise >/dev/null 2>&1; then
     log_info "mise $(mise --version | cut -d' ' -f1) already installed, leaving it as-is"
 else
@@ -97,11 +94,14 @@ else
     curl -fsSL https://mise.run | sh
     log_success "mise installed"
 fi
+
+# If there's a workspace dir (Dev Container)
 if [[ -n "$WORKSPACE_DIR" ]]; then
     mise trust --cd="$WORKSPACE_DIR" --quiet
 fi
 
 #### Signing Key ####
+
 # Must run before chezmoi applies so the key is detected at render time.
 if [[ "$IS_DC" != "true" ]]; then
     show_progress "Ensuring commit signing key"
@@ -109,7 +109,18 @@ if [[ "$IS_DC" != "true" ]]; then
     log_success "Signing key ready"
 fi
 
+#### Chezmoi ####
+
+# On Omarchy, take chezmoi from the repos rather than the curl installer, so it
+# is upgraded by `omarchy update` along with everything else.
+if [[ "$IS_OMARCHY" == "true" ]] && ! command -v chezmoi >/dev/null 2>&1; then
+    show_progress "Installing chezmoi from the Arch repos"
+    omarchy pkg add chezmoi
+    log_success "chezmoi installed"
+fi
+
 #### Chezmoi Setup ####
+
 show_progress "Installing chezmoi and dotfiles"
 if [[ -n "$WORK_EMAIL" ]]; then
     "$SCRIPT_DIR/install-dotfiles.sh" --work-email "$WORK_EMAIL"
@@ -119,17 +130,12 @@ fi
 log_success "Dotfiles installed and applied"
 
 #### Shell ####
+
 show_progress "Setting up shell"
-fish -c "fundle install"
 if [[ "${SHELL:-}" != *"fish"* ]]; then
     log_info "Changing default shell to fish"
     sudo chsh -s "$(which fish)" "${USER:-$(id -un)}"
 fi
 log_success "Shell setup complete"
-
-#### Claude Code ####
-show_progress "Installing Claude Code"
-curl -fsSL https://claude.ai/install.sh | bash
-log_success "Claude Code installed"
 
 log_success "Setup complete"

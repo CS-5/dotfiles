@@ -1,0 +1,16 @@
+{{ if eq .chezmoi.os "windows" -}}
+# See run_once_before_00-migrate-mise-config.sh.tmpl. The dotfiles' mise tool
+# config moved to a conf.d drop-in; config.toml outranks conf.d, so a leftover
+# dotfiles-owned copy would keep winning. Move it aside once.
+
+$ErrorActionPreference = 'Stop'
+
+$config = Join-Path $env:USERPROFILE '.config\mise\config.toml'
+
+if (-not (Test-Path $config)) { exit 0 }
+if (-not (Select-String -Path $config -Pattern '^minimum_release_age' -Quiet)) { exit 0 }
+
+$backup = "$config.pre-conf.d.bak"
+Write-Host "mise: moving dotfiles-owned config.toml aside to $(Split-Path $backup -Leaf)"
+Move-Item -Force -Path $config -Destination $backup
+{{ end -}}

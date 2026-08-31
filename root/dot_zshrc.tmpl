@@ -1,50 +1,8 @@
-{{ if .isMac -}}
-# Homebrew completion (macOS)
-if command -v brew >/dev/null 2>&1; then
-    eval "$(brew shellenv)"
-    if [[ -r "$(brew --prefix)/share/zsh/site-functions" ]]; then
-        fpath=("$(brew --prefix)/share/zsh/site-functions" $fpath)
-    fi
-fi
-{{- end }}
+{{ if .isOmarchy -}}
+# Omarchy publishes OMARCHY_PATH and the mise/~/.local/bin PATH entries through
+# a POSIX-sh snippet; zsh is not a shell Omarchy sets up, so source it directly
+# rather than going through its bash rc chain.
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
 
-export PATH="{{ .binDirAbs }}:$PATH"
-{{ template "env-posix" . }}
-
-# Enable completions
-autoload -U compinit && compinit
-
-# Initialize starship prompt
-if command -v starship >/dev/null 2>&1; then
-    eval "$(starship init zsh)"
-fi
-
-# Initialize tools
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh --shims)"
-fi
-
-if command -v zoxide >/dev/null 2>&1; then
-    eval "$(zoxide init zsh)"
-fi
-
-if command -v mcfly >/dev/null 2>&1; then
-    eval "$(mcfly init zsh)"
-fi
-
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
-
-fzkill() {
-    ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
-}
-
-# History settings
-HISTFILE=~/.zsh_history
-HISTSIZE=20000
-SAVEHIST=20000
-setopt HIST_IGNORE_DUPS
-setopt HIST_IGNORE_ALL_DUPS
-setopt HIST_IGNORE_SPACE
-setopt HIST_SAVE_NO_DUPS
-setopt APPEND_HISTORY
-setopt SHARE_HISTORY
+{{ end -}}
+{{ template "shell-rcd" . }}

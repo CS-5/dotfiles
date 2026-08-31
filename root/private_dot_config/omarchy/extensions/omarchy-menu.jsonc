@@ -1,0 +1,23 @@
+{
+  // Extend the Quickshell Omarchy menu with JSONC.
+  //
+  // IDs are object keys and the parent is inferred from the dotted id, so
+  // "dotfiles.pull" appears under "dotfiles", and "dotfiles" appears on the
+  // root menu. See $OMARCHY_PATH/default/omarchy/omarchy-menu.jsonc for the
+  // full field list.
+  //
+  // This file is managed by chezmoi (root/private_dot_config/omarchy/extensions/).
+
+  // Dotfiles — the keyboard path to the same actions the carson.dotfiles bar
+  // widget offers. Every row shells out to dotfiles-sync, so the menu, the
+  // widget and the CLI cannot drift apart.
+  "dotfiles": {"icon":"󰊢","label":"Dotfiles","aliases":["chezmoi"],"description":"chezmoi dotfiles: apply, pull, re-add, commit"},
+
+  "dotfiles.sync": {"icon":"󰓦","label":"Sync","description":"Open the interactive dotfiles menu","action":"omarchy-launch-floating-terminal-with-presentation dotfiles-sync"},
+  "dotfiles.pull": {"icon":"󰇚","label":"Pull & apply","description":"chezmoi update: pull the latest dotfiles and apply them","action":"omarchy-launch-floating-terminal-with-presentation dotfiles-sync pull"},
+  "dotfiles.diff": {"icon":"󰦓","label":"Show diff","description":"What an apply would change","action":"omarchy-launch-floating-terminal-with-presentation dotfiles-sync diff"},
+  "dotfiles.readd": {"icon":"󰑙","label":"Re-add local edits","description":"Take targets edited outside chezmoi back into the source","action":"omarchy-launch-floating-terminal-with-presentation dotfiles-sync re-add"},
+  "dotfiles.commit": {"icon":"󰊢","label":"Commit & push","description":"Open lazygit in the dotfiles source directory","action":"omarchy-launch-floating-terminal-with-presentation dotfiles-sync commit"},
+  "dotfiles.update": {"icon":"","label":"Full update","description":"System packages, mise, chezmoi, dotfiles and tools","action":"omarchy-launch-floating-terminal-with-presentation dotfiles-sync update"},
+  "dotfiles.refresh": {"icon":"","label":"Refresh indicator","description":"Re-check status and update the bar widget","action":"omarchy-shell -q carson.dotfiles refresh"},
+}

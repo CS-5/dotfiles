@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Poke the carson.dotfiles bar widget after an Omarchy update.
+#
+# Migrations rewrite files under ~/.config/hypr and ~/.config/omarchy that
+# chezmoi also manages, so the moment an update finishes is exactly when the
+# drift counter is most likely to have changed. Without this the badge would
+# not catch up until the widget's own half-hourly poll.
+#
+# -q makes this a no-op when the shell isn't running (a TTY update, a headless
+# session), so it can never fail the update it is hooked into.
+
+set -e
+
+omarchy-shell -q carson.dotfiles refresh

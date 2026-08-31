@@ -1,0 +1,9 @@
+# Load POSIX-shell drop-ins. Every shell-agnostic piece of this configuration
+# lives in one numbered file under ~/.config/sh/rc.d, so ~/.bashrc and ~/.zshrc
+# stay thin loaders that never need to change again — which is what lets a
+# distro that owns the rc file (Omarchy) keep its own copy above this line.
+# fish is the exception: it has a native conf.d and uses that instead.
+for _rc in "$HOME/.config/sh/rc.d"/*.sh; do
+    [ -r "$_rc" ] && . "$_rc"
+done
+unset _rc

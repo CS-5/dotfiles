@@ -1,0 +1,23 @@
+{{ if and .isOmarchy .isThinkPad -}}
+#!/bin/bash
+
+# Pick up the user unit chezmoi just wrote and make sure it is running.
+#
+# Only the unit file itself is managed. The enablement symlinks under
+# default.target.wants/ are systemd's to write, which is what `enable` below
+# does -- checking them into the repo would fight `systemctl disable`.
+#
+# unit-hash: {{ include (joinPath .chezmoi.sourceDir "private_dot_config/systemd/user/kbd-backlight-auto.service") | sha256sum }}
+
+set -euo pipefail
+
+# No user bus during a TTY bootstrap or a container apply; the unit file is on
+# disk and the next graphical login starts it.
+if ! systemctl --user show-environment >/dev/null 2>&1; then
+    echo "systemd-user: no user bus, leaving kbd-backlight-auto to start at next login"
+    exit 0
+fi
+
+systemctl --user daemon-reload
+systemctl --user enable --now kbd-backlight-auto.service
+{{ end -}}

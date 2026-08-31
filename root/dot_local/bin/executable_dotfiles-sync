@@ -1,0 +1,167 @@
+#!/bin/bash
+
+# Interactive front-end for keeping the dotfiles and this machine in step.
+#
+# Bare, it shows a gum picker (the look Omarchy's floating terminals use) and is
+# what the carson.dotfiles bar widget opens on a left click. With a subcommand
+# it is fully non-interactive, which is what the widget's right click, the
+# Omarchy menu entries, and any script should use.
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+set -uo pipefail
+
+step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
+die() {
+    printf '\033[0;31m%s\033[0m\n' "$1" >&2
+    exit 1
+}
+
+usage() {
+    cat <<'USAGE'
+Usage: dotfiles-sync [command]
+
+With no command, opens an interactive picker.
+
+Commands:
+  pull      Pull the latest dotfiles and apply them (chezmoi update)
+  apply     Apply the current source state without pulling
+  diff      Show what an apply would change
+  re-add    Re-add targets that were edited out of band, into the source
+  commit    Open lazygit in the dotfiles source directory
+  update    Full system update (packages, mise, chezmoi, dotfiles)
+  status    Print the JSON status summary
+USAGE
+}
+
+# Targets whose column 1 is non-empty in `chezmoi status`: the file on disk
+# changed after chezmoi last wrote it.
+drifted_targets() {
+    chezmoi status 2>/dev/null | awk 'substr($0,1,1) != " " { print substr($0,4) }'
+}
+
+do_pull() {
+    step "Pulling latest dotfiles and applying"
+    chezmoi update
+}
+
+do_apply() {
+    step "Applying the current source state"
+    chezmoi apply
+}
+
+do_diff() {
+    step "Pending changes"
+    chezmoi diff
+}
+
+do_readd() {
+    local targets=()
+    mapfile -t targets < <(drifted_targets)
+    if ((${#targets[@]} == 0)); then
+        step "Nothing has drifted; no targets to re-add"
+        return 0
+    fi
+
+    step "Re-adding ${#targets[@]} drifted target(s) into the source"
+    printf '  %s\n' "${targets[@]}"
+
+    # No arguments on purpose: bare `chezmoi re-add` re-adds exactly the
+    # modified targets, which is the same set listed above, and avoids having to
+    # rebuild absolute paths from status output.
+    chezmoi re-add
+}
+
+do_commit() {
+    local src
+    src="$(chezmoi source-path)" || die "could not locate the dotfiles source directory"
+    step "Opening lazygit in $src"
+    if command -v lazygit >/dev/null 2>&1; then
+        (cd "$src" && lazygit)
+    else
+        (cd "$src" && git status)
+        echo "lazygit is not installed; showing git status instead" >&2
+    fi
+}
+
+do_update() {
+    step "Full system update"
+    if command -v update >/dev/null 2>&1; then
+        update
+    else
+        die "the 'update' command is not installed"
+    fi
+}
+
+# --help must work on a machine that has not been provisioned yet.
+if [[ ${1:-} != "-h" && ${1:-} != "--help" ]]; then
+    command -v chezmoi >/dev/null 2>&1 || die "chezmoi is not installed"
+fi
+
+case "${1:-}" in
+pull)
+    do_pull
+    exit $?
+    ;;
+apply)
+    do_apply
+    exit $?
+    ;;
+diff)
+    do_diff
+    exit $?
+    ;;
+re-add | readd)
+    do_readd
+    exit $?
+    ;;
+commit)
+    do_commit
+    exit $?
+    ;;
+update)
+    do_update
+    exit $?
+    ;;
+status) exec dotfiles-status --fetch ;;
+-h | --help)
+    usage
+    exit 0
+    ;;
+"") ;;
+*)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+# ---- interactive ----------------------------------------------------------
+
+command -v gum >/dev/null 2>&1 || die "gum is not installed (needed for the interactive menu)"
+command -v jq >/dev/null 2>&1 || die "jq is not installed (needed to read the status summary)"
+
+read -r applyNeeded localEdits behind ahead uncommitted < <(
+    dotfiles-status --fetch | jq -r '[.applyNeeded,.localEdits,.behind,.ahead,.uncommitted] | @tsv' 2>/dev/null
+) || true
+
+gum style --border rounded --padding "0 1" --margin "1 0" \
+    "Dotfiles" \
+    "apply pending: ${applyNeeded:-?}   drifted: ${localEdits:-?}" \
+    "behind: ${behind:-?}   ahead: ${ahead:-?}   uncommitted: ${uncommitted:-?}"
+
+choice="$(gum choose --header "What would you like to do?" \
+    "Pull & apply" \
+    "Show diff" \
+    "Re-add local edits" \
+    "Commit & push" \
+    "Full update" \
+    "Quit")" || exit 0
+
+case "$choice" in
+"Pull & apply") do_pull ;;
+"Show diff") do_diff ;;
+"Re-add local edits") do_readd ;;
+"Commit & push") do_commit ;;
+"Full update") do_update ;;
+*) exit 0 ;;
+esac

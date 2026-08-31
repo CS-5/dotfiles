@@ -9,23 +9,33 @@ set -eufo pipefail
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
 
+# Omarchy routes every system update through `omarchy update`, and enforces it:
+# a libalpm hook (00-omarchy-update-guard) aborts any direct `pacman -Syu`.
+is_omarchy() {
+    [[ -r /etc/os-release ]] && grep -q '^ID=omarchy$' /etc/os-release
+}
+
 # Everything lives inside main so bash parses the whole script before any of
 # it runs: `chezmoi update` below re-applies the dotfiles, which can rewrite
 # this very file mid-execution.
 main() {
-    step "Updating system packages"
-    case "$(uname -s)" in
-    Darwin)
-        brew update && brew upgrade
-        ;;
-    Linux)
-        if command -v apt-get >/dev/null 2>&1; then
-            sudo apt-get update && sudo apt-get upgrade -y
-        elif command -v pacman >/dev/null 2>&1; then
-            sudo pacman -Syu --noconfirm
-        fi
-        ;;
-    esac
+    # Omarchy is the exception to going first: its update step runs last, at the
+    # bottom of main(). See the comment there.
+    if ! is_omarchy; then
+        step "Updating system packages"
+        case "$(uname -s)" in
+        Darwin)
+            brew update && brew upgrade
+            ;;
+        Linux)
+            if command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update && sudo apt-get upgrade -y
+            elif command -v pacman >/dev/null 2>&1; then
+                sudo pacman -Syu --noconfirm
+            fi
+            ;;
+        esac
+    fi
 
     if command -v mise >/dev/null 2>&1; then
         step "Updating mise"
@@ -37,8 +47,19 @@ main() {
 
     # Upgrade the chezmoi binary before pulling the dotfiles: newer templates
     # may require a newer chezmoi (.chezmoiversion).
+    #
+    # `chezmoi upgrade` replaces the binary in place, so it only works on a copy
+    # this user owns. A package-managed chezmoi (Omarchy and Arch install it
+    # from extra/, Homebrew from its own prefix) is root-owned and updated by
+    # the system-package step above -- same reasoning as the mise step. Testing
+    # writability rather than the distro covers every packager at once.
     step "Updating chezmoi"
-    chezmoi upgrade
+    chezmoi_bin="$(command -v chezmoi)"
+    if [[ -w $chezmoi_bin ]]; then
+        chezmoi upgrade
+    else
+        echo "chezmoi is package-managed ($chezmoi_bin), updated with system packages"
+    fi
 
     step "Pulling latest dotfiles and applying"
     chezmoi update
@@ -47,6 +68,22 @@ main() {
     if command -v mise >/dev/null 2>&1; then
         step "Upgrading mise tools"
         mise upgrade
+    fi
+
+    # Omarchy last, deliberately. `omarchy update` ends in
+    # omarchy-update-restart, which calls `gum confirm "... Reboot?"` and, on
+    # yes, reboots then and there. `-y` does not prevent that: it exports
+    # OMARCHY_UPDATE_UNATTENDED, but nothing under $OMARCHY_PATH reads that
+    # variable, so the prompt still appears. Running it first meant a kernel
+    # upgrade could take the machine down before the dotfiles were ever pulled,
+    # leaving a half-done update that looked like a finished one.
+    #
+    # Nothing above needs it to have run: chezmoi and mise are both already
+    # installed, and the package-managed guards skip their own self-updates
+    # precisely because this step is what updates them.
+    if is_omarchy; then
+        step "Updating Omarchy and system packages"
+        omarchy update -y
     fi
 
     step "Update complete"
