@@ -1,5 +1,5 @@
 /*
- * kbd-backlight-auto -- macOS-style keyboard backlight for the ThinkPad T14 Gen 2i.
+ * kbd-backlight-auto - macOS-style keyboard backlight for the ThinkPad T14 Gen 2i.
  *
  * Lights the keyboard on the first keystroke, keeps it lit while you type, and
  * drops it after a short idle window or as soon as the lid closes.
@@ -11,7 +11,7 @@
  * Fn+Space stays your brightness control. The kernel reports firmware-driven
  * brightness changes through the LED's brightness_hw_changed attribute, so the
  * daemon sees your Fn+Space presses as events and adopts whatever level you
- * pick for auto-on from then on -- including 0, which reads as "leave it off".
+ * pick for auto-on from then on, including 0, which reads as "leave it off".
  *
  * Nothing here polls. The process sits in a single poll() over three
  * descriptors (keyboard, lid, brightness_hw_changed) and wakes only on a real

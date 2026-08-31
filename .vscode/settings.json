@@ -23,5 +23,7 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.markdownlint": "explicit"
     }
-  }
+  },
+  "qt-core.showWelcomePageOnActivation": false,
+  "qt-qml.qmlls.enabled": false
 }

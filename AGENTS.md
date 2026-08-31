@@ -13,10 +13,6 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 ### Development Scripts  
 
-- `./test.sh [stage...]` - The test suite. Four stages, cheapest first: **render** (every `*.tmpl` against every environment), **apply** (a real `chezmoi apply` into a throwaway destination per environment, scripts excluded), **lint** (shellcheck + shfmt over every shell script, including rendered templates), **parse** (every JSON/TOML/JSONC file, templated ones in every environment). Run a subset with e.g. `./test.sh render lint`. Nothing touches `$HOME` — every apply gets its own temp destination and its own chezmoi persistent state. **Run this before considering a change done.**
-
-  The apply stage is the one that earns its keep: rendering only proves a template is valid Go template syntax, while an apply resolves cross-file references like the `include` calls in `.chezmoiscripts`. That is how a stale path to a moved file gets caught, which rendering alone misses entirely.
-
 - `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (supplying the identity via `DOTFILES_WORK_EMAIL` while neutralizing any real `~/work.email` via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply. `--data` passes a JSON object to chezmoi's `--override-data` to force `[data]` values (e.g. `'{"isMac":true}'` to preview macOS renders from Linux)
 
 ### User Commands
@@ -115,18 +111,6 @@ CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_con
 
 Before adding an installer for anything, check `mise registry <tool>`.
 
-### Chezmoi Automation Scripts
-
-Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
-
-- `run_once_before_00-migrate-mise-config.sh.tmpl` / `.ps1.tmpl` - One-time move of a pre-existing dotfiles-owned `~/.config/mise/config.toml` aside, now that the tool pins live in a `conf.d` drop-in. `config.toml` outranks `conf.d`, so a leftover copy would keep winning; the `minimum_release_age` line identifies the file as ours, leaving a `mise use -g` config untouched
-- `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
-- `run_after_mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is reported and stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it
-- `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
-- `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
-- `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
-- `run_onchange_after_08-fish-plugins.sh.tmpl` - Runs `fundle install` for the plugins declared in `config.fish`, re-running when that list changes. It lives here rather than in `install.sh` so macOS — which applies chezmoi directly with no bootstrap script — gets fish plugins too; previously they silently never installed there. Note that **the per-host signing key cannot move here**: `gitSigningKeyFile` is resolved when `.chezmoi.toml.tmpl` renders, which happens at `chezmoi init`, before any script runs. It stays in `install.sh`, and macOS is documented to run `scripts/generate-signing-key.sh` beforehand
-
 ### Claude Plugin Management
 
 Claude Code plugins and marketplaces are declared in a single source-only file,
@@ -223,16 +207,6 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 - `root/.chezmoiignore.tmpl` - Controls which files chezmoi ignores per environment
 - There is no `.chezmoiexternal` file: fundle is vendored at `root/private_dot_config/fish/functions/fundle.fish` (update it by copying a newer upstream release in, preserving the MIT license header at the top of the file), and binaries like eget install through mise
 
-### Key Files
-
-- `root/.chezmoi.toml.tmpl` - Main chezmoi configuration with environment variables
-- `root/dot_gitconfig.tmpl` - Git configuration with conditional work includes
-- `root/dot_gitconfig-work.tmpl` - Work-specific git configuration
-- `root/private_dot_config/fish/config.fish.tmpl` - Fish shell configuration
-- `root/dot_bashrc.tmpl` / `root/dot_zshrc.tmpl` - Thin loaders for `~/.config/sh/rc.d/`
-- `root/private_dot_config/sh/rc.d/` - The actual bash/zsh configuration, one numbered file per concern
-- `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl` - mise tool pins
-
 ## Common Commands
 
 ```bash
@@ -267,6 +241,4 @@ clean                       # Prune orphaned packages, old tool versions, caches
 
 4. **Template formatting** - Template files containing Go template strings must be formatted carefully to preserve correct whitespace and avoid trimming issues.
 
-5. **NEVER test on host machine** - Changes must never be tested on the host machine. `chezmoi apply` should be considered dangerous unless run within a Docker container, or pointed at a throwaway `--destination` with its own `--persistent-state` (which is what `./test.sh` does).
-
-6. **Run `./test.sh` before calling a change done.** CI runs the same script on Ubuntu and macOS, plus an end-to-end `chezmoi init --apply` in Debian and Arch containers where the `.chezmoiscripts` actually execute and a second apply must be a no-op.
+5. **NEVER test on host machine** - Changes must never be tested on the host machine. `chezmoi apply` should be considered dangerous unless run within a Docker container, or pointed at a throwaway `--destination` with its own `--persistent-state`.

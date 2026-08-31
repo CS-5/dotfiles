@@ -35,29 +35,18 @@ Library
 .config/ghostty
 {{- end }}
 
-{{/* Everything Omarchy-only lives in one block so the rule stays auditable.
-     Off Omarchy none of it should ever be applied; on Omarchy the inverse list
-     is what Omarchy itself already provides, so applying our copy would either
-     duplicate or fight it. */}}
 {{- if not .isOmarchy }}
 .config/hypr
 .config/omarchy
 {{- else }}
-{{/* ~/.config/ghostty/config on this machine is byte-identical to Omarchy's
-     default. Leaving it unmanaged keeps `omarchy font set` (which rewrites
-     font-family in place) and the theme system working with zero drift. */}}
 .config/ghostty
-{{/* Omarchy's default/bash/rc already activates each of these, and sets its own
-     history sizes. Ours would be a redundant second activation per shell. */}}
 .config/sh/rc.d/25-mise.sh
 .config/sh/rc.d/40-starship.sh
 .config/sh/rc.d/42-zoxide.sh
 .config/sh/rc.d/70-history.sh
+.config/hypr/monitors.lua
 {{- end }}
 
-{{/* Hardware-specific: the keyboard-backlight daemon and its user unit. Gated
-     on the machine, not the distro, so a future Omarchy desktop doesn't get a
-     laptop keyboard-LED service. */}}
 {{- if not (and .isOmarchy .isThinkPad) }}
 .config/systemd
 .local/src

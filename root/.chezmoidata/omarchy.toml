@@ -16,13 +16,13 @@
 packages = [
   "fish",
   "bitwarden",
-  "bitwarden-cli",
   "efibootmgr",
   "fprintd",
   "fwupd",
   "libfprint",
   "omazed",
   "usbutils",
+  "vscode",
 ]
 
 # AUR packages with no Omarchy installer of their own. google-chrome is absent

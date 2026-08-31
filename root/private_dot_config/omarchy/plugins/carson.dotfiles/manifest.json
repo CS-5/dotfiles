@@ -4,7 +4,6 @@
   "name": "Dotfiles",
   "version": "1.0.0",
   "author": "Carson Seese",
-  "license": "MIT",
   "description": "Shows when the chezmoi dotfiles and this machine have drifted apart, and offers the commands to put them back in step.",
   "kinds": [
     "bar-widget"
