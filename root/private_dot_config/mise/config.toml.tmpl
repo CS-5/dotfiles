@@ -1,6 +1,6 @@
 [tools]
 starship = "1.26.0"
-lazygit = "0.64.1"
+lazygit = "0.65.0"
 lazydocker = "0.25.2"
 ast-grep = "0.45.3"
 hyperfine = "1.20.0"
@@ -10,27 +10,27 @@ fzf = "0.74.3"
 jq = "1.8.2"
 ripgrep = "15.2.0"
 lsd = "1.2.0"
-gh = "2.98.0"
+gh = "2.100.0"
 zoxide = "0.10.0"
-worktrunk = "0.75.0"
+worktrunk = "0.76.0"
 cloudflared = "2026.8.3"
-aube = "2.2.0"
-usage = "6.6.0"
+aube = "2.2.12"
+usage = "6.8.0"
 
 "github:Ataraxy-Labs/sem" = "0.24.0"
-"github:backnotprop/plannotator" = "0.27.10"
-"github:modem-dev/hunk" = "0.20.1"
+"github:backnotprop/plannotator" = "0.27.12"
+"github:modem-dev/hunk" = "0.21.1"
 {{ if ne .chezmoi.os "windows" -}}
 herdr = "0.8.2"
 zellij = "0.45.1"
 "github:zyedidia/eget" = "1.3.4"
 {{- end }}
 {{ if not .isDc -}}
-go = "1.27.0"
+go = "1.27.1"
 node = "lts"
-bun = "1.4.0"
+bun = "1.4.2"
 python = "3.14.7"
-pnpm = "12.1.0"
+pnpm = "12.3.4"
 {{- end }}
 
 [settings]
