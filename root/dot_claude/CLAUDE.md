@@ -4,20 +4,18 @@ These are the top user-level instructions for AI agents. These MUST be respected
 
 ## Model Routing
 
-There is never one best tool for the job, so pick the correct tool according to the following directives.
+**IMPORTANT:** There is never one best tool for the job, so pick the correct tool according to the following directives. Never use the highest capability model directly for implementation or code searching. Context and tokens are very limited, so be mindful of these limits and efficient. 
 
 ### Delegation
 
 The higher your tier, the more you delegate. Push the work down, keep your own context for judgment. Brief every child: the context, the why, what done looks like. It starts blank and inherits nothing.
 
-| Model    | Best for             | Delegate?        | Effort |
-| -------- | -------------------- | ---------------- | ------ |
-| Haiku    | bulk mechanical      | never            | low    |
-| Sonnet 5 | scoped research      | when it helps    | medium |
-| Opus 4.8 | multi-step reasoning | on clear benefit | xhigh  |
-| Fable 5  | judgment, taste      | by default       | medium |
-
-Fable goes xhigh only for the hardest calls. Skip high.
+| Model  | Best for             | Delegate?        |
+| ------ | -------------------- | ---------------- | 
+| Haiku  | bulk mechanical      | never            | 
+| Sonnet | scoped research      | when it helps    |
+| Opus   | multi-step reasoning | on clear benefit | 
+| Fable  | judgment, taste      | by default       |
 
 ### Escalation
 
