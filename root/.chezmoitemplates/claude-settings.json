@@ -58,8 +58,13 @@
     ]
   },
 {{- $enabled := dict -}}
-{{- range .claude.plugins -}}{{- $_ := set $enabled . true -}}{{- end }}
+{{- range concat .claude.plugins (dig "identities" .identity "plugins" list .claude) -}}{{- $_ := set $enabled . true -}}{{- end }}
   "enabledPlugins": {{ $enabled | toPrettyJson | indent 2 | trim }},
+{{- $known := dict -}}
+{{- range $name, $repo := merge (dict) .claude.marketplaces (dig "identities" .identity "marketplaces" dict .claude) -}}
+{{- $_ := set $known $name (dict "source" (dict "source" "github" "repo" $repo)) -}}
+{{- end }}
+  "extraKnownMarketplaces": {{ $known | toPrettyJson | indent 2 | trim }},
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline.sh"

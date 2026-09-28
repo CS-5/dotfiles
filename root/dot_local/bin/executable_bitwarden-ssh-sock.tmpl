@@ -1,0 +1,39 @@
+{{ if .bitwardenSshAgent -}}
+#!/bin/sh
+
+# Print the SSH agent socket for a machine whose agent is the Bitwarden
+# desktop app. Shells export it as SSH_AUTH_SOCK and, on macOS, a LaunchAgent
+# hands it to GUI apps; ~/.ssh/config applies the same order via Match exec.
+#
+# Inside an SSH session with a forwarded agent, that agent (the client's
+# Bitwarden) is kept, since the local app can't serve a remote login.
+# Otherwise the first Bitwarden socket that exists wins, falling back to the
+# native install path so a missing app fails loudly instead of quietly
+# using some other agent.
+#
+# --forwarded: print nothing; exit 0 only when a forwarded agent is in use.
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+forwarded() {
+    [ -n "${SSH_CONNECTION:-}" ] && [ -S "${SSH_AUTH_SOCK:-}" ]
+}
+
+if [ "${1:-}" = "--forwarded" ]; then
+    forwarded
+    exit
+fi
+
+if forwarded; then
+    printf '%s\n' "$SSH_AUTH_SOCK"
+    exit 0
+fi
+
+for sock in {{ range .bitwardenSshSocks }}{{ squote . }} {{ end }}; do
+    if [ -S "$sock" ]; then
+        printf '%s\n' "$sock"
+        exit 0
+    fi
+done
+printf '%s\n' "$sock"
+{{ end -}}

@@ -8,8 +8,12 @@ if command -v brew >/dev/null 2>&1; then
 fi
 {{- end }}
 
+export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="{{ .binDirAbs }}:$PATH"
 {{ template "env-posix" . }}
+{{- if .bitwardenSshAgent }}
+export SSH_AUTH_SOCK="$({{ .binDirAbs }}/bitwarden-ssh-sock)"
+{{- end }}
 
 # Enable completions
 autoload -U compinit && compinit

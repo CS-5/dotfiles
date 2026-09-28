@@ -1,0 +1,15 @@
+{{ if and .isMac .bitwardenSshAgent -}}
+#!/bin/bash
+
+# The LaunchAgent only runs at login, so (re)load it now to hand
+# Bitwarden's SSH_AUTH_SOCK to GUI apps launched from here on.
+# LaunchAgent hash: {{ include "Library/LaunchAgents/local.bitwarden-ssh-auth-sock.plist.tmpl" | sha256sum }}
+
+label="local.bitwarden-ssh-auth-sock"
+domain="gui/$(id -u)"
+
+launchctl bootout "$domain/$label" 2>/dev/null || true
+if ! launchctl bootstrap "$domain" "$HOME/Library/LaunchAgents/$label.plist"; then
+    echo "[WARN] failed to load $label; it will load at next login"
+fi
+{{- end }}

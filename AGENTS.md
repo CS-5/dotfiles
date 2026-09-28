@@ -21,6 +21,7 @@ Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_
 
 - `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins. The mise step is skipped over when mise is package-managed — the system-package step above already covered it
 - `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache
+- `bitwarden-ssh-sock` - Prints the SSH agent socket on machines where Bitwarden is the agent (see SSH Agent); `--forwarded` exits 0 only inside an SSH session with a forwarded agent. Applied only when `bitwardenSshAgent` is true
 - `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
 
 ## Architecture
@@ -74,6 +75,17 @@ The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed
 
 On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signing-key.sh` to create a per-host `~/.ssh/git_signing` key before applying. When that private key file is present, `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and signs directly from disk with no agent; otherwise it falls back to the `key::` public-key literal and the forwarded agent.
 
+### SSH Agent
+
+On work machines (`bitwardenSshAgent`: work identity, not a dev container, WSL or Windows) the Bitwarden desktop app is the only SSH agent. Dev containers keep the host's forwarded agent; on WSL the app runs on the Windows side, where its Unix socket is unreachable. Personal machines keep the platform agent (`fish_ssh_agent`, `IdentitiesOnly`).
+
+Sandboxed installs put the socket inside their container, so `.chezmoi.toml.tmpl` renders an ordered per-OS candidate list, `bitwardenSshSocks` (macOS App Store; Linux snap, flatpak), always ending with the native install path `~/.bitwarden-ssh-agent.sock` as the fallback. The first socket that exists at runtime wins, and a forwarded agent in an SSH session (a work VM reached with `ssh -A`) wins over all of them. The same order is applied by two consumers:
+
+- `dot_ssh/config.tmpl` - `Match exec` blocks set `IdentityAgent` for anything that runs OpenSSH, whatever its environment. `IdentitiesOnly` and `AddKeysToAgent` are dropped, since the keys live only in the agent and Bitwarden doesn't accept added keys
+- `~/.local/bin/bitwarden-ssh-sock` - prints the socket for tools that read `SSH_AUTH_SOCK` instead (`ssh-add`, `ssh-keygen -Y sign`, VS Code agent forwarding). fish, bash and zsh export it, and on macOS the `local.bitwarden-ssh-auth-sock` LaunchAgent hands it to GUI apps via `launchctl setenv` at login
+
+Bitwarden leaves its socket file on disk after quitting, so the check stays stable while the app isn't running. `Match exec` runs through `$SHELL`, adding a few tens of milliseconds per ssh invocation when that shell is fish.
+
 ### Tool Management
 
 CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/config.toml.tmpl`. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
@@ -87,6 +99,7 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
+- `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS work machines: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
 
 ### Claude Plugin Management
 
@@ -96,21 +109,29 @@ is loaded into chezmoi's template data (`.claude`) but is **never applied to
 `$HOME`** — the list is a component of the dotfiles, not a user file. It drives
 two consumers:
 
-- **`dot_claude/settings.json.tmpl`** renders `enabledPlugins` from
-  `.claude.plugins` (each listed spec becomes `"spec": true`).
+- **`.chezmoitemplates/claude-settings.json`** (the settings body, applied via
+  `dot_claude/modify_settings.json`) renders `enabledPlugins` from the plugin
+  specs (each becomes `"spec": true`) and `extraKnownMarketplaces` from the
+  marketplaces.
 - **`run_onchange_after_04-claude-plugins.sh.tmpl`** runs `claude plugin
-  marketplace add` for each `.claude.marketplaces` entry, then `claude plugin
-  install` for each `.claude.plugins` entry. Enabling a plugin in settings does
-  not install it, so this script closes that gap; both commands are idempotent.
+  marketplace add` for each marketplace, then `claude plugin install` for each
+  plugin. Enabling a plugin in settings does not install it, so this script
+  closes that gap; both commands are idempotent.
 
-The `.toml` holds two arrays: `plugins` (specs `"plugin@marketplace"`) and
-`marketplaces` (GitHub `"owner/repo"`). Built-in marketplaces like
-`claude-plugins-official` are always available and need not be listed.
+The `.toml` holds `plugins` (an array of `"plugin@marketplace"` specs) and
+`marketplaces` (a table of marketplace name → GitHub `"owner/repo"`; the name is
+the one in the repo's `.claude-plugin/marketplace.json`, i.e. the part after `@`
+in a spec). `[claude.identities.<identity>]` holds the same two keys for entries
+added only on that identity (e.g. a private work marketplace). Built-in
+marketplaces like `claude-plugins-official` are always available and need not be
+listed. Marketplaces must be declared in settings, not just added by the script:
+`claude plugin marketplace add --scope user` writes them to
+`extraKnownMarketplaces`, and an undeclared entry would show up as drift.
 
-**To add** a plugin/marketplace, add a line to the relevant array. **To remove**
-one, delete its line: the plugin drops out of `enabledPlugins` and stops loading
-on the next apply (removal is handled declaratively by settings regeneration; the
-script never force-uninstalls). The provisioner re-runs whenever the file's hash
+**To add** a plugin/marketplace, add an entry. **To remove** one, delete it: the
+plugin drops out of `enabledPlugins` and stops loading on the next apply (removal
+is handled declaratively by settings regeneration; the script never
+force-uninstalls). The provisioner re-runs whenever the file's hash
 changes, following the same `run_onchange` pattern as the mise script.
 
 The script skips cleanly when the `claude` CLI is not yet installed (e.g. the
@@ -118,6 +139,12 @@ first `install.sh` run, which installs Claude Code after `chezmoi apply`) and
 picks the plugins up on the next apply. Hand-authored skills under
 `dot_claude/skills/` are unrelated — those are files applied directly to
 `~/.claude/skills/`.
+
+Claude Code rewrites `settings.json` in its own key order, so it is a
+`modify_` template: it keeps the live file untouched when it parses to the same
+JSON as the managed settings, and writes the managed version otherwise. Settings
+changed in the Claude Code UI still show up as a diff and are overwritten on
+apply; put anything you want kept into the partial.
 
 ### Environment Variables
 

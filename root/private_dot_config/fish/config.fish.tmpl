@@ -21,6 +21,7 @@ set -g fish_color_user brgreen
 set -g fish_color_valid_path --underline
 
 fish_add_path ~/.local/share/mise/shims
+fish_add_path ~/.opencode/bin
 
 fundle plugin 'edc/bass'
 fundle plugin 'PatrickF1/fzf.fish'
@@ -31,6 +32,8 @@ fish_add_path {{ .binDirAbs | quote }}
 
 {{ template "env-fish" . }}
 
-{{ if not .isDc -}}
+{{ if .bitwardenSshAgent -}}
+set -gx SSH_AUTH_SOCK ({{ .binDirAbs }}/bitwarden-ssh-sock)
+{{- else if not .isDc -}}
 fish_ssh_agent
 {{- end }}

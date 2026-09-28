@@ -54,6 +54,23 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
      GitHub's own web-flow key and cannot reach the forwarded signing key. */}}
 {{ $gitSign := and (not $isCodespaces) (ne $signingKey "") -}}
 
+{{/* Work machines use the Bitwarden desktop app as their only SSH agent.
+     Dev containers use the host's forwarded agent instead, and on WSL the
+     app runs on the Windows side where its Unix socket is unreachable.
+     Sandboxed installs (App Store, snap, flatpak) put the socket inside
+     their container, so candidates are checked in order at runtime; the
+     last entry, the native install path, is the fallback. */}}
+{{ $isWsl := env "WSL_DISTRO_NAME" | not | not -}}
+{{ $bitwardenSshAgent := and $isWork (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
+{{ $bitwardenSshSocks := list -}}
+{{ if eq .chezmoi.os "darwin" -}}
+  {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir "Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock") -}}
+{{ else if eq .chezmoi.os "linux" -}}
+  {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir "snap/bitwarden/current/.bitwarden-ssh-agent.sock") -}}
+  {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock") -}}
+{{ end -}}
+{{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
+
 [data]
     # Environment Info
     os = {{ .chezmoi.os | quote }}
@@ -62,7 +79,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 
     isMac = {{ eq .chezmoi.os "darwin" }}
     isWindows = {{ eq .chezmoi.os "windows" }}
-    isWsl = {{ env "WSL_DISTRO_NAME" | not | not }}
+    isWsl = {{ $isWsl }}
     isDc = {{ $isDc }}
 
     # Identity
@@ -78,6 +95,10 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     gitSigningPubKey = {{ $signingKey | quote }}
     gitSigningKeyFile = {{ $signingKeyFile | quote }}
     gitSign = {{ $gitSign }}
+
+    # SSH agent
+    bitwardenSshAgent = {{ $bitwardenSshAgent }}
+    bitwardenSshSocks = {{ $bitwardenSshSocks | toJson }}
 
     # Directory paths
     binDir = {{ $binDir | quote }}

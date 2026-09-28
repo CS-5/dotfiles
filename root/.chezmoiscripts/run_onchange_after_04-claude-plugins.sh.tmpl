@@ -10,11 +10,11 @@ if ! command -v claude >/dev/null 2>&1; then
     exit 0
 fi
 
-{{ range .claude.marketplaces -}}
+{{ range merge (dict) .claude.marketplaces (dig "identities" .identity "marketplaces" dict .claude) -}}
 echo "Adding marketplace {{ . }}..."
 claude plugin marketplace add "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to add marketplace {{ . }}"
 {{ end -}}
-{{ range .claude.plugins -}}
+{{ range concat .claude.plugins (dig "identities" .identity "plugins" list .claude) -}}
 echo "Installing {{ . }}..."
 claude plugin install "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to install {{ . }}"
 {{ end -}}

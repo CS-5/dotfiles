@@ -1,0 +1,13 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+  Claude Code rewrites settings.json with its own key order. Keep the live file
+  byte-for-byte when it is semantically equal to the managed settings (toJson
+  sorts keys), so reordering alone never shows up as a diff.
+*/ -}}
+{{- $managed := includeTemplate "claude-settings.json" . -}}
+{{- $current := get .chezmoi "stdin" -}}
+{{- if and $current (eq (fromJson $current | toJson) (fromJson $managed | toJson)) -}}
+{{- $current -}}
+{{- else -}}
+{{- $managed -}}
+{{- end -}}

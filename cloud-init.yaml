@@ -3,7 +3,7 @@
 #
 # Creates a sudo user, imports SSH keys from GitHub, installs bootstrap
 # packages, then clones this dotfiles repo and runs install.sh to set up
-# mise, chezmoi-managed dotfiles, fish, fundle, and Claude Code.
+# mise, chezmoi-managed dotfiles, fish, fundle, Claude Code, and opencode.
 #
 # Target distro: Ubuntu/Debian (apt-based). install.sh uses apt-get.
 

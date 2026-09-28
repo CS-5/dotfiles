@@ -3,6 +3,17 @@ Include conf.d/*
 Include ~/.orbstack/ssh/config
 {{- end }}
 
+{{ if .bitwardenSshAgent -}}
+# Bitwarden is the only SSH agent, resolved in the same order as
+# ~/.local/bin/bitwarden-ssh-sock: a forwarded agent in a remote session,
+# then a sandboxed install's socket, then the native install path (Host *).
+Match exec "{{ .binDirAbs }}/bitwarden-ssh-sock --forwarded"
+  IdentityAgent SSH_AUTH_SOCK
+{{ range initial .bitwardenSshSocks -}}
+Match exec "test -S {{ . }}"
+  IdentityAgent "{{ . }}"
+{{ end }}
+{{ end -}}
 {{ if not .isDc -}}
 Host github.com
   Hostname github.com
@@ -11,8 +22,12 @@ Host github.com
   PreferredAuthentications publickey
 
 Host *
+{{- if .bitwardenSshAgent }}
+  IdentityAgent "{{ last .bitwardenSshSocks }}"
+{{- else }}
   AddKeysToAgent yes
   IdentitiesOnly yes
+{{- end }}
   Compression yes
 {{- if .isMac }}
   UseKeychain yes
