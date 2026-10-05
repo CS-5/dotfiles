@@ -8,11 +8,12 @@ plugins = [
   "typescript-lsp@claude-plugins-official",
   "code-simplifier@claude-plugins-official",
   "frontend-design@claude-plugins-official",
-  "mattpocock-skills@claude-plugins-official",
+  "mattpocock-skills@mattpocock",
   "plannotator@plannotator",
 ]
 
 [claude.marketplaces]
+mattpocock = "mattpocock/skills"
 plannotator = "backnotprop/plannotator"
 
 [claude.identities.kirbtech]
