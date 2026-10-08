@@ -7,7 +7,8 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 ### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs
 
 Clone and run the bootstrap script. It installs mise, chezmoi, fish, Claude
-Code, and opencode, then applies the dotfiles:
+Code, Codex, Antigravity CLI, GitHub Copilot CLI, and opencode, then applies the
+dotfiles:
 
 ```sh
 git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi

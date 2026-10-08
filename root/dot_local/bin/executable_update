@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Update everything on this machine: system packages (apt/brew), mise,
-# chezmoi, the dotfiles themselves, and mise-managed tools.
+# chezmoi, the dotfiles themselves, mise-managed tools, and the coding-agent
+# CLIs that install.sh sets up outside mise.
 #
 # Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
 
@@ -48,6 +49,18 @@ main() {
         step "Upgrading mise tools"
         mise upgrade
     fi
+
+    # Installed by install.sh with each vendor's own installer rather than
+    # mise, so they can self-update; this runs that same updater on demand.
+    # Each is optional (macOS/Windows don't get them), and one failing
+    # shouldn't stop the rest.
+    local tool
+    for tool in "claude update" "codex update" "copilot update" "agy update" "opencode upgrade"; do
+        if command -v "${tool%% *}" >/dev/null 2>&1; then
+            step "Updating ${tool%% *}"
+            $tool || echo "${tool%% *} update failed, skipping"
+        fi
+    done
 
     step "Update complete"
 }
