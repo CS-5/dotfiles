@@ -132,6 +132,24 @@ show_progress "Installing Claude Code"
 curl -fsSL https://claude.ai/install.sh | bash
 log_success "Claude Code installed"
 
+#### Codex ####
+# CODEX_NON_INTERACTIVE: the installer otherwise offers to launch codex via
+# /dev/tty, which would stall an unattended bootstrap.
+show_progress "Installing Codex"
+curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
+log_success "Codex installed"
+
+#### Antigravity CLI ####
+show_progress "Installing Antigravity CLI"
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+log_success "Antigravity CLI installed"
+
+#### GitHub Copilot CLI ####
+# PREFIX pins ~/.local/bin; the installer would pick /usr/local when run as root.
+show_progress "Installing GitHub Copilot CLI"
+curl -fsSL https://gh.io/copilot-install | PREFIX="$HOME/.local" bash
+log_success "GitHub Copilot CLI installed"
+
 #### opencode ####
 # --no-modify-path: the installer would otherwise append to chezmoi-managed
 # shell configs, which already put ~/.opencode/bin on PATH.
