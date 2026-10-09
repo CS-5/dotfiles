@@ -16,10 +16,10 @@ worktrunk = "0.80.0"
 cloudflared = "2026.9.3"
 aube = "2.5.1"
 usage = "6.11.1"
+hunk = "0.22.0"
 
 "github:Ataraxy-Labs/sem" = "0.25.0"
 "github:backnotprop/plannotator" = "0.27.21"
-"github:modem-dev/hunk" = "0.22.0"
 {{ if ne .chezmoi.os "windows" -}}
 herdr = "0.9.1"
 zellij = "0.45.1"
@@ -57,4 +57,9 @@ node.verify = false
 
 # Install corepack shims after installing node
 node.corepack = true
+
+self_update.auto = true
+self_update.check_duration = "24h"
+self_update.minimum_release_age = "24h"
+
 
