@@ -54,3 +54,15 @@ needed). You can also override the public key by dropping it at
 `~/.ssh/git_signing.pub`, or by setting `DOTFILES_SIGNING_KEY`. The matching
 **private** key must be available (a local key file, or loaded in your SSH
 agent) wherever you commit.
+
+Machines without `~/.ssh/git_signing` (macOS, which skips `install.sh`) sign
+through their SSH agent. On work machines that's Bitwarden, so store the private
+half of the baked-in public key in Bitwarden. No per-machine git config is
+needed.
+
+## Link routing (macOS)
+
+On macOS, the dotfiles configure [Brouter](https://github.com/CS-5/Brouter) at
+`~/.config/brouter/config.toml`. Install the app yourself from its
+[releases](https://github.com/CS-5/Brouter/releases) and let it become the
+default browser. The routing rules are described in `AGENTS.md`.
