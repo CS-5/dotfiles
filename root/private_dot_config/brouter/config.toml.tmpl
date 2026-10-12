@@ -6,19 +6,6 @@
 #   /Applications/Brouter.app/Contents/MacOS/Brouter test <url>
 {{- $kirbtechMac := and .isMac (eq .identity "kirbtech") }}
 
-{{- /* Native-app rules render only for apps installed when chezmoi applies.
-     Brouter sends a rule whose app is missing to `default` rather than on to
-     the next rule, which would skip the Edge rules on the work Mac. Re-apply
-     (or run `update`) after installing one of these apps. */}}
-{{- $installed := dict }}
-{{- range $app := list "Linear" "Microsoft Teams" }}
-{{-   range $dir := list "/Applications" (joinPath $.chezmoi.homeDir "Applications") }}
-{{-     if stat (joinPath $dir (printf "%s.app" $app)) }}
-{{-       $_ := set $installed $app true }}
-{{-     end }}
-{{-   end }}
-{{- end }}
-
 {{ if $kirbtechMac -}}
 default = "com.google.Chrome"
 {{- else -}}
@@ -26,18 +13,15 @@ default = "app.zen-browser.zen"
 {{- end }}
 strip_tracking = true
 hide_icon = false
-{{- if $installed }}
 
 # --- Native apps -------------------------------------------------------------
-{{- end }}
-{{- if hasKey $installed "Linear" }}
+# A rule whose app isn't installed is skipped, so its links fall through to
+# the rules below.
 
 [[rules]]
 host = "linear.app"
 open = "Linear"
 scheme = "linear"
-{{- end }}
-{{- if hasKey $installed "Microsoft Teams" }}
 
 # Teams deep links (/l/...) open in the app under its msteams:// scheme.
 # Other Teams URLs go to a browser, where Teams offers to open the app.
@@ -46,7 +30,6 @@ host = "teams.microsoft.com"
 path = "/l/*"
 open = "Microsoft Teams"
 scheme = "msteams"
-{{- end }}
 {{- if $kirbtechMac }}
 
 # --- Work browser ------------------------------------------------------------
