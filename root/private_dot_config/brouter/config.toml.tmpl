@@ -1,0 +1,87 @@
+# Brouter config: https://github.com/CS-5/Brouter
+#
+# Managed by chezmoi; edit root/private_dot_config/brouter/config.toml.tmpl in
+# the dotfiles repo, not this file. Rules are checked top to bottom and the
+# first match wins. Check a link with:
+#   /Applications/Brouter.app/Contents/MacOS/Brouter test <url>
+{{- $kirbtechMac := and .isMac (eq .identity "kirbtech") }}
+
+{{ if $kirbtechMac -}}
+default = "com.google.Chrome"
+{{- else -}}
+default = "app.zen-browser.zen"
+{{- end }}
+strip_tracking = true
+hide_icon = false
+
+# --- Native apps -------------------------------------------------------------
+# A rule whose app isn't installed is skipped, so its links fall through to
+# the rules below.
+
+[[rules]]
+host = "linear.app"
+open = "Linear"
+scheme = "linear"
+
+# Teams deep links (/l/...) open in the app under its msteams:// scheme.
+# Other Teams URLs go to a browser, where Teams offers to open the app.
+[[rules]]
+host = "teams.microsoft.com"
+path = "/l/*"
+open = "Microsoft Teams"
+scheme = "msteams"
+{{- if $kirbtechMac }}
+
+# --- Work browser ------------------------------------------------------------
+
+[[rules]]
+regex = "(?i)kirbtech"
+open = "com.microsoft.edgemac"
+
+[[rules]]
+host = [
+  # Zubie
+  "zubie.com",
+  # Cloudflare
+  "cloudflare.com",
+  "cloudflareaccess.com",
+  # Claude
+  "claude.ai",
+  "claude.com",
+  "anthropic.com",
+  # ChatGPT
+  "chatgpt.com",
+  "openai.com",
+  # Microsoft
+  "microsoft.com",
+  "microsoftonline.com",
+  "microsoft365.com",
+  "cloud.microsoft",
+  "office.com",
+  "office365.com",
+  "sharepoint.com",
+  "live.com",
+  "outlook.com",
+  "onedrive.com",
+  "azure.com",
+  "powerbi.com",
+  # Bitwarden
+  "bitwarden.com",
+  "bitwarden.eu",
+]
+open = "com.microsoft.edgemac"
+{{- else }}
+
+# --- Zen containers ----------------------------------------------------------
+# Needs the "Open external links in a container" extension installed in Zen.
+
+[[rules]]
+regex = "(?i)scstem"
+open = "app.zen-browser.zen"
+container = "Robotics"
+
+[[rules]]
+regex = "(?i)journalytic"
+open = "app.zen-browser.zen"
+container = "Work"
+{{- end }}

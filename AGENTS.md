@@ -73,7 +73,7 @@ Commits are signed with an SSH key. The signing **public** key resolves at `chez
 
 The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is true everywhere **except Codespaces**, where GitHub signs commits server-side with its own web-flow key and the forwarded signing key is unavailable. The matching **private** key must be loaded in the SSH agent wherever commits are made.
 
-On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signing-key.sh` to create a per-host `~/.ssh/git_signing` key before applying. When that private key file is present, `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and signs directly from disk with no agent; otherwise it falls back to the `key::` public-key literal and the forwarded agent.
+On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signing-key.sh` to create a per-host `~/.ssh/git_signing` key before applying. When that private key file is present, `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and signs directly from disk with no agent; otherwise it falls back to the `key::` public-key literal, and whichever agent `SSH_AUTH_SOCK` points at signs with the matching private key: the forwarded agent in a dev container, Bitwarden on work machines (see SSH Agent). Machines without `~/.ssh/git_signing` (macOS, which installs without `install.sh`) therefore sign with the key stored in Bitwarden, so the committed canonical default must be that key's public half; no per-machine git config is needed.
 
 ### SSH Agent
 
@@ -146,6 +146,16 @@ JSON as the managed settings, and writes the managed version otherwise. Settings
 changed in the Claude Code UI still show up as a diff and are overwritten on
 apply; put anything you want kept into the partial.
 
+### Link Routing (macOS)
+
+[Brouter](https://github.com/CS-5/Brouter), a menu-bar app set as the default browser, sends each clicked link to a browser, a browser container, or a native app. Its config, `root/private_dot_config/brouter/config.toml.tmpl` (applied to `~/.config/brouter/config.toml`), is applied only on macOS; Brouter reloads it as soon as chezmoi writes it. The app itself is installed by hand from its GitHub releases, not by the dotfiles.
+
+- **All Macs**: Linear and Teams deep links (`teams.microsoft.com/l/*`) open in their native apps, via a scheme swap (`linear://`, `msteams://`). Brouter skips a rule whose app isn't installed, so those links fall through to the rules below (a kirbtech Linear link goes to Edge on a Mac without Linear). Slack has no rule: its app links need team and channel IDs a scheme swap can't produce, so Slack links go to a browser, which offers to open the app
+- **Kirbtech Mac** (`isMac` and identity `kirbtech`): default Chrome. Any URL containing `kirbtech`, and the listed Zubie, Cloudflare, Claude, ChatGPT, Microsoft and Bitwarden domains, open in Edge
+- **Other Macs**: default Zen. URLs containing `scstem` open in Zen's `Robotics` container and `journalytic` in its `Work` container (needs Zen's "Open external links in a container" extension)
+
+Rules are checked top to bottom and the first match wins, so native apps come first. To add a domain, add it to the relevant rule's `host` list (a host also matches its subdomains).
+
 ### Environment Variables
 
 Simple key-value environment variables (e.g., `VISUAL`, `HOMEBREW_NO_AUTO_UPDATE`) are centralized in template partials under `root/.chezmoitemplates/`. Each partial renders the same variables in the syntax for its target shell:
@@ -176,6 +186,7 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 - `root/private_dot_config/fish/config.fish.tmpl` - Fish shell configuration
 - `root/dot_bashrc.tmpl` - Bash configuration (Homebrew, starship, mise, zoxide, mcfly)
 - `root/dot_zshrc.tmpl` - Zsh configuration
+- `root/private_dot_config/brouter/config.toml.tmpl` - Brouter link-routing rules (macOS)
 
 ## Common Commands
 
