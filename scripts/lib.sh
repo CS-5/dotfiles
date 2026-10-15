@@ -4,7 +4,6 @@
 # Usage: source "$(dirname "${BASH_SOURCE[0]}")/scripts/lib.sh"
 #   or:  source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'

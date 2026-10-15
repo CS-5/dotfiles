@@ -3,7 +3,6 @@
 
 {{ template "env-windows-persist" . }}
 
-# Add ~/.local/bin to User PATH if not already present
 $binDir = Join-Path $HOME ".local" "bin"
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if (-not $userPath) { $userPath = "" }
