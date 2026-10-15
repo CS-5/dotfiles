@@ -11,18 +11,20 @@
 # Entries under [codex.identities.<identity>] are added only on that identity.
 
 [codex]
-# Not native Codex plugins: these ship only Claude manifests
+# frontend-design and mattpocock-skills ship only Claude manifests
 # (.claude-plugin/), so they rely on Codex's fallback to reading Claude-format
-# marketplaces and plugins. kirbtech-skills ships native Codex manifests
-# (.agents/plugins/marketplace.json, .codex-plugin/plugin.json).
+# marketplaces and plugins. modern-web-guidance and kirbtech-skills ship native
+# Codex manifests (.agents/plugins/marketplace.json, .codex-plugin/plugin.json).
 plugins = [
   "frontend-design@claude-plugins-official",
   "mattpocock-skills@mattpocock",
+  "modern-web-guidance@googlechrome",
 ]
 
 # Unlike Claude, Codex has no built-in claude-plugins-official marketplace.
 [codex.marketplaces]
 claude-plugins-official = "anthropics/claude-plugins-official"
+googlechrome = "GoogleChrome/modern-web-guidance"
 mattpocock = "mattpocock/skills"
 
 [codex.identities.kirbtech]
