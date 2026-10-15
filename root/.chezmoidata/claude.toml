@@ -9,10 +9,12 @@ plugins = [
   "code-simplifier@claude-plugins-official",
   "frontend-design@claude-plugins-official",
   "mattpocock-skills@mattpocock",
+  "modern-web-guidance@googlechrome",
   "plannotator@plannotator",
 ]
 
 [claude.marketplaces]
+googlechrome = "GoogleChrome/modern-web-guidance"
 mattpocock = "mattpocock/skills"
 plannotator = "backnotprop/plannotator"
 
