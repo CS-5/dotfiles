@@ -152,7 +152,7 @@ log_success "GitHub Copilot CLI installed"
 # --no-modify-path: the installer would otherwise append to chezmoi-managed
 # shell configs, which already put ~/.opencode/bin on PATH.
 show_progress "Installing opencode"
-curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
+curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
 log_success "opencode installed"
 
 log_success "Setup complete"
