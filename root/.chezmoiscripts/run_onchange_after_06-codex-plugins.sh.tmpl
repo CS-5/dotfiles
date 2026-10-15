@@ -1,0 +1,18 @@
+{{/* Rendered only once codex is on PATH: an empty script doesn't run or get
+     recorded, so the first apply after codex is installed provisions it. */ -}}
+{{ if and (ne .chezmoi.os "windows") (lookPath "codex") -}}
+#!/bin/bash
+
+# codex plugins hash: {{ include ".chezmoidata/codex.toml" | sha256sum }}
+
+set -euo pipefail
+
+{{ range merge (dict) .codex.marketplaces (dig "identities" .identity "marketplaces" dict .codex) -}}
+echo "Adding marketplace {{ . }}..."
+codex plugin marketplace add "{{ . }}" 2>/dev/null || echo "[WARN] failed to add marketplace {{ . }}"
+{{ end -}}
+{{ range concat .codex.plugins (dig "identities" .identity "plugins" list .codex) -}}
+echo "Installing {{ . }}..."
+codex plugin add "{{ . }}" 2>/dev/null || echo "[WARN] failed to install {{ . }}"
+{{ end -}}
+{{- end }}

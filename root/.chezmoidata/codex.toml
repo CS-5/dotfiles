@@ -1,0 +1,26 @@
+# Codex plugins, provisioned by run_onchange_after_06-codex-plugins.sh the same
+# way claude.toml drives Claude Code. Codex reads Claude-format marketplaces
+# (.claude-plugin/marketplace.json), so these are the Claude plugins that work
+# in Codex. Codex loads a plugin's skills and MCP servers, but not its agents,
+# LSP servers or hooks, so these Claude plugins stay Claude-only:
+# code-simplifier (agent), gopls-lsp and typescript-lsp (LSP), plannotator
+# (hooks; Codex support comes from its own installer, not a plugin).
+#
+# Unlike Claude, removing an entry here does not uninstall it: run
+# `codex plugin remove <plugin@marketplace>` as well.
+# Entries under [codex.identities.<identity>] are added only on that identity.
+
+[codex]
+plugins = [
+  "frontend-design@claude-plugins-official",
+  "mattpocock-skills@mattpocock",
+]
+
+# Unlike Claude, Codex has no built-in claude-plugins-official marketplace.
+[codex.marketplaces]
+claude-plugins-official = "anthropics/claude-plugins-official"
+mattpocock = "mattpocock/skills"
+
+[codex.identities.kirbtech]
+plugins = ["kirbtech-skills@kirbtech"]
+marketplaces = { kirbtech = "kirbtech/skills" }

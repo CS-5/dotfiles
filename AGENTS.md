@@ -100,6 +100,7 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
 - `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS work machines: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
+- `run_onchange_after_06-codex-plugins.sh.tmpl` - Installs Codex plugins when the plugin list changes (see Codex Plugin Management)
 
 ### Claude Plugin Management
 
@@ -134,9 +135,10 @@ is handled declaratively by settings regeneration; the script never
 force-uninstalls). The provisioner re-runs whenever the file's hash
 changes, following the same `run_onchange` pattern as the mise script.
 
-The script skips cleanly when the `claude` CLI is not yet installed (e.g. the
-first `install.sh` run, which installs Claude Code after `chezmoi apply`) and
-picks the plugins up on the next apply. Hand-authored skills under
+The script renders empty, and so neither runs nor is recorded, until the
+`claude` CLI is on `PATH` (`lookPath`). The first `install.sh` run installs
+Claude Code after `chezmoi apply`, so the plugins are picked up on the next
+apply (e.g. `update`). Hand-authored skills under
 `dot_claude/skills/` are unrelated — those are files applied directly to
 `~/.claude/skills/`.
 
@@ -145,6 +147,27 @@ Claude Code rewrites `settings.json` in its own key order, so it is a
 JSON as the managed settings, and writes the managed version otherwise. Settings
 changed in the Claude Code UI still show up as a diff and are overwritten on
 apply; put anything you want kept into the partial.
+
+### Codex Plugin Management
+
+Codex plugins are declared the same way in **`root/.chezmoidata/codex.toml`**
+(same `plugins` / `marketplaces` / `[codex.identities.<identity>]` schema), and
+**`run_onchange_after_06-codex-plugins.sh.tmpl`** runs `codex plugin marketplace
+add` and `codex plugin add` for each entry. Both are idempotent, and the script
+renders empty until `codex` is on `PATH`, like the Claude one.
+
+Codex reads Claude-format marketplaces (`.claude-plugin/marketplace.json`), so
+the list is the subset of the Claude plugins that work in Codex. Codex loads a
+plugin's skills and MCP servers but not its agents, LSP servers or hooks, so
+`code-simplifier`, the `*-lsp` plugins and `plannotator` stay Claude-only. Codex
+has no built-in `claude-plugins-official`, so it is declared as a marketplace
+(`anthropics/claude-plugins-official`). Plugins update themselves at Codex
+startup; `codex plugin marketplace upgrade` refreshes the marketplaces by hand.
+
+Differences from Claude: `~/.codex/config.toml` is not managed by chezmoi (the
+`codex plugin` commands write their own `[marketplaces]` and `[plugins]` entries
+to it), so **removing** an entry from `codex.toml` does not uninstall it; also run
+`codex plugin remove <plugin@marketplace>`.
 
 ### Link Routing (macOS)
 
