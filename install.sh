@@ -39,7 +39,6 @@ SCRIPT_DIR="$DOTFILES_SOURCE_DIR/scripts"
 
 source "$SCRIPT_DIR/lib.sh"
 
-# Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
     --work-email)
@@ -59,7 +58,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Create necessary directories
 mkdir -p ~/.local/bin ~/.config/fish/{conf.d,completions}
 
 log_info "Setting up environment${WORK_EMAIL:+ (work email: $WORK_EMAIL)}"

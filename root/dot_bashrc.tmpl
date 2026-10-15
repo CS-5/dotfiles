@@ -15,12 +15,10 @@ export PATH="{{ .binDirAbs }}:$PATH"
 export SSH_AUTH_SOCK="$({{ .binDirAbs }}/bitwarden-ssh-sock)"
 {{- end }}
 
-# Initialize starship prompt
 if command -v starship >/dev/null 2>&1; then
     eval "$(starship init bash)"
 fi
 
-# Initialize tools
 if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate bash --shims)"
 fi
@@ -39,7 +37,6 @@ fzkill() {
     ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
 }
 
-# History settings
 HISTFILE=~/.bash_history
 HISTSIZE=20000
 HISTFILESIZE=20000

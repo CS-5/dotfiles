@@ -100,6 +100,7 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
 - `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS work machines: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
+- `run_onchange_after_06-codex-plugins.sh.tmpl` - Installs Codex plugins when the plugin list changes (see Codex Plugin Management)
 
 ### Claude Plugin Management
 
@@ -134,9 +135,10 @@ is handled declaratively by settings regeneration; the script never
 force-uninstalls). The provisioner re-runs whenever the file's hash
 changes, following the same `run_onchange` pattern as the mise script.
 
-The script skips cleanly when the `claude` CLI is not yet installed (e.g. the
-first `install.sh` run, which installs Claude Code after `chezmoi apply`) and
-picks the plugins up on the next apply. Hand-authored skills under
+The script renders empty, and so neither runs nor is recorded, until the
+`claude` CLI is on `PATH` (`lookPath`). The first `install.sh` run installs
+Claude Code after `chezmoi apply`, so the plugins are picked up on the next
+apply (e.g. `update`). Hand-authored skills under
 `dot_claude/skills/` are unrelated — those are files applied directly to
 `~/.claude/skills/`.
 
@@ -146,11 +148,32 @@ JSON as the managed settings, and writes the managed version otherwise. Settings
 changed in the Claude Code UI still show up as a diff and are overwritten on
 apply; put anything you want kept into the partial.
 
+### Codex Plugin Management
+
+Codex plugins are declared the same way in **`root/.chezmoidata/codex.toml`**
+(same `plugins` / `marketplaces` / `[codex.identities.<identity>]` schema), and
+**`run_onchange_after_06-codex-plugins.sh.tmpl`** runs `codex plugin marketplace
+add` and `codex plugin add` for each entry. Both are idempotent, and the script
+renders empty until `codex` is on `PATH`, like the Claude one.
+
+Codex reads Claude-format marketplaces (`.claude-plugin/marketplace.json`), so
+the list is the subset of the Claude plugins that work in Codex. Codex loads a
+plugin's skills and MCP servers but not its agents, LSP servers or hooks, so
+`code-simplifier`, the `*-lsp` plugins and `plannotator` stay Claude-only. Codex
+has no built-in `claude-plugins-official`, so it is declared as a marketplace
+(`anthropics/claude-plugins-official`). Plugins update themselves at Codex
+startup; `codex plugin marketplace upgrade` refreshes the marketplaces by hand.
+
+Differences from Claude: `~/.codex/config.toml` is not managed by chezmoi (the
+`codex plugin` commands write their own `[marketplaces]` and `[plugins]` entries
+to it), so **removing** an entry from `codex.toml` does not uninstall it; also run
+`codex plugin remove <plugin@marketplace>`.
+
 ### Link Routing (macOS)
 
 [Brouter](https://github.com/CS-5/Brouter), a menu-bar app set as the default browser, sends each clicked link to a browser, a browser container, or a native app. Its config, `root/private_dot_config/brouter/config.toml.tmpl` (applied to `~/.config/brouter/config.toml`), is applied only on macOS; Brouter reloads it as soon as chezmoi writes it. The app itself is installed by hand from its GitHub releases, not by the dotfiles.
 
-- **All Macs**: Linear and Teams deep links (`teams.microsoft.com/l/*`) open in their native apps, via a scheme swap (`linear://`, `msteams://`). Brouter skips a rule whose app isn't installed, so those links fall through to the rules below (a kirbtech Linear link goes to Edge on a Mac without Linear). Slack has no rule: its app links need team and channel IDs a scheme swap can't produce, so Slack links go to a browser, which offers to open the app
+- **All Macs**: Linear and Teams deep links (`teams.microsoft.com/l/*`) open in their native apps, via a scheme swap (`linear://`, `msteams://`). Brouter doesn't skip a rule whose app isn't installed, so each rule renders only when its app is in `/Applications` or `~/Applications` at apply time; without it, the links fall through to the rules below (a kirbtech Linear link goes to Edge on a Mac without Linear). Re-apply (or run `update`) after installing one. Slack has no rule: its app links need team and channel IDs a scheme swap can't produce, so Slack links go to a browser, which offers to open the app
 - **Kirbtech Mac** (`isMac` and identity `kirbtech`): default Chrome. Any URL containing `kirbtech`, and the listed Zubie, Cloudflare, Claude, ChatGPT, Microsoft and Bitwarden domains, open in Edge
 - **Other Macs**: default Zen. URLs containing `scstem` open in Zen's `Robotics` container and `journalytic` in its `Work` container (needs Zen's "Open external links in a container" extension)
 

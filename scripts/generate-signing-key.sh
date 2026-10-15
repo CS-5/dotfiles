@@ -31,7 +31,6 @@ chmod 600 "$KEY_PATH"
 chmod 644 "${KEY_PATH}.pub"
 log_success "Signing key generated"
 
-# Upload to GitHub automatically when gh is installed and authenticated.
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
     if gh ssh-key add "${KEY_PATH}.pub" --type signing --title "git signing ($(hostname))"; then
         log_success "Uploaded signing key to GitHub"

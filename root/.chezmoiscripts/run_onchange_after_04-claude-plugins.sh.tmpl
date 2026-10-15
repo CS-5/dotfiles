@@ -1,14 +1,11 @@
-{{ if ne .chezmoi.os "windows" -}}
+{{/* Rendered only once claude is on PATH: an empty script doesn't run or get
+     recorded, so the first apply after claude is installed provisions it. */ -}}
+{{ if and (ne .chezmoi.os "windows") (lookPath "claude") -}}
 #!/bin/bash
 
 # claude plugins hash: {{ include ".chezmoidata/claude.toml" | sha256sum }}
 
 set -euo pipefail
-
-if ! command -v claude >/dev/null 2>&1; then
-    echo "claude not found, skipping plugin setup"
-    exit 0
-fi
 
 {{ range merge (dict) .claude.marketplaces (dig "identities" .identity "marketplaces" dict .claude) -}}
 echo "Adding marketplace {{ . }}..."
