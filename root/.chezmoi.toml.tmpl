@@ -34,26 +34,6 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ end -}}
 {{ $isWork := ne $identity "personal" -}}
 
-{{/* Signing public key: committed canonical default, overridden by a
-     per-host file, overridden by an explicit env var. The key is public,
-     so committing it is safe; the matching private key lives in the SSH
-     agent wherever commits are made. */}}
-{{ $signingKey := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKEgjvCUvsO0qdi0D+H0ksk2HbfGhlQU7fQE4F817N+G" -}}
-{{ $signingKeyPath := joinPath .chezmoi.homeDir ".ssh/git_signing.pub" -}}
-{{ if stat $signingKeyPath -}}{{ $signingKey = include $signingKeyPath | trim -}}{{ end -}}
-{{ if env "DOTFILES_SIGNING_KEY" -}}{{ $signingKey = env "DOTFILES_SIGNING_KEY" -}}{{ end -}}
-
-{{/* Private signing key on disk (hosts/VMs/WSL). When present, git signs
-     directly from the file with no agent; otherwise it falls back to the
-     canonical public key via a forwarded agent (dev containers). */}}
-{{ $signingKeyFilePath := joinPath .chezmoi.homeDir ".ssh/git_signing" -}}
-{{ $signingKeyFile := "" -}}
-{{ if stat $signingKeyFilePath -}}{{ $signingKeyFile = $signingKeyFilePath -}}{{ end -}}
-
-{{/* Sign commits everywhere except Codespaces, which signs commits with
-     GitHub's own web-flow key and cannot reach the forwarded signing key. */}}
-{{ $gitSign := and (not $isCodespaces) (ne $signingKey "") -}}
-
 {{/* Work machines use the Bitwarden desktop app as their only SSH agent.
      Dev containers use the host's forwarded agent instead, and on WSL the
      app runs on the Windows side where its Unix socket is unreachable.
@@ -70,6 +50,26 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
   {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock") -}}
 {{ end -}}
 {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
+
+{{/* Signing key, first match wins:
+     1. A private key on disk at ~/.ssh/git_signing (install.sh generates
+        one on WSL, VMs and bare metal): git signs from the file, no agent.
+     2. Bitwarden as the SSH agent: git signs through the agent with the
+        "GitHub Signing" key stored in the vault, so nothing lives on disk.
+     3. Neither: commits are not signed. */}}
+{{ $signingKey := "" -}}
+{{ $signingKeyFile := "" -}}
+{{ $signingKeyFilePath := joinPath .chezmoi.homeDir ".ssh/git_signing" -}}
+{{ if stat $signingKeyFilePath -}}
+  {{ $signingKeyFile = $signingKeyFilePath -}}
+  {{ $signingPubKeyPath := printf "%s.pub" $signingKeyFilePath -}}
+  {{ if stat $signingPubKeyPath -}}{{ $signingKey = include $signingPubKeyPath | trim -}}{{ end -}}
+{{ else if $bitwardenSshAgent -}}
+  {{ $signingKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUhU31PFPWI9ggTCNK7JuYnc7O7RrUKgjjt2aWDCVIP" -}}
+{{ end -}}
+
+{{/* Codespaces sign server-side with GitHub's own web-flow key. */}}
+{{ $gitSign := and (not $isCodespaces) (or (ne $signingKeyFile "") (ne $signingKey "")) -}}
 
 [data]
     # Environment Info
