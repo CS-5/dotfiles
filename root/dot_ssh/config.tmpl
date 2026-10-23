@@ -18,7 +18,9 @@ Match exec "test -S {{ . }}"
 Host github.com
   Hostname github.com
   User git
+{{- if not .bitwardenSshAgent }}
   IdentityFile ~/.ssh/git_personal
+{{- end }}
   PreferredAuthentications publickey
 
 Host *
