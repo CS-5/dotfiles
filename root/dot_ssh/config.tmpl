@@ -15,14 +15,6 @@ Match exec "test -S {{ . }}"
 {{ end }}
 {{ end -}}
 {{ if not .isDc -}}
-Host github.com
-  Hostname github.com
-  User git
-{{- if not .bitwardenSshAgent }}
-  IdentityFile ~/.ssh/git_personal
-{{- end }}
-  PreferredAuthentications publickey
-
 Host *
 {{- if .bitwardenSshAgent }}
   IdentityAgent "{{ last .bitwardenSshSocks }}"
