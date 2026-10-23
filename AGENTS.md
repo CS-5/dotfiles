@@ -69,11 +69,13 @@ There is no auto-detection or prompt: the file (or its env-var fallback) is the 
 
 ### Git Signing
 
-Commits are signed with an SSH key. The signing **public** key resolves at `chezmoi init` time with this precedence: `DOTFILES_SIGNING_KEY` env var → `~/.ssh/git_signing.pub` (per-host override) → a committed canonical default. Because the public key is non-secret and always available, signing works out of the box on every machine — including dev containers, which sign using the host's forwarded SSH agent (no local key file needed).
+Commits are signed with an SSH key, resolved at `chezmoi init` time in `.chezmoi.toml.tmpl` (first match wins):
 
-The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is true everywhere **except Codespaces**, where GitHub signs commits server-side with its own web-flow key and the forwarded signing key is unavailable. The matching **private** key must be loaded in the SSH agent wherever commits are made.
+1. **Key on disk** - a private key at `~/.ssh/git_signing` (on WSL, VMs and bare metal, `install.sh` runs `scripts/generate-signing-key.sh` to create one before applying). `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
+2. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent) and in dev containers, which use the host's forwarded Bitwarden agent, `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent and no key file is needed on disk. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
+3. **Neither** - commits are not signed (`gitSign` is false); e.g. personal machines without a key file
 
-On real hosts (WSL, VMs, bare metal), `install.sh` runs `scripts/generate-signing-key.sh` to create a per-host `~/.ssh/git_signing` key before applying. When that private key file is present, `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and signs directly from disk with no agent; otherwise it falls back to the `key::` public-key literal, and whichever agent `SSH_AUTH_SOCK` points at signs with the matching private key: the forwarded agent in a dev container, Bitwarden on work machines (see SSH Agent). Machines without `~/.ssh/git_signing` (macOS, which installs without `install.sh`) therefore sign with the key stored in Bitwarden, so the committed canonical default must be that key's public half; no per-machine git config is needed.
+The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is always false in **Codespaces**, where GitHub signs commits server-side with its own web-flow key.
 
 ### SSH Agent
 

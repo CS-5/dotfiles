@@ -43,22 +43,16 @@ iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 
 ## Commit signing
 
-Commits are signed with an SSH key. The signing **public** key is baked into the
-config, so signing works out of the box everywhere — including dev containers,
-which sign using the host's forwarded SSH agent. Signing is disabled in
-Codespaces (GitHub signs those server-side).
+Commits are signed with an SSH key, picked at `chezmoi init` time:
 
-On real hosts (WSL, VMs, bare metal), `install.sh` generates a per-host
-`~/.ssh/git_signing` key and git signs directly from that file (no agent
-needed). You can also override the public key by dropping it at
-`~/.ssh/git_signing.pub`, or by setting `DOTFILES_SIGNING_KEY`. The matching
-**private** key must be available (a local key file, or loaded in your SSH
-agent) wherever you commit.
+1. If `~/.ssh/git_signing` exists, git signs directly from that file (no agent
+   needed). On real hosts (WSL, VMs, bare metal), `install.sh` generates one.
+2. Otherwise, on work machines where Bitwarden is the SSH agent, and in dev
+   containers (which use the host's forwarded agent), git signs through Bitwarden with the "GitHub Signing" key stored in the vault. Nothing
+   is kept on disk; Bitwarden must be running and unlocked to commit.
+3. Otherwise, commits are not signed.
 
-Machines without `~/.ssh/git_signing` (macOS, which skips `install.sh`) sign
-through their SSH agent. On work machines that's Bitwarden, so store the private
-half of the baked-in public key in Bitwarden. No per-machine git config is
-needed.
+Signing is always disabled in Codespaces (GitHub signs those server-side).
 
 ## Link routing (macOS)
 
