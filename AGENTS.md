@@ -72,8 +72,8 @@ There is no auto-detection or prompt: the file (or its env-var fallback) is the 
 Commits are signed with an SSH key, resolved at `chezmoi init` time in `.chezmoi.toml.tmpl` (first match wins):
 
 1. **Key on disk** - a private key at `~/.ssh/git_signing` (on WSL, VMs and bare metal, `install.sh` runs `scripts/generate-signing-key.sh` to create one before applying). `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
-2. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent) `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent and no key file is needed on disk. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
-3. **Neither** - commits are not signed (`gitSign` is false); this includes dev containers and personal machines without a key file
+2. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent) and in dev containers, which use the host's forwarded Bitwarden agent, `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent and no key file is needed on disk. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
+3. **Neither** - commits are not signed (`gitSign` is false); e.g. personal machines without a key file
 
 The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is always false in **Codespaces**, where GitHub signs commits server-side with its own web-flow key.
 

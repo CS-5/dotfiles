@@ -47,8 +47,8 @@ Commits are signed with an SSH key, picked at `chezmoi init` time:
 
 1. If `~/.ssh/git_signing` exists, git signs directly from that file (no agent
    needed). On real hosts (WSL, VMs, bare metal), `install.sh` generates one.
-2. Otherwise, on work machines where Bitwarden is the SSH agent, git signs
-   through Bitwarden with the "GitHub Signing" key stored in the vault. Nothing
+2. Otherwise, on work machines where Bitwarden is the SSH agent, and in dev
+   containers (which use the host's forwarded agent), git signs through Bitwarden with the "GitHub Signing" key stored in the vault. Nothing
    is kept on disk; Bitwarden must be running and unlocked to commit.
 3. Otherwise, commits are not signed.
 

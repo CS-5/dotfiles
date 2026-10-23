@@ -54,7 +54,8 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{/* Signing key, first match wins:
      1. A private key on disk at ~/.ssh/git_signing (install.sh generates
         one on WSL, VMs and bare metal): git signs from the file, no agent.
-     2. Bitwarden as the SSH agent: git signs through the agent with the
+     2. Bitwarden as the SSH agent, directly or forwarded into a dev
+        container from the host: git signs through the agent with the
         "GitHub Signing" key stored in the vault, so nothing lives on disk.
      3. Neither: commits are not signed. */}}
 {{ $signingKey := "" -}}
@@ -64,7 +65,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
   {{ $signingKeyFile = $signingKeyFilePath -}}
   {{ $signingPubKeyPath := printf "%s.pub" $signingKeyFilePath -}}
   {{ if stat $signingPubKeyPath -}}{{ $signingKey = include $signingPubKeyPath | trim -}}{{ end -}}
-{{ else if $bitwardenSshAgent -}}
+{{ else if or $bitwardenSshAgent $isDc -}}
   {{ $signingKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUhU31PFPWI9ggTCNK7JuYnc7O7RrUKgjjt2aWDCVIP" -}}
 {{ end -}}
 
