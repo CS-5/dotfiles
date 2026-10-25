@@ -52,20 +52,19 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
 
 {{/* Signing key, first match wins:
-     1. Bitwarden as the SSH agent, directly or forwarded into a dev
-        container from the host: git signs through the agent with the
-        "GitHub Signing" key stored in the vault, so nothing lives on disk.
+     1. Bitwarden as the SSH agent, directly, forwarded into a dev container
+        from the host, or on the Windows side of WSL (reached through
+        ssh-keygen.exe): git signs through the agent with the "GitHub
+        Signing" key stored in the vault, so nothing lives on disk.
         Any ~/.ssh/git_signing on these machines is ignored.
      2. A private key on disk at ~/.ssh/git_signing: git signs from the
         file, no agent. install.sh generates one where $signingKeyFileWanted.
-     3. Neither: commits are not signed.
-     WSL wants no key file: Bitwarden runs on the Windows side, so WSL leaves
-     commits unsigned unless a key file is placed there by hand. */}}
+     3. Neither: commits are not signed. */}}
 {{ $signingKey := "" -}}
 {{ $signingKeyFile := "" -}}
 {{ $signingKeyFilePath := joinPath .chezmoi.homeDir ".ssh/git_signing" -}}
 {{ $signingKeyFileWanted := not (or $bitwardenSshAgent $isDc $isWsl) -}}
-{{ if or $bitwardenSshAgent $isDc -}}
+{{ if or $bitwardenSshAgent $isDc $isWsl -}}
   {{ $signingKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUhU31PFPWI9ggTCNK7JuYnc7O7RrUKgjjt2aWDCVIP" -}}
 {{ else if stat $signingKeyFilePath -}}
   {{ $signingKeyFile = $signingKeyFilePath -}}

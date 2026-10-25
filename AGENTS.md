@@ -22,6 +22,7 @@ Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_
 - `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins, then each coding-agent CLI's own updater (`claude update`, `codex update`, `copilot update`, `agy update`, `opencode upgrade`) for whichever are installed — `install.sh` installs these with their vendor installers, not mise, so they can self-update; a failure is reported and skipped. The mise step is skipped over when mise is package-managed — the system-package step above already covered it
 - `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache
 - `bitwarden-ssh-sock` - Prints the SSH agent socket on machines where Bitwarden is the agent (see SSH Agent); `--forwarded` exits 0 only inside an SSH session with a forwarded agent. Applied only when `bitwardenSshAgent` is true
+- `ssh-keygen-wsl` - git's `gpg.ssh.program` on WSL: runs Windows `ssh-keygen.exe`, the only `ssh-keygen` that can reach the Windows-side Bitwarden agent, after translating the absolute Linux paths git passes with `wslpath -w`. Applied only when `isWsl` is true
 - `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
 
 ## Architecture
@@ -71,11 +72,11 @@ There is no auto-detection or prompt: the file (or its env-var fallback) is the 
 
 Commits are signed with an SSH key, resolved at `chezmoi init` time in `.chezmoi.toml.tmpl` (first match wins):
 
-1. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent) and in dev containers, which use the host's forwarded Bitwarden agent, `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent. Any `~/.ssh/git_signing` on these machines is ignored. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
+1. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent), in dev containers, which use the host's forwarded Bitwarden agent, and on WSL, which uses the Windows-side Bitwarden agent through `ssh-keygen.exe` (see `ssh-keygen-wsl`), `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent. Any `~/.ssh/git_signing` on these machines is ignored. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
 2. **Key on disk** - a private key at `~/.ssh/git_signing`. `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
 3. **Neither** - commits are not signed (`gitSign` is false); e.g. personal machines without a key file
 
-`signingKeyFileWanted` is true where no Bitwarden agent is available: not `bitwardenSshAgent`, not a dev container, and not WSL (Bitwarden runs on the Windows side there, so WSL stays unsigned unless a key file is placed by hand). After its first apply, `install.sh` checks it and, when no key exists yet, runs `scripts/generate-signing-key.sh` and re-runs `chezmoi init --apply` so the new key is picked up
+`signingKeyFileWanted` is true where no Bitwarden agent is available: not `bitwardenSshAgent`, not a dev container, and not WSL. After its first apply, `install.sh` checks it and, when no key exists yet, runs `scripts/generate-signing-key.sh` and re-runs `chezmoi init --apply` so the new key is picked up
 
 The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is always false in **Codespaces**, where GitHub signs commits server-side with its own web-flow key.
 
