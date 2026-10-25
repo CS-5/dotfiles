@@ -21,13 +21,6 @@ if [[ -z "$WORKSPACE_DIR" && -d "/workspaces" ]]; then
     WORKSPACE_DIR="$(find /workspaces -maxdepth 1 -mindepth 1 -type d ! -name '.*' 2>/dev/null | sort | head -n1)"
 fi
 
-# Dev containers sign commits via the host's forwarded SSH agent; real hosts
-# (WSL, VMs, bare metal) own a signing key on disk.
-IS_DC=false
-if [[ -n "${REMOTE_CONTAINERS_IPC:-}" || "${USER:-}" == "vscode" || "${CODESPACES:-}" == "true" || -n "$WORKSPACE_DIR" ]]; then
-    IS_DC=true
-fi
-
 # Work identity is detected from ~/work.email at chezmoi render time. Pass
 # --work-email to write that file here (non-interactive provisioning); leave it
 # unset to keep any existing ~/work.email (no file => personal identity).
@@ -99,14 +92,6 @@ if [[ -n "$WORKSPACE_DIR" ]]; then
     mise trust --cd="$WORKSPACE_DIR" --quiet
 fi
 
-#### Signing Key ####
-# Must run before chezmoi applies so the key is detected at render time.
-if [[ "$IS_DC" != "true" ]]; then
-    show_progress "Ensuring commit signing key"
-    "$SCRIPT_DIR/generate-signing-key.sh"
-    log_success "Signing key ready"
-fi
-
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
 if [[ -n "$WORK_EMAIL" ]]; then
@@ -115,6 +100,17 @@ else
     "$SCRIPT_DIR/install-dotfiles.sh"
 fi
 log_success "Dotfiles installed and applied"
+
+#### Signing Key ####
+# The rendered chezmoi config decides whether this host signs from a key file
+# (no Bitwarden agent, not a dev container or WSL), so this runs after init.
+# A newly generated key is only detected at render time, hence the re-init.
+if [[ "$(chezmoi execute-template '{{ .signingKeyFileWanted }}')" == "true" && ! -f "$HOME/.ssh/git_signing" ]]; then
+    show_progress "Generating commit signing key"
+    "$SCRIPT_DIR/generate-signing-key.sh"
+    chezmoi init --apply --error-on-conflict --source="$DOTFILES_SOURCE_DIR"
+    log_success "Signing key generated and applied"
+fi
 
 #### Shell ####
 show_progress "Setting up shell"

@@ -38,7 +38,7 @@ The dotfiles adapt based on environment variables:
 
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
 - `CODESPACES` - Detects GitHub Codespaces environment
-- A `/workspaces` directory - Also treated as a dev container signal (matches install.sh; covers containers whose user isn't `vscode` and where `REMOTE_CONTAINERS_IPC` isn't set at install time)
+- A `/workspaces` directory - Also treated as a dev container signal (covers containers whose user isn't `vscode` and where `REMOTE_CONTAINERS_IPC` isn't set at install time)
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
 - `DOTFILES_WORK_EMAIL` - Work email fallback when `~/work.email` is absent (the file wins; Codespaces user secrets surface as env vars)
 - `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
@@ -71,9 +71,11 @@ There is no auto-detection or prompt: the file (or its env-var fallback) is the 
 
 Commits are signed with an SSH key, resolved at `chezmoi init` time in `.chezmoi.toml.tmpl` (first match wins):
 
-1. **Key on disk** - a private key at `~/.ssh/git_signing` (on WSL, VMs and bare metal, `install.sh` runs `scripts/generate-signing-key.sh` to create one before applying). `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
-2. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent) and in dev containers, which use the host's forwarded Bitwarden agent, `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent and no key file is needed on disk. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
+1. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent) and in dev containers, which use the host's forwarded Bitwarden agent, `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent. Any `~/.ssh/git_signing` on these machines is ignored. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
+2. **Key on disk** - a private key at `~/.ssh/git_signing`. `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
 3. **Neither** - commits are not signed (`gitSign` is false); e.g. personal machines without a key file
+
+`signingKeyFileWanted` is true where no Bitwarden agent is available: not `bitwardenSshAgent`, not a dev container, and not WSL (Bitwarden runs on the Windows side there, so WSL stays unsigned unless a key file is placed by hand). After its first apply, `install.sh` checks it and, when no key exists yet, runs `scripts/generate-signing-key.sh` and re-runs `chezmoi init --apply` so the new key is picked up
 
 The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is always false in **Codespaces**, where GitHub signs commits server-side with its own web-flow key.
 

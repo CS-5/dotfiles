@@ -2,12 +2,13 @@
 
 # Ensure an SSH commit-signing key exists at ~/.ssh/git_signing.
 #
-# For real hosts (WSL, VMs, bare-metal Linux) that own their signing key on
-# disk. Dev containers don't need this — they sign via the host's forwarded
-# SSH agent. Idempotent: a no-op if the key already exists.
+# For hosts whose rendered chezmoi config sets `signingKeyFileWanted`: no
+# Bitwarden agent, not a dev container, not WSL. Idempotent: a no-op if the
+# key already exists.
 #
 # chezmoi reads the public key into `gitSigningPubKey` and the private key
-# path into `gitSigningKeyFile` at apply time, so run this BEFORE applying.
+# path into `gitSigningKeyFile` at render time, so re-run `chezmoi init`
+# after generating.
 
 set -eufo pipefail
 
