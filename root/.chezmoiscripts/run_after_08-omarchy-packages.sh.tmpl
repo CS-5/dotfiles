@@ -1,0 +1,67 @@
+{{ if .isOmarchy -}}
+#!/bin/bash
+
+# Install whatever .chezmoidata/omarchy.toml lists that isn't here yet.
+#
+# A plain run_ script rather than run_onchange_, on purpose: every step is
+# guarded by a presence check, so on a settled machine this is a handful of
+# `pacman -Q` calls that print nothing. A run_onchange_ would record itself as
+# done even after a run that had to skip work (no terminal for sudo, network
+# down) and never retry. Failures only warn, so they never block the apply;
+# the next apply picks up whatever is still missing.
+
+set -uo pipefail
+
+warn() { printf 'omarchy-packages: %s\n' "$1" >&2; }
+
+packages=({{ range .omarchy.packages }}{{ . | quote }} {{ end }})
+aur=({{ range .omarchy.aur }}{{ . | quote }} {{ end }})
+
+missing=()
+for pkg in "${packages[@]}"; do
+    pacman -Q "$pkg" &>/dev/null || missing+=("$pkg")
+done
+
+missing_aur=()
+for pkg in "${aur[@]}"; do
+    pacman -Q "$pkg" &>/dev/null || missing_aur+=("$pkg")
+done
+
+installers=()
+{{ range .omarchy.installers -}}
+pacman -Q {{ .package | quote }} &>/dev/null || installers+=({{ .command | quote }})
+{{ end }}
+# Plugins are git clones into ~/.config/omarchy/plugins and need no root.
+{{ range .omarchy.plugins -}}
+if [[ ! -d "$HOME/.config/omarchy/plugins/"{{ .id | quote }} ]]; then
+    omarchy plugin add {{ .url | quote }} --yes || warn "could not add plugin {{ .id }}"
+fi
+{{ end }}
+((${#missing[@]} + ${#missing_aur[@]} + ${#installers[@]})) || exit 0
+
+# Everything below needs sudo, and there is nowhere to type a password without
+# a terminal (an apply from a script or a bar widget). Say what was skipped.
+if [[ ! -t 0 ]]; then
+    warn "no terminal for sudo, skipping: ${missing[*]} ${missing_aur[*]} ${installers[*]}"
+    warn "run 'chezmoi apply' from a terminal to finish"
+    exit 0
+fi
+
+if ((${#missing[@]})); then
+    omarchy pkg add "${missing[@]}" || warn "could not install: ${missing[*]}"
+fi
+
+if ((${#missing_aur[@]})); then
+    if omarchy pkg aur accessible; then
+        omarchy pkg aur add "${missing_aur[@]}" || warn "could not install from the AUR: ${missing_aur[*]}"
+    else
+        warn "the AUR is unreachable, skipping: ${missing_aur[*]}"
+    fi
+fi
+
+for installer in "${installers[@]}"; do
+    # Word-split on purpose: routes are two words ("editor zed").
+    # shellcheck disable=SC2086
+    omarchy install $installer || warn "'omarchy install $installer' failed"
+done
+{{ end -}}

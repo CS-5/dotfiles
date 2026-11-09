@@ -1,0 +1,9 @@
+{{- if .isOmarchy }}
+{{- /* Omarchy's installer writes ~/.config/git/config (a personal user.email and
+       init.defaultBranch=master among its defaults). git reads it beneath
+       ~/.gitconfig, so every key the dotfiles leave unset would leak through
+       from it. Its useful defaults live in dot_gitconfig.tmpl instead. Only
+       `omarchy refresh config git/config` or a config reinstall recreates it,
+       and the next apply removes it again. */}}
+.config/git/config
+{{- end }}

@@ -1,3 +1,14 @@
+{{ if .isOmarchy -}}
+# Omarchy environment (OMARCHY_PATH + PATH), needed even for non-interactive shells
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
+
+# If not running interactively, don't do anything else (leave this above the rc source)
+[[ $- != *i* ]] && return
+
+# All the default Omarchy aliases and functions, including the prompt, mise,
+# zoxide, fzf and history setup. Everything below layers on top of them.
+source "$OMARCHY_PATH/default/bash/rc"
+{{ else -}}
 {{ if .isMac -}}
 # Homebrew completion (macOS)
 if command -v brew >/dev/null 2>&1; then
@@ -10,10 +21,12 @@ fi
 
 export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="{{ .binDirAbs }}:$PATH"
+{{- end }}
 {{ template "env-posix" . }}
 {{- if .bitwardenSshAgent }}
 export SSH_AUTH_SOCK="$({{ .binDirAbs }}/bitwarden-ssh-sock)"
 {{- end }}
+{{- if not .isOmarchy }}
 
 if command -v starship >/dev/null 2>&1; then
     eval "$(starship init bash)"
@@ -26,6 +39,7 @@ fi
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init bash)"
 fi
+{{- end }}
 
 if command -v mcfly >/dev/null 2>&1; then
     eval "$(mcfly init bash)"
@@ -36,6 +50,7 @@ fi
 fzkill() {
     ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
 }
+{{- if not .isOmarchy }}
 
 HISTFILE=~/.bash_history
 HISTSIZE=20000
@@ -43,3 +58,8 @@ HISTFILESIZE=20000
 HISTCONTROL=ignoreboth:erasedups
 shopt -s histappend
 shopt -s cmdhist
+{{- end }}
+
+{{ template "shell-abbreviations" . }}
+# Per-machine overrides, never managed by the dotfiles.
+[[ -r ~/.config/local/shell.sh ]] && source ~/.config/local/shell.sh

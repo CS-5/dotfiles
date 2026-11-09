@@ -4,11 +4,13 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Install
 
-### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs
+### Linux (Debian/Ubuntu/Arch/Omarchy) — dev containers, WSL, cloud VMs
 
 Clone and run the bootstrap script. It installs mise, chezmoi, fish, Claude
 Code, Codex, Antigravity CLI, GitHub Copilot CLI, and opencode, then applies the
-dotfiles:
+dotfiles. On [Omarchy](https://omarchy.org/) it installs through Omarchy's own
+commands instead, keeps bash as the shell, and leaves the coding-agent CLIs that
+Omarchy already provides to Omarchy:
 
 ```sh
 git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi
@@ -45,10 +47,11 @@ iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 
 Commits are signed with an SSH key, picked at `chezmoi init` time:
 
-1. On work machines where Bitwarden is the SSH agent, and in dev containers
-   (which use the host's forwarded agent), git signs through Bitwarden with the
-   "GitHub Signing" key stored in the vault. Nothing is kept on disk; Bitwarden
-   must be running and unlocked to commit.
+1. Where Bitwarden is the SSH agent (work machines, and any other machine where
+   Bitwarden's SSH agent was enabled before `chezmoi init` ran), and in dev
+   containers (which use the host's forwarded agent), git signs through
+   Bitwarden with the "GitHub Signing" key stored in the vault. Nothing is kept
+   on disk; Bitwarden must be running and unlocked to commit.
 2. Otherwise, if `~/.ssh/git_signing` exists, git signs directly from that file
    (no agent needed). `install.sh` generates one on Linux hosts without a
    Bitwarden agent, except WSL.
@@ -62,3 +65,9 @@ On macOS, the dotfiles configure [Brouter](https://github.com/CS-5/Brouter) at
 `~/.config/brouter/config.toml`. Install the app yourself from its
 [releases](https://github.com/CS-5/Brouter/releases) and let it become the
 default browser. The routing rules are described in `AGENTS.md`.
+
+## Per-machine overrides
+
+Anything that should apply to one machine only goes in `~/.config/local/`,
+which the dotfiles never touch: `shell.sh` (bash/zsh), `shell.fish`,
+`gitconfig`, and `hypr.lua` (Omarchy). Each is loaded last, if it exists.

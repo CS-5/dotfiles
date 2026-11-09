@@ -1,0 +1,31 @@
+{{ if .isOmarchy -}}
+{{- $themes := glob (joinPath .chezmoi.sourceDir "private_dot_config/omarchy/themes/*/colors.toml") -}}
+#!/bin/bash
+
+# Re-derive the active theme's per-app files when chezmoi changes its colors,
+# without ever choosing a theme.
+#
+# Theme definitions are synced so every machine has them in the switcher; the
+# active selection (~/.local/state/omarchy/current/theme.name) is not, so
+# machines sharing these dotfiles can still look different. Omarchy compiles a
+# theme's colors.toml into per-app files (ghostty.conf, btop.theme, ...) only
+# when a theme is set or refreshed, so if chezmoi just changed the colors of
+# the theme active here, those files are stale until it is refreshed.
+#
+# colors.toml hashes: {{ range $themes }}{{ include . | sha256sum | trunc 12 }} {{ end }}
+
+set -euo pipefail
+
+managed_themes=({{ range $themes }}{{ base (dir .) | quote }} {{ end }})
+current=$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || true)
+
+for theme in "${managed_themes[@]}"; do
+    [[ $theme == "$current" ]] || continue
+    if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+        echo "omarchy-theme: no Hyprland session; run 'omarchy theme refresh' to re-derive $theme"
+        exit 0
+    fi
+    echo "omarchy-theme: refreshing the active theme, $theme"
+    omarchy theme refresh || echo "omarchy-theme: 'omarchy theme refresh' failed" >&2
+done
+{{ end -}}

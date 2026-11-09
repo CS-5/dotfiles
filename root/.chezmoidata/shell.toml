@@ -1,0 +1,42 @@
+# Command abbreviations for every shell, kept in this one list. fish renders
+# them as abbreviations (expanded as you type, via conf.d/abbreviations.fish);
+# bash and zsh render them as aliases (via the shell-abbreviations partial).
+# Source-only: under .chezmoidata/ this is template data, never a file in $HOME.
+#
+# To add one, add a line. Expansions are rendered inside single quotes, so they
+# must not contain a single quote themselves.
+
+[shell.abbreviations]
+# git
+g = "git"
+gs = "git status -sb"
+ga = "git add"
+gc = "git commit"
+gcm = "git commit -m"
+gca = "git commit --amend"
+gcl = "git clone"
+gco = "git checkout"
+gp = "git push"
+gpf = "git push --force-with-lease"
+gpl = "git pull"
+gl = "git l"
+gd = "git diff"
+gds = "git diff --staged"
+gf = "git fetch"
+
+# chezmoi
+cma = "chezmoi apply"
+cmu = "chezmoi update"
+cmcd = "chezmoi cd"
+
+# mise
+mls = "mise ls"
+mi = "mise install"
+mup = "mise upgrade"
+mus = "mise use"
+
+# Claude Code
+cc = "claude"
+ccr = "claude --resume"
+ccc = "claude --continue"
+ccp = "claude -p"

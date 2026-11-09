@@ -3,6 +3,9 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") (stat "/workspaces" | not | not) -}}
 {{ $isCodespaces := env "CODESPACES" | not | not -}}
 {{ $isDc := or $probablyDc $isCodespaces -}}
+{{/* Keyed on the distro ID rather than a path, so it is false by
+     construction on WSL (ID=arch/ubuntu), dev containers, macOS and Windows. */}}
+{{ $isOmarchy := eq (dig "osRelease" "id" "" .chezmoi) "omarchy" -}}
 {{ $binDir := ".local/bin" -}}
 
 {{/* Work identity is driven by ~/work.email: a file whose sole contents
@@ -34,14 +37,16 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ end -}}
 {{ $isWork := ne $identity "personal" -}}
 
-{{/* Work machines use the Bitwarden desktop app as their only SSH agent.
-     Dev containers use the host's forwarded agent instead, and on WSL the
-     app runs on the Windows side where its Unix socket is unreachable.
-     Sandboxed installs (App Store, snap, flatpak) put the socket inside
-     their container, so candidates are checked in order at runtime; the
-     last entry, the native install path, is the fallback. */}}
+{{/* The Bitwarden desktop app is the only SSH agent on work machines, and on
+     any other machine where its agent socket exists (Bitwarden leaves the
+     socket file on disk after quitting, so this is stable once its SSH agent
+     has been enabled; re-run `chezmoi init` after enabling it). Dev
+     containers use the host's forwarded agent instead, and on WSL the app
+     runs on the Windows side where its Unix socket is unreachable. Sandboxed
+     installs (App Store, snap, flatpak) put the socket inside their
+     container, so candidates are checked in order at runtime; the last
+     entry, the native install path, is the fallback. */}}
 {{ $isWsl := env "WSL_DISTRO_NAME" | not | not -}}
-{{ $bitwardenSshAgent := and $isWork (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
 {{ $bitwardenSshSocks := list -}}
 {{ if eq .chezmoi.os "darwin" -}}
   {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir "Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock") -}}
@@ -50,6 +55,11 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
   {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock") -}}
 {{ end -}}
 {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
+{{ $bitwardenSockFound := false -}}
+{{ range $bitwardenSshSocks -}}
+  {{ if stat . -}}{{ $bitwardenSockFound = true -}}{{ end -}}
+{{ end -}}
+{{ $bitwardenSshAgent := and (or $isWork $bitwardenSockFound) (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
 
 {{/* Signing key, first match wins:
      1. Bitwarden as the SSH agent, directly, forwarded into a dev container
@@ -85,6 +95,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ $isWsl }}
     isDc = {{ $isDc }}
+    isOmarchy = {{ $isOmarchy }}
 
     # Identity
     identity = {{ $identity | quote }}

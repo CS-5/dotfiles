@@ -35,3 +35,16 @@ Library
 {{- end }}
 
 {{ end -}}
+
+{{- /* Desktop config for Omarchy (Hyprland + the Omarchy shell). On Omarchy,
+       Omarchy owns the terminal, prompt and multiplexer configs (it themes
+       them and its migrations keep them current), and bash is the shell. */}}
+{{- if .isOmarchy }}
+.config/ghostty
+.config/starship.toml
+.config/herdr
+.config/fish
+{{- else }}
+.config/hypr
+.config/omarchy
+{{- end }}
