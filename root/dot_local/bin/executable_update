@@ -67,7 +67,9 @@ main() {
     fi
 
     step "Pulling latest dotfiles and applying"
-    chezmoi update
+    # --init regenerates the config from the freshly pulled .chezmoi.toml.tmpl,
+    # so data keys the new templates rely on exist before they are applied.
+    chezmoi update --init
 
     # After the pull: the applied mise config may pin newer tool versions.
     if command -v mise >/dev/null 2>&1; then
