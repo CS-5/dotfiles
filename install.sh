@@ -123,17 +123,6 @@ else
 fi
 log_success "Dotfiles installed and applied"
 
-#### Signing Key ####
-# The rendered chezmoi config decides whether this host signs from a key file
-# (no Bitwarden agent, not a dev container or WSL), so this runs after init.
-# A newly generated key is only detected at render time, hence the re-init.
-if [[ "$(chezmoi execute-template '{{ .signingKeyFileWanted }}')" == "true" && ! -f "$HOME/.ssh/git_signing" ]]; then
-    show_progress "Generating commit signing key"
-    "$SCRIPT_DIR/generate-signing-key.sh"
-    chezmoi init --apply --error-on-conflict --source="$DOTFILES_SOURCE_DIR"
-    log_success "Signing key generated and applied"
-fi
-
 #### Shell ####
 # Omarchy keeps bash: its own ~/.bashrc layering is what the dotfiles extend.
 if [[ "$IS_OMARCHY" != "true" ]]; then

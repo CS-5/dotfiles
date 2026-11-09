@@ -10,8 +10,7 @@
 # home, this script points the file check at a nonexistent temp path (via
 # DOTFILES_WORK_EMAIL_FILE) and supplies the email through the env var, so
 # the template's real detection logic (env fallback + domain mapping) runs
-# (HOME is left intact, so signing-key and other homeDir-derived paths stay
-# faithful to the host).
+# (HOME is left intact, so homeDir-derived paths stay faithful to the host).
 #
 # Usage: ./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>
 

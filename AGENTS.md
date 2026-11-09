@@ -47,7 +47,7 @@ The dotfiles adapt based on environment variables:
 
 ### Identity System
 
-The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). This mirrors the per-host signing-key file pattern (`~/.ssh/git_signing.pub`). When the file is absent, the **`DOTFILES_WORK_EMAIL`** env var is consulted as a fallback (the file always wins when both exist) — this is how Codespaces get a work identity, since user secrets surface there as env vars. `.chezmoi.toml.tmpl` reads the email at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
+The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). When the file is absent, the **`DOTFILES_WORK_EMAIL`** env var is consulted as a fallback (the file always wins when both exist) — this is how Codespaces get a work identity, since user secrets surface there as env vars. `.chezmoi.toml.tmpl` reads the email at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
 
 | `~/work.email` | `identity` | `isWork` | `workEmail` |
 | --- | --- | --- | --- |
@@ -71,19 +71,13 @@ There is no auto-detection or prompt: the file (or its env-var fallback) is the 
 
 ### Git Signing
 
-Commits are signed with an SSH key, resolved at `chezmoi init` time in `.chezmoi.toml.tmpl` (first match wins):
-
-1. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent), in dev containers, which use the host's forwarded Bitwarden agent, and on WSL, which uses the Windows-side Bitwarden agent through `ssh-keygen.exe` (see `ssh-keygen-wsl`), `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent. Any `~/.ssh/git_signing` on these machines is ignored. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
-2. **Key on disk** - a private key at `~/.ssh/git_signing`. `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
-3. **Neither** - commits are not signed (`gitSign` is false); e.g. personal machines without a key file
-
-`signingKeyFileWanted` is true where no Bitwarden agent is available: not `bitwardenSshAgent`, not a dev container, and not WSL. After its first apply, `install.sh` checks it and, when no key exists yet, runs `scripts/generate-signing-key.sh` and re-runs `chezmoi init --apply` so the new key is picked up
+Commits are always signed with the "GitHub Signing" key stored in Bitwarden. Its public key is inlined as `gitSigningPubKey` in `.chezmoi.toml.tmpl`, and `dot_gitconfig.tmpl` sets `signingkey` to its `key::` literal, so git signs only through an SSH agent holding that key: Bitwarden's own on `bitwardenSshAgent` machines (see SSH Agent), the host's forwarded Bitwarden agent in dev containers, and on WSL the Windows-side agent through `ssh-keygen.exe` (see `ssh-keygen-wsl`). There is no key-file fallback: if Bitwarden isn't running, isn't the agent, doesn't hold the key, or the prompt is denied, signing fails with an agent error.
 
 The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is always false in **Codespaces**, where GitHub signs commits server-side with its own web-flow key.
 
 ### SSH Agent
 
-Where `bitwardenSshAgent` is true the Bitwarden desktop app is the only SSH agent: not a dev container, WSL or Windows, and either a work identity or a Bitwarden socket (any of `bitwardenSshSocks`) that exists at `chezmoi init` time. So a personal machine switches to Bitwarden, for the agent and for signing, once Bitwarden's SSH agent has been enabled there and `chezmoi init` is re-run. Dev containers keep the host's forwarded agent; on WSL the app runs on the Windows side, where its Unix socket is unreachable. Other machines keep the platform agent (`fish_ssh_agent`, `IdentitiesOnly`).
+Where `bitwardenSshAgent` is true the Bitwarden desktop app is the only SSH agent: not a dev container, WSL or Windows, and either a work identity or a Bitwarden socket (any of `bitwardenSshSocks`) that exists at `chezmoi init` time. So a personal machine switches to Bitwarden as its SSH agent once Bitwarden's SSH agent has been enabled there and `chezmoi init` is re-run. Dev containers keep the host's forwarded agent; on WSL the app runs on the Windows side, where its Unix socket is unreachable. Other machines keep the platform agent (`fish_ssh_agent`, `IdentitiesOnly`).
 
 Sandboxed installs put the socket inside their container, so `.chezmoi.toml.tmpl` renders an ordered per-OS candidate list, `bitwardenSshSocks` (macOS App Store; Linux snap, flatpak), always ending with the native install path `~/.bitwarden-ssh-agent.sock` as the fallback. The first socket that exists at runtime wins, and a forwarded agent in an SSH session (a work VM reached with `ssh -A`) wins over all of them. The same order is applied by two consumers:
 

@@ -45,17 +45,11 @@ iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 
 ## Commit signing
 
-Commits are signed with an SSH key, picked at `chezmoi init` time:
-
-1. Where Bitwarden is the SSH agent (work machines, and any other machine where
-   Bitwarden's SSH agent was enabled before `chezmoi init` ran), and in dev
-   containers (which use the host's forwarded agent), git signs through
-   Bitwarden with the "GitHub Signing" key stored in the vault. Nothing is kept
-   on disk; Bitwarden must be running and unlocked to commit.
-2. Otherwise, if `~/.ssh/git_signing` exists, git signs directly from that file
-   (no agent needed). `install.sh` generates one on Linux hosts without a
-   Bitwarden agent, except WSL.
-3. Otherwise, commits are not signed.
+Commits are signed with the "GitHub Signing" SSH key stored in Bitwarden, whose
+public key is inlined in the git config. git signs only through an SSH agent
+that holds it: Bitwarden's own, the host's agent forwarded into a dev container,
+or the Windows-side Bitwarden agent on WSL. Nothing is kept on disk; Bitwarden
+must be running and unlocked to commit, and without it commits fail.
 
 Signing is always disabled in Codespaces (GitHub signs those server-side).
 

@@ -2,11 +2,7 @@
   name = Carson Seese
   email = {{ .personalEmail }}
 {{- if .gitSign }}
-{{- if .gitSigningKeyFile }}
-  signingkey = {{ .gitSigningKeyFile | replace "\\" "/" }}
-{{- else }}
   signingkey = key::{{ .gitSigningPubKey }}
-{{- end }}
 {{- end }}
 
 {{ if and .isWork (not .isDc) -}}

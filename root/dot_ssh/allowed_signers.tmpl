@@ -1,6 +1,6 @@
-{{ if and .gitSign .gitSigningPubKey .personalEmail -}}
+{{ if .gitSign -}}
 {{ .personalEmail }} {{ .gitSigningPubKey }}
-{{ end -}}
-{{ if and .gitSign .gitSigningPubKey .workEmail -}}
+{{ if .workEmail -}}
 {{ .workEmail }} {{ .gitSigningPubKey }}
+{{ end -}}
 {{ end -}}
