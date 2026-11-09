@@ -1,27 +1,37 @@
+# Managed by chezmoi as a conf.d drop-in, so ~/.config/mise/config.toml stays
+# free for `mise use -g` (yours, or Omarchy's agent wrappers). A tool pinned
+# there outranks the pin here.
 [tools]
-starship = "1.27.0"
-lazygit = "0.66.2"
 lazydocker = "0.25.2"
 ast-grep = "0.51.1"
 hyperfine = "2.0.0"
 duf = "0.9.1"
-fd = "10.5.0"
-fzf = "0.74.5"
-jq = "1.8.2"
-ripgrep = "15.2.0"
 lsd = "1.2.0"
 gh = "2.103.3"
-zoxide = "0.10.0"
 worktrunk = "0.81.0"
 cloudflared = "2026.10.7"
 aube = "2.8.5"
-usage = "6.12.1"
 hunk = "0.24.1"
 
 "github:Ataraxy-Labs/sem" = "0.29.0"
 "github:backnotprop/plannotator" = "0.28.45"
+{{ if not .isOmarchy -}}
+# Omarchy installs these as system packages.
+starship = "1.27.0"
+lazygit = "0.66.2"
+fd = "10.5.0"
+fzf = "0.74.5"
+jq = "1.8.2"
+ripgrep = "15.2.0"
+zoxide = "0.10.0"
+usage = "6.12.1"
+{{ end -}}
 {{ if ne .chezmoi.os "windows" -}}
+{{ if not .isOmarchy -}}
+# Omarchy ships herdr as a package and deletes mise copies of it: a stale
+# client would shadow /usr/bin/herdr with an older wire protocol.
 herdr = "0.9.5"
+{{ end -}}
 zellij = "0.45.1"
 "github:zyedidia/eget" = "1.3.4"
 {{- end }}

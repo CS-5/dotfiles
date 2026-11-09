@@ -1,0 +1,16 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+  ~/.config/mise/config.toml belongs to `mise use -g` (yours, or the fallback in
+  Omarchy's agent wrappers); the dotfiles' pins live in conf.d/10-dotfiles.toml.
+  Machines from before that move still have a config.toml the dotfiles wrote,
+  and config.toml outranks conf.d, so its stale pins would win forever.
+
+  Recognise that file by a top-level settings line every dotfiles version
+  since Sep 2025 carried and `mise use -g` never writes, and remove it (empty
+  output removes the target). Anything else passes through byte-for-byte, so
+  this never shows up as a diff and never creates the file.
+*/ -}}
+{{- $current := .chezmoi.stdin -}}
+{{- if not (regexMatch "(?m)^(minimum_release_age|idiomatic_version_file_enable_tools)\\s*=" $current) -}}
+{{- $current -}}
+{{- end -}}

@@ -1,0 +1,4 @@
+# Abbreviations shared by every shell; edit root/.chezmoidata/shell.toml.
+{{ range $name, $expansion := .shell.abbreviations -}}
+abbr -a {{ $name }} {{ $expansion | squote }}
+{{ end -}}

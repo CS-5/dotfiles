@@ -3,14 +3,17 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $probablyDc := or (env "REMOTE_CONTAINERS_IPC" | not | not) (eq (env "USER") "vscode") (stat "/workspaces" | not | not) -}}
 {{ $isCodespaces := env "CODESPACES" | not | not -}}
 {{ $isDc := or $probablyDc $isCodespaces -}}
+{{/* Keyed on the distro ID rather than a path, so it is false by
+     construction on WSL (ID=arch/ubuntu), dev containers, macOS and Windows. */}}
+{{ $isOmarchy := eq (dig "osRelease" "id" "" .chezmoi) "omarchy" -}}
 {{ $binDir := ".local/bin" -}}
 
 {{/* Work identity is driven by ~/work.email: a file whose sole contents
      are one work email address. When the file is absent, the
      DOTFILES_WORK_EMAIL env var is consulted as a fallback (Codespaces
      user secrets surface as env vars). The email's domain selects the
-     identity; no email or an unrecognized domain means personal. Mirrors
-     the per-host signing-key file below. Add new jobs to $identities. */}}
+     identity; no email or an unrecognized domain means personal. Add new
+     jobs to $identities. */}}
 {{ $identities := dict
     "kirbtech.com"    "kirbtech"
     "journalytic.com" "journalytic" -}}
@@ -34,14 +37,15 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ end -}}
 {{ $isWork := ne $identity "personal" -}}
 
-{{/* Work machines use the Bitwarden desktop app as their only SSH agent.
-     Dev containers use the host's forwarded agent instead, and on WSL the
-     app runs on the Windows side where its Unix socket is unreachable.
-     Sandboxed installs (App Store, snap, flatpak) put the socket inside
-     their container, so candidates are checked in order at runtime; the
-     last entry, the native install path, is the fallback. */}}
+{{/* The Bitwarden desktop app is the only SSH agent, reached directly or
+     forwarded into an SSH session (ssh -A), which is how a headless box
+     reaches it. Dev containers use the host's forwarded agent instead, and
+     on WSL the app runs on the Windows side where its Unix socket is
+     unreachable. Sandboxed
+     installs (App Store, snap, flatpak) put the socket inside their
+     container, so candidates are checked in order at runtime; the last
+     entry, the native install path, is the fallback. */}}
 {{ $isWsl := env "WSL_DISTRO_NAME" | not | not -}}
-{{ $bitwardenSshAgent := and $isWork (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
 {{ $bitwardenSshSocks := list -}}
 {{ if eq .chezmoi.os "darwin" -}}
   {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir "Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock") -}}
@@ -50,30 +54,14 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
   {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock") -}}
 {{ end -}}
 {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
+{{ $bitwardenSshAgent := and (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
 
-{{/* Signing key, first match wins:
-     1. Bitwarden as the SSH agent, directly, forwarded into a dev container
-        from the host, or on the Windows side of WSL (reached through
-        ssh-keygen.exe): git signs through the agent with the "GitHub
-        Signing" key stored in the vault, so nothing lives on disk.
-        Any ~/.ssh/git_signing on these machines is ignored.
-     2. A private key on disk at ~/.ssh/git_signing: git signs from the
-        file, no agent. install.sh generates one where $signingKeyFileWanted.
-     3. Neither: commits are not signed. */}}
-{{ $signingKey := "" -}}
-{{ $signingKeyFile := "" -}}
-{{ $signingKeyFilePath := joinPath .chezmoi.homeDir ".ssh/git_signing" -}}
-{{ $signingKeyFileWanted := not (or $bitwardenSshAgent $isDc $isWsl) -}}
-{{ if or $bitwardenSshAgent $isDc $isWsl -}}
-  {{ $signingKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUhU31PFPWI9ggTCNK7JuYnc7O7RrUKgjjt2aWDCVIP" -}}
-{{ else if stat $signingKeyFilePath -}}
-  {{ $signingKeyFile = $signingKeyFilePath -}}
-  {{ $signingPubKeyPath := printf "%s.pub" $signingKeyFilePath -}}
-  {{ if stat $signingPubKeyPath -}}{{ $signingKey = include $signingPubKeyPath | trim -}}{{ end -}}
-{{ end -}}
-
-{{/* Codespaces sign server-side with GitHub's own web-flow key. */}}
-{{ $gitSign := and (not $isCodespaces) (or (ne $signingKeyFile "") (ne $signingKey "")) -}}
+{{/* Commits are signed with the "GitHub Signing" key stored in Bitwarden,
+     always through an SSH agent: Bitwarden's own, the host's forwarded into
+     a dev container, or the Windows-side one on WSL (reached through
+     ssh-keygen.exe). Codespaces sign server-side with GitHub's own
+     web-flow key. */}}
+{{ $gitSign := not $isCodespaces -}}
 
 [data]
     # Environment Info
@@ -85,6 +73,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ $isWsl }}
     isDc = {{ $isDc }}
+    isOmarchy = {{ $isOmarchy }}
 
     # Identity
     identity = {{ $identity | quote }}
@@ -96,10 +85,8 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     workEmail = {{ $workEmail | quote }}
 
     # Signing
-    gitSigningPubKey = {{ $signingKey | quote }}
-    gitSigningKeyFile = {{ $signingKeyFile | quote }}
+    gitSigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUhU31PFPWI9ggTCNK7JuYnc7O7RrUKgjjt2aWDCVIP"
     gitSign = {{ $gitSign }}
-    signingKeyFileWanted = {{ $signingKeyFileWanted }}
 
     # SSH agent
     bitwardenSshAgent = {{ $bitwardenSshAgent }}

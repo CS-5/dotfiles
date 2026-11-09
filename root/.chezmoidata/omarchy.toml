@@ -1,0 +1,63 @@
+# What an Omarchy machine needs that isn't a file: packages, Omarchy's own
+# installers, and third-party shell plugins. Source-only (under .chezmoidata/
+# this is template data, never a file in $HOME), consumed by
+# .chezmoiscripts/run_after_08-omarchy-packages.sh.tmpl.
+#
+# To add something, add an entry. This says what must be present, not what
+# must be absent: deleting an entry never uninstalls anything.
+
+[omarchy]
+
+# Arch and Omarchy repo packages, installed with `omarchy pkg add`.
+packages = ["bitwarden", "efibootmgr", "fwupd", "usbutils"]
+
+# AUR packages, installed with `omarchy pkg aur add`.
+aur = ["hyprmoncfg"]
+
+# Omarchy's installers do more than install a package (set the app as the
+# Omarchy default, wire it into the theme system, ...), so they are preferred
+# whenever one exists. `package` is the sentinel: the installer runs only while
+# that package is missing.
+[[omarchy.installers]]
+command = "terminal ghostty"
+package = "ghostty"
+
+[[omarchy.installers]]
+command = "editor vscode"
+package = "visual-studio-code-bin"
+
+[[omarchy.installers]]
+command = "editor zed"
+package = "zed"
+
+[[omarchy.installers]]
+command = "browser chrome"
+package = "google-chrome"
+
+[[omarchy.installers]]
+command = "ai claude"
+package = "claude-desktop"
+
+# Third-party Omarchy shell plugins, cloned into ~/.config/omarchy/plugins.
+# Only installed, never enabled: shell.json is yours, so place each one once
+# per machine with `omarchy plugin enable <id>`. `omarchy plugin update` keeps
+# them current.
+[[omarchy.plugins]]
+id = "bobbynicholas.omaland"
+url = "https://github.com/bobby-nicholas/omaland.git"
+
+[[omarchy.plugins]]
+id = "crmne.hyprmoncfg"
+url = "https://github.com/crmne/omarchy-hyprmoncfg.git"
+
+[[omarchy.plugins]]
+id = "io.github.sirjul1337.lock-explorer"
+url = "https://github.com/SirJul1337/omarchy-lock-explorer.git"
+
+[[omarchy.plugins]]
+id = "jkoestinger.vpn"
+url = "https://github.com/jkoestinger/omarchy-vpn.git"
+
+[[omarchy.plugins]]
+id = "io.github.cyprusad.omakeez"
+url = "https://github.com/cyprusad/omakeez.git"

@@ -4,11 +4,13 @@ My personal dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Install
 
-### Linux (Debian/Ubuntu/Arch) — dev containers, WSL, cloud VMs
+### Linux (Debian/Ubuntu/Arch/Omarchy) — dev containers, WSL, cloud VMs
 
 Clone and run the bootstrap script. It installs mise, chezmoi, fish, Claude
 Code, Codex, Antigravity CLI, GitHub Copilot CLI, and opencode, then applies the
-dotfiles:
+dotfiles. On [Omarchy](https://omarchy.org/) it installs through Omarchy's own
+commands instead, keeps bash as the shell, and leaves the coding-agent CLIs that
+Omarchy already provides to Omarchy:
 
 ```sh
 git clone https://github.com/CS-5/dotfiles.git ~/.local/share/chezmoi
@@ -43,16 +45,17 @@ iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 
 ## Commit signing
 
-Commits are signed with an SSH key, picked at `chezmoi init` time:
+Commits are signed with the "GitHub Signing" SSH key stored in Bitwarden, whose
+public key is inlined in the git config. git signs only through an SSH agent
+that holds it: Bitwarden's own, the host's agent forwarded into a dev container,
+or the Windows-side Bitwarden agent on WSL. Nothing is kept on disk; Bitwarden
+must be running and unlocked to commit, and without it commits fail.
 
-1. On work machines where Bitwarden is the SSH agent, and in dev containers
-   (which use the host's forwarded agent), git signs through Bitwarden with the
-   "GitHub Signing" key stored in the vault. Nothing is kept on disk; Bitwarden
-   must be running and unlocked to commit.
-2. Otherwise, if `~/.ssh/git_signing` exists, git signs directly from that file
-   (no agent needed). `install.sh` generates one on Linux hosts without a
-   Bitwarden agent, except WSL.
-3. Otherwise, commits are not signed.
+On a headless box, connect with agent forwarding (`ssh -A`, or VS Code
+Remote-SSH) so it signs through Bitwarden on the machine you connect from. A
+box that commits while nobody is connected (e.g. a coding agent in a zellij
+session) needs its own choice in `~/.config/local/gitconfig`: a signing key
+just for that box, or `gpgSign = false` under `[commit]` and `[tag]`.
 
 Signing is always disabled in Codespaces (GitHub signs those server-side).
 
@@ -62,3 +65,9 @@ On macOS, the dotfiles configure [Brouter](https://github.com/CS-5/Brouter) at
 `~/.config/brouter/config.toml`. Install the app yourself from its
 [releases](https://github.com/CS-5/Brouter/releases) and let it become the
 default browser. The routing rules are described in `AGENTS.md`.
+
+## Per-machine overrides
+
+Anything that should apply to one machine only goes in `~/.config/local/`,
+which the dotfiles never touch: `shell.sh` (bash/zsh), `shell.fish`,
+`gitconfig`, and `hypr.lua` (Omarchy). Each is loaded last, if it exists.

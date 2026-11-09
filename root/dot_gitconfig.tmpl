@@ -2,11 +2,7 @@
   name = Carson Seese
   email = {{ .personalEmail }}
 {{- if .gitSign }}
-{{- if .gitSigningKeyFile }}
-  signingkey = {{ .gitSigningKeyFile | replace "\\" "/" }}
-{{- else }}
   signingkey = key::{{ .gitSigningPubKey }}
-{{- end }}
 {{- end }}
 
 {{ if and .isWork (not .isDc) -}}
@@ -34,6 +30,30 @@
 
 [rerere]
   enabled = true
+  autoupdate = true
+
+[init]
+  defaultBranch = main
+
+[push]
+  autoSetupRemote = true
+
+[diff]
+  algorithm = histogram
+  colorMoved = plain
+  mnemonicPrefix = true
+
+[commit]
+  verbose = true
+
+[column]
+  ui = auto
+
+[branch]
+  sort = -committerdate
+
+[tag]
+  sort = -version:refname
 
 {{ if eq .os "windows" -}}
 [credential]
@@ -68,7 +88,16 @@
 {{- end }}
 
 [alias]
+  co = checkout
+  br = branch
+  ci = commit
+  st = status
   pushfwl = push --force-with-lease
 
 [pull]
   rebase = true
+
+# Per-machine overrides, never managed by the dotfiles. Last, so it wins; git
+# skips the include when the file doesn't exist.
+[include]
+  path = ~/.config/local/gitconfig

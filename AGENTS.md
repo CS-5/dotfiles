@@ -9,7 +9,7 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 ### Installation Scripts
 
 - `./scripts/install-dotfiles.sh [--work-email <addr>]` - Standard installation script; `--work-email` writes `~/work.email` before applying
-- `./install.sh [--work-email <addr>]` - Dev container / Linux bootstrap; `--work-email` writes `~/work.email` for non-interactive work setups
+- `./install.sh [--work-email <addr>]` - Dev container / Linux bootstrap (Debian/Ubuntu, Arch, Omarchy); `--work-email` writes `~/work.email` for non-interactive work setups
 
 ### Development Scripts  
 
@@ -19,9 +19,9 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_local/bin/`), so one bash implementation serves fish, bash, and zsh. Not applied on Windows (ignored via `.chezmoiignore.tmpl`):
 
-- `update` - Updates everything: system packages (apt or pacman on Linux, brew on macOS), mise itself, chezmoi, then `chezmoi update` (pull latest dotfiles + apply), then `mise upgrade` for the freshly pulled tool pins, then each coding-agent CLI's own updater (`claude update`, `codex update`, `copilot update`, `agy update`, `opencode upgrade`) for whichever are installed — `install.sh` installs these with their vendor installers, not mise, so they can self-update; a failure is reported and skipped. The mise step is skipped over when mise is package-managed — the system-package step above already covered it
-- `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache
-- `bitwarden-ssh-sock` - Prints the SSH agent socket on machines where Bitwarden is the agent (see SSH Agent); `--forwarded` exits 0 only inside an SSH session with a forwarded agent. Applied only when `bitwardenSshAgent` is true
+- `update` - Updates everything: system packages (apt or pacman on Linux, `omarchy update -y` on Omarchy, brew on macOS), mise itself, chezmoi, then `chezmoi update --init` (pull latest dotfiles, regenerate the config from `.chezmoi.toml.tmpl`, apply), then `mise upgrade` for the freshly pulled tool pins, then each coding-agent CLI's own updater (`claude update`, `codex update`, `copilot update`, `agy update`, `opencode upgrade`) for whichever are installed — `install.sh` installs these with their vendor installers, not mise, so they can self-update; a failure is reported and skipped. On Omarchy, a CLI that Omarchy's mise config provides is left to Omarchy (see Omarchy). The mise and chezmoi self-updates are skipped over when the binary is package-managed — the system-package step above already covered it
+- `clean` - Prunes what `update` leaves behind: orphaned system packages and caches (`apt-get autoremove --purge`/`clean`, `pacman -Rns` of `-Qtdq` orphans + `-Sc`, `brew autoremove`/`cleanup --prune=all`), mise tool versions no longer referenced by any config (`mise prune`), and mise's download cache. On Omarchy the system-package step is skipped: `omarchy update` already removes orphans and prunes the cache down to two versions per package, its offline rollback path
+- `bitwarden-ssh-sock` - Prints the SSH agent socket on machines where Bitwarden is the agent (see SSH Agent); `--forwarded` exits 0 only inside an SSH session with a forwarded agent. Applied only when `bitwardenSshAgent` is true (everywhere except dev containers, WSL and Windows)
 - `ssh-keygen-wsl` - git's `gpg.ssh.program` on WSL: runs Windows `ssh-keygen.exe`, the only `ssh-keygen` that can reach the Windows-side Bitwarden agent, after translating the absolute Linux paths git passes with `wslpath -w`. Applied only when `isWsl` is true
 - `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
 
@@ -43,10 +43,11 @@ The dotfiles adapt based on environment variables:
 - `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
 - `DOTFILES_WORK_EMAIL` - Work email fallback when `~/work.email` is absent (the file wins; Codespaces user secrets surface as env vars)
 - `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
+- `ID=omarchy` in `/etc/os-release` - Sets `isOmarchy` (see Omarchy). Keyed on the distro ID, so it is false by construction on WSL, dev containers, macOS and Windows
 
 ### Identity System
 
-The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). This mirrors the per-host signing-key file pattern (`~/.ssh/git_signing.pub`). When the file is absent, the **`DOTFILES_WORK_EMAIL`** env var is consulted as a fallback (the file always wins when both exist) — this is how Codespaces get a work identity, since user secrets surface there as env vars. `.chezmoi.toml.tmpl` reads the email at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
+The work identity is driven by a single file, **`~/work.email`**, whose only contents are one work email address (no other text or formatting). When the file is absent, the **`DOTFILES_WORK_EMAIL`** env var is consulted as a fallback (the file always wins when both exist) — this is how Codespaces get a work identity, since user secrets surface there as env vars. `.chezmoi.toml.tmpl` reads the email at render time and derives the `identity`, `isWork`, `isPersonal`, and `workEmail` data variables. The email's **domain** selects the identity:
 
 | `~/work.email` | `identity` | `isWork` | `workEmail` |
 | --- | --- | --- | --- |
@@ -70,19 +71,15 @@ There is no auto-detection or prompt: the file (or its env-var fallback) is the 
 
 ### Git Signing
 
-Commits are signed with an SSH key, resolved at `chezmoi init` time in `.chezmoi.toml.tmpl` (first match wins):
-
-1. **Bitwarden** - on `bitwardenSshAgent` machines (see SSH Agent), in dev containers, which use the host's forwarded Bitwarden agent, and on WSL, which uses the Windows-side Bitwarden agent through `ssh-keygen.exe` (see `ssh-keygen-wsl`), `signingkey` is the `key::` literal of the committed "GitHub Signing" public key, so git signs only through the Bitwarden agent. Any `~/.ssh/git_signing` on these machines is ignored. If Bitwarden isn't running or the prompt is denied, signing fails with an agent error rather than falling back to a file
-2. **Key on disk** - a private key at `~/.ssh/git_signing`. `dot_gitconfig.tmpl` sets `signingkey` to the file path (`gitSigningKeyFile`) and git signs from disk with no agent. `gitSigningPubKey` is read from `~/.ssh/git_signing.pub` for `allowed_signers`
-3. **Neither** - commits are not signed (`gitSign` is false); e.g. personal machines without a key file
-
-`signingKeyFileWanted` is true where no Bitwarden agent is available: not `bitwardenSshAgent`, not a dev container, and not WSL. After its first apply, `install.sh` checks it and, when no key exists yet, runs `scripts/generate-signing-key.sh` and re-runs `chezmoi init --apply` so the new key is picked up
+Commits are always signed with the "GitHub Signing" key stored in Bitwarden. Its public key is inlined as `gitSigningPubKey` in `.chezmoi.toml.tmpl`, and `dot_gitconfig.tmpl` sets `signingkey` to its `key::` literal, so git signs only through an SSH agent holding that key: Bitwarden's own on `bitwardenSshAgent` machines (see SSH Agent), the host's forwarded Bitwarden agent in dev containers, and on WSL the Windows-side agent through `ssh-keygen.exe` (see `ssh-keygen-wsl`). There is no key-file fallback: if Bitwarden isn't running, isn't the agent, doesn't hold the key, or the prompt is denied, signing fails with an agent error.
 
 The `gitSign` data flag gates all signing config (`dot_gitconfig.tmpl`, `allowed_signers.tmpl`). It is always false in **Codespaces**, where GitHub signs commits server-side with its own web-flow key.
 
 ### SSH Agent
 
-On work machines (`bitwardenSshAgent`: work identity, not a dev container, WSL or Windows) the Bitwarden desktop app is the only SSH agent. Dev containers keep the host's forwarded agent; on WSL the app runs on the Windows side, where its Unix socket is unreachable. Personal machines keep the platform agent (`fish_ssh_agent`, `IdentitiesOnly`).
+`bitwardenSshAgent` is true everywhere except dev containers, WSL and Windows, and there the Bitwarden desktop app is the only SSH agent. A headless box reaches it through a forwarded agent (`ssh -A`, or VS Code Remote-SSH, which forwards by default). Without Bitwarden or a forwarded agent, ssh still authenticates with key files on disk (on macOS `UseKeychain` supplies their passphrases), but commits can't be signed (see Git Signing). Dev containers keep the host's forwarded agent. On WSL the app runs on the Windows side, where its Unix socket is unreachable, so fish starts a local agent shared across WSL shells (`fish_ssh_agent`) and ssh keeps `AddKeysToAgent`/`IdentitiesOnly`.
+
+A forwarded agent only lives as long as the SSH session: a coding agent left committing in a zellij or tmux session after you disconnect can't reach it, nor after you reconnect, since the session keeps the old socket path. Give such a box its own choice in `~/.config/local/gitconfig` (see Local Overrides): a box-only signing key (`[user] signingkey = ~/.ssh/git_signing`, added to GitHub as a signing key) or no signing (`[commit] gpgSign = false` and `[tag] gpgSign = false`).
 
 Sandboxed installs put the socket inside their container, so `.chezmoi.toml.tmpl` renders an ordered per-OS candidate list, `bitwardenSshSocks` (macOS App Store; Linux snap, flatpak), always ending with the native install path `~/.bitwarden-ssh-agent.sock` as the fallback. The first socket that exists at runtime wins, and a forwarded agent in an SSH session (a work VM reached with `ssh -A`) wins over all of them. The same order is applied by two consumers:
 
@@ -93,7 +90,9 @@ Bitwarden leaves its socket file on disk after quitting, so the check stays stab
 
 ### Tool Management
 
-CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/config.toml.tmpl`. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
+CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl`, applied as a `conf.d` drop-in. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). On Omarchy, tools Omarchy installs as system packages (starship, lazygit, fd, fzf, jq, ripgrep, zoxide, usage, herdr) are left out. Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
+
+`~/.config/mise/config.toml` is deliberately not managed: it belongs to `mise use -g`, whether you run it or Omarchy's agent wrappers fall back to it, so a managed copy would be reverted and rewritten on every apply. A tool pinned there outranks the drop-in's pin. `modify_config.toml` only removes a `config.toml` that an older version of the dotfiles wrote (recognized by its top-level `minimum_release_age`/`idiomatic_version_file_enable_tools` settings, which `mise use -g` never writes); anything else passes through untouched.
 
 ### Chezmoi Automation Scripts
 
@@ -102,10 +101,12 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
 - `run_after_mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is reported and stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it
 - `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
-- `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup)
+- `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup). Not on Omarchy, where fish isn't used
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
-- `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS work machines: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
+- `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
 - `run_onchange_after_06-codex-plugins.sh.tmpl` - Installs Codex plugins when the plugin list changes (see Codex Plugin Management)
+- `run_onchange_after_07-omarchy-theme.sh.tmpl` - Omarchy: runs `omarchy theme refresh` when a managed theme's `colors.toml` changes and that theme is the active one (see Omarchy)
+- `run_after_08-omarchy-packages.sh.tmpl` - Omarchy: installs whatever `.chezmoidata/omarchy.toml` lists that is missing (see Omarchy)
 
 ### Claude Plugin Management
 
@@ -184,6 +185,34 @@ to it), so **removing** an entry from `codex.toml` does not uninstall it; also r
 
 Rules are checked top to bottom and the first match wins, so native apps come first. To add a domain, add it to the relevant rule's `host` list (a host also matches its subdomains).
 
+### Omarchy
+
+On [Omarchy](https://omarchy.org/) (`isOmarchy`), the dotfiles layer on top of Omarchy rather than replace it, and install and update through its own entrypoints. Omarchy's defaults live read-only in `/usr/share/omarchy`; read them before changing anything here.
+
+- **Who owns what** - Omarchy themes and migrates the ghostty, starship and herdr configs, so `.chezmoiignore.tmpl` leaves them (and the unused fish config) to it there. In `~/.config/hypr`, only `input.lua` and `looknfeel.lua` are managed, and they hold just the overrides on top of Omarchy's defaults. Omarchy's migrations rewrite a user file only while it still matches a stock version, so a managed file that differs is never contested, while a managed stock file would be. `monitors.lua`, `bindings.lua`, `autostart.lua` and `~/.config/omarchy/shell.json` stay per-machine. Only manage a file that differs from its `$OMARCHY_PATH/config` default
+- **Shell** - bash, Omarchy's shell; `install.sh` installs neither fish nor changes the login shell. `.bashrc` keeps Omarchy's own structure (env-bootstrap above the interactivity guard, then `$OMARCHY_PATH/default/bash/rc`, which sets up the prompt, mise, zoxide, fzf and history) and adds only what is ours below it
+- **Git** - `.chezmoiremove.tmpl` removes Omarchy's `~/.config/git/config`: git reads it beneath `~/.gitconfig`, so its `init.defaultBranch = master` and personal email would leak through on keys we leave unset. Its useful defaults are carried in `dot_gitconfig.tmpl`
+- **Packages** - `.chezmoidata/omarchy.toml` lists repo packages (`omarchy pkg add`), AUR packages (`omarchy pkg aur add`), Omarchy installers (`omarchy install <route>`, preferred whenever one exists because they also wire the app into Omarchy; each has a sentinel package that decides whether it still needs to run) and third-party shell plugins (`omarchy plugin add`, installed but never enabled, since `shell.json` is per-machine). `run_after_08-omarchy-packages.sh.tmpl` runs on every apply but does nothing once everything is present; failures only warn, and without a terminal for sudo it says what it skipped. Removing an entry never uninstalls anything
+- **Themes** - custom theme definitions live in `private_dot_config/omarchy/themes/<name>/` (`colors.toml`, `backgrounds/`) and appear in Omarchy's theme switcher; nothing here selects the active theme. Claude Code's settings use `"theme": "custom:omarchy"`, the theme file Omarchy regenerates on every theme change
+- **Updates** - `update` runs `omarchy update -y` (Omarchy blocks a direct `pacman -Syu` with a libalpm hook), and `install.sh` installs with `omarchy pkg add` and takes chezmoi from the Arch repos. Omarchy's mise config (`/etc/mise/conf.d/omarchy-tools.toml`) provides most coding-agent CLIs lazily, so `install.sh` and `update` skip their vendor installers/updaters for any CLI it declares (`omarchy-mise-default-tools declares <tool>`), unless the user opted out of Omarchy's default tools
+
+### Shell Abbreviations
+
+`root/.chezmoidata/shell.toml` holds one list of command abbreviations for every shell. fish renders it as abbreviations (`conf.d/abbreviations.fish.tmpl`); bash and zsh render it as aliases (the `shell-abbreviations` partial). Add one with a line in that file. fish-only aliases (`ls` → lsd and friends) stay in `conf.d/alias.fish`.
+
+### Local Overrides
+
+`~/.config/local/` holds per-machine overrides that the dotfiles never manage. Each managed config loads its file there only if it exists, last, so it wins:
+
+| File | Loaded by |
+| --- | --- |
+| `shell.sh` | `.bashrc`, `.zshrc` |
+| `shell.fish` | `config.fish` |
+| `gitconfig` | `.gitconfig` (`[include]`) |
+| `hypr.lua` | `~/.config/hypr/looknfeel.lua` (Omarchy; re-read on `hyprctl reload`) |
+
+To add another, have the managed config load `~/.config/local/<file>` when it exists.
+
 ### Environment Variables
 
 Simple key-value environment variables (e.g., `VISUAL`, `HOMEBREW_NO_AUTO_UPDATE`) are centralized in template partials under `root/.chezmoitemplates/`. Each partial renders the same variables in the syntax for its target shell:
@@ -212,9 +241,13 @@ On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from 
 - `root/dot_gitconfig.tmpl` - Git configuration with conditional work includes
 - `root/dot_gitconfig-work.tmpl` - Work-specific git configuration
 - `root/private_dot_config/fish/config.fish.tmpl` - Fish shell configuration
-- `root/dot_bashrc.tmpl` - Bash configuration (Homebrew, starship, mise, zoxide, mcfly)
+- `root/dot_bashrc.tmpl` - Bash configuration (Homebrew, starship, mise, zoxide, mcfly; on Omarchy, layered on Omarchy's rc)
 - `root/dot_zshrc.tmpl` - Zsh configuration
 - `root/private_dot_config/brouter/config.toml.tmpl` - Brouter link-routing rules (macOS)
+- `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl` - mise tool pins and settings
+- `root/.chezmoidata/shell.toml` - Shell abbreviations for every shell
+- `root/.chezmoidata/omarchy.toml` - Omarchy packages, installers and shell plugins
+- `root/private_dot_config/hypr/` - Hyprland overrides (Omarchy)
 
 ## Common Commands
 

@@ -1,14 +1,26 @@
 #!/bin/bash
 
-# Update everything on this machine: system packages (apt/brew), mise,
-# chezmoi, the dotfiles themselves, mise-managed tools, and the coding-agent
-# CLIs that install.sh sets up outside mise.
+# Update everything on this machine: system packages (apt/pacman/brew, or
+# `omarchy update` on Omarchy), mise, chezmoi, the dotfiles themselves,
+# mise-managed tools, and the coding-agent CLIs that install.sh sets up
+# outside mise.
 #
 # Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
 
 set -eufo pipefail
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
+
+is_omarchy() {
+    [[ -r /etc/os-release ]] && grep -qx 'ID=omarchy' /etc/os-release
+}
+
+# Omarchy's mise config provides most agent CLIs itself (and updates them),
+# unless this user opted out of Omarchy's default tools.
+omarchy_provides() {
+    is_omarchy && command -v omarchy-mise-default-tools >/dev/null 2>&1 &&
+        omarchy-mise-default-tools declares "$1"
+}
 
 # Everything lives inside main so bash parses the whole script before any of
 # it runs: `chezmoi update` below re-applies the dotfiles, which can rewrite
@@ -20,7 +32,14 @@ main() {
         brew update && brew upgrade
         ;;
     Linux)
-        if command -v apt-get >/dev/null 2>&1; then
+        if is_omarchy; then
+            # Omarchy blocks a direct `pacman -Syu` (a libalpm hook aborts it).
+            # Its own entrypoint also snapshots, refreshes keyrings, runs
+            # migrations and hooks, and updates AUR packages and mise tools.
+            # -y skips its confirmations, so a kernel update reports that a
+            # reboot is due instead of prompting for one.
+            omarchy update -y
+        elif command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update && sudo apt-get upgrade -y
         elif command -v pacman >/dev/null 2>&1; then
             sudo pacman -Syu --noconfirm
@@ -37,12 +56,20 @@ main() {
     fi
 
     # Upgrade the chezmoi binary before pulling the dotfiles: newer templates
-    # may require a newer chezmoi (.chezmoiversion).
+    # may require a newer chezmoi (.chezmoiversion). `chezmoi upgrade` replaces
+    # the binary in place, so a package-managed (root-owned) chezmoi is left to
+    # the system-package step above, same as mise.
     step "Updating chezmoi"
-    chezmoi upgrade
+    if [[ -w "$(command -v chezmoi)" ]]; then
+        chezmoi upgrade
+    else
+        echo "chezmoi is package-managed, updated with the system packages"
+    fi
 
     step "Pulling latest dotfiles and applying"
-    chezmoi update
+    # --init regenerates the config from the freshly pulled .chezmoi.toml.tmpl,
+    # so data keys the new templates rely on exist before they are applied.
+    chezmoi update --init
 
     # After the pull: the applied mise config may pin newer tool versions.
     if command -v mise >/dev/null 2>&1; then
@@ -53,10 +80,12 @@ main() {
     # Installed by install.sh with each vendor's own installer rather than
     # mise, so they can self-update; this runs that same updater on demand.
     # Each is optional (macOS/Windows don't get them), and one failing
-    # shouldn't stop the rest.
-    local tool
-    for tool in "claude update" "codex update" "copilot update" "agy update" "opencode upgrade"; do
-        if command -v "${tool%% *}" >/dev/null 2>&1; then
+    # shouldn't stop the rest. Format: "<updater>:<mise tool name>".
+    local entry tool
+    for entry in "claude update:claude" "codex update:codex" "copilot update:copilot" \
+        "agy update:antigravity-cli" "opencode upgrade:opencode"; do
+        tool=${entry%%:*}
+        if command -v "${tool%% *}" >/dev/null 2>&1 && ! omarchy_provides "${entry##*:}"; then
             step "Updating ${tool%% *}"
             $tool || echo "${tool%% *} update failed, skipping"
         fi

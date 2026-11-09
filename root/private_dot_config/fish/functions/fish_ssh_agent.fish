@@ -20,15 +20,9 @@ function __ssh_agent_start -d "start a new ssh agent"
 end
 
 
-function fish_ssh_agent --description "Start ssh-agent or load keys from the macOS Keychain."
-   # macOS: launchd already runs a Keychain-aware ssh-agent at SSH_AUTH_SOCK.
-   # Pull any passphrases previously saved via `ssh-add --apple-use-keychain`
-   # into that agent so git/ssh stop prompting.
-   if test (uname -s) = Darwin
-      ssh-add --apple-load-keychain --quiet 2>/dev/null
-      return
-   end
-
+# WSL only: Bitwarden runs on the Windows side, where its agent socket is
+# unreachable, so WSL keeps one ssh-agent shared across its shells.
+function fish_ssh_agent --description "Start ssh-agent, or reuse the one already running"
    if test -z "$SSH_ENV"
       set -xg SSH_ENV $HOME/.ssh/environment
    end
