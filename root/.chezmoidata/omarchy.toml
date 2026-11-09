@@ -35,10 +35,6 @@ command = "browser chrome"
 package = "google-chrome"
 
 [[omarchy.installers]]
-command = "service spotify"
-package = "spotify"
-
-[[omarchy.installers]]
 command = "ai claude"
 package = "claude-desktop"
 
