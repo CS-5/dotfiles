@@ -37,12 +37,11 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ end -}}
 {{ $isWork := ne $identity "personal" -}}
 
-{{/* The Bitwarden desktop app is the only SSH agent on work machines, and on
-     any other machine where its agent socket exists (Bitwarden leaves the
-     socket file on disk after quitting, so this is stable once its SSH agent
-     has been enabled; re-run `chezmoi init` after enabling it). Dev
-     containers use the host's forwarded agent instead, and on WSL the app
-     runs on the Windows side where its Unix socket is unreachable. Sandboxed
+{{/* The Bitwarden desktop app is the only SSH agent, reached directly or
+     forwarded into an SSH session (ssh -A), which is how a headless box
+     reaches it. Dev containers use the host's forwarded agent instead, and
+     on WSL the app runs on the Windows side where its Unix socket is
+     unreachable. Sandboxed
      installs (App Store, snap, flatpak) put the socket inside their
      container, so candidates are checked in order at runtime; the last
      entry, the native install path, is the fallback. */}}
@@ -55,11 +54,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
   {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock") -}}
 {{ end -}}
 {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
-{{ $bitwardenSockFound := false -}}
-{{ range $bitwardenSshSocks -}}
-  {{ if stat . -}}{{ $bitwardenSockFound = true -}}{{ end -}}
-{{ end -}}
-{{ $bitwardenSshAgent := and (or $isWork $bitwardenSockFound) (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
+{{ $bitwardenSshAgent := and (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
 
 {{/* Commits are signed with the "GitHub Signing" key stored in Bitwarden,
      always through an SSH agent: Bitwarden's own, the host's forwarded into

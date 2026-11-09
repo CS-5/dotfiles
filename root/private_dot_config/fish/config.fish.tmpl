@@ -34,7 +34,7 @@ fish_add_path {{ .binDirAbs | quote }}
 
 {{ if .bitwardenSshAgent -}}
 set -gx SSH_AUTH_SOCK ({{ .binDirAbs }}/bitwarden-ssh-sock)
-{{- else if not .isDc -}}
+{{- else if .isWsl -}}
 fish_ssh_agent
 {{- end }}
 
