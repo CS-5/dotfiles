@@ -1,8 +1,8 @@
 [user]
   name = Carson Seese
   email = {{ .personalEmail }}
-{{- if .gitSign }}
-  signingkey = key::{{ .gitSigningPubKey }}
+{{- if and .gitSign (not .isDc) }}
+  signingkey = {{ joinPath .chezmoi.homeDir ".ssh/git_signing" | replace "\\" "/" }}
 {{- end }}
 
 {{ if and .isWork (not .isDc) -}}
@@ -69,11 +69,19 @@
   helper = !gh auth git-credential
 
 {{ if .gitSign -}}
+{{ if .isDc -}}
+# Written by git-signing-agent on apply and at shell startup: a forwarded agent
+# key that is registered with GitHub, with signing on, or no file (no signing)
+# when the agent has none. git skips the include when the file doesn't exist.
+[include]
+  path = ~/.local/state/git-signing.gitconfig
+{{- else -}}
 [commit]
   gpgSign = true
 
 [tag]
   gpgSign = true
+{{- end }}
 
 [gpg]
   format = ssh
@@ -82,8 +90,6 @@
   allowedSignersFile = {{ joinPath .chezmoi.homeDir ".ssh/allowed_signers" | replace "\\" "/" }}
 {{- if .isWindows }}
   program = C:/Windows/System32/OpenSSH/ssh-keygen.exe
-{{- else if .isWsl }}
-  program = {{ joinPath .binDirAbs "ssh-keygen-wsl" }}
 {{- end }}
 {{- end }}
 

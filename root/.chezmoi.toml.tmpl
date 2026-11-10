@@ -56,11 +56,11 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 {{ $bitwardenSshSocks = append $bitwardenSshSocks (joinPath .chezmoi.homeDir ".bitwarden-ssh-agent.sock") -}}
 {{ $bitwardenSshAgent := and (not $isDc) (not $isWsl) (ne .chezmoi.os "windows") -}}
 
-{{/* Commits are signed with the "GitHub Signing" key stored in Bitwarden,
-     always through an SSH agent: Bitwarden's own, the host's forwarded into
-     a dev container, or the Windows-side one on WSL (reached through
-     ssh-keygen.exe). Codespaces sign server-side with GitHub's own
-     web-flow key. */}}
+{{/* Each machine signs commits with its own key file, ~/.ssh/git_signing,
+     which the git-signing script creates and registers with GitHub. Dev
+     containers have no key of their own: they sign with a forwarded agent key
+     that is registered with GitHub, and only when there is one. Codespaces
+     sign server-side with GitHub's own web-flow key. */}}
 {{ $gitSign := not $isCodespaces -}}
 
 [data]
@@ -85,7 +85,7 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     workEmail = {{ $workEmail | quote }}
 
     # Signing
-    gitSigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUhU31PFPWI9ggTCNK7JuYnc7O7RrUKgjjt2aWDCVIP"
+    githubUser = "CS-5"
     gitSign = {{ $gitSign }}
 
     # SSH agent

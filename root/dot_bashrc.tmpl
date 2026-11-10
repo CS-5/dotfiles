@@ -26,6 +26,9 @@ export PATH="{{ .binDirAbs }}:$PATH"
 {{- if .bitwardenSshAgent }}
 export SSH_AUTH_SOCK="$({{ .binDirAbs }}/bitwarden-ssh-sock)"
 {{- end }}
+{{- if and .isDc .gitSign }}
+{{ .binDirAbs }}/git-signing-agent --quiet
+{{- end }}
 {{- if not .isOmarchy }}
 
 if command -v starship >/dev/null 2>&1; then

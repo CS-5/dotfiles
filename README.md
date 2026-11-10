@@ -45,17 +45,18 @@ iex "&{$(irm 'https://get.chezmoi.io/ps1')} init --apply CS-5"
 
 ## Commit signing
 
-Commits are signed with the "GitHub Signing" SSH key stored in Bitwarden, whose
-public key is inlined in the git config. git signs only through an SSH agent
-that holds it: Bitwarden's own, the host's agent forwarded into a dev container,
-or the Windows-side Bitwarden agent on WSL. Nothing is kept on disk; Bitwarden
-must be running and unlocked to commit, and without it commits fail.
+Each machine signs commits with its own key, `~/.ssh/git_signing`, which
+`chezmoi apply` creates (no passphrase, so signing never prompts) and registers
+with GitHub as a signing key through `gh`. Registering needs `gh` logged in
+with the `admin:ssh_signing_key` scope. Applying from a terminal asks for it;
+otherwise apply prints the command, and the next apply (or `update`) finishes
+the job. Until then the machine's commits show as Unverified on GitHub. To
+retire a machine, delete its key under GitHub's SSH and GPG keys settings.
 
-On a headless box, connect with agent forwarding (`ssh -A`, or VS Code
-Remote-SSH) so it signs through Bitwarden on the machine you connect from. A
-box that commits while nobody is connected (e.g. a coding agent in a zellij
-session) needs its own choice in `~/.config/local/gitconfig`: a signing key
-just for that box, or `gpgSign = false` under `[commit]` and `[tag]`.
+Dev containers sign only when the host's forwarded SSH agent holds a key that
+is registered with GitHub (such as the "Signing" key in Bitwarden), and
+otherwise commit unsigned. Run `git-signing-agent` after connecting an agent
+to pick it up without opening a new shell.
 
 Signing is always disabled in Codespaces (GitHub signs those server-side).
 
