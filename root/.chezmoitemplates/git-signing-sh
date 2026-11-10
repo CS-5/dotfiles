@@ -1,0 +1,27 @@
+{{- /* POSIX sh functions shared by run_after_09-git-signing.sh.tmpl and
+       git-signing-agent, so both read GitHub's list and write
+       ~/.ssh/allowed_signers the same way. Takes the template data. */ -}}
+# github_signing_keys <seconds>: prints the account's GitHub signing keys, one
+# "type blob" per line. Public, so no gh login is needed; fails when GitHub
+# can't be reached within the time given.
+github_signing_keys() {
+    gsk_json=$(curl -fsSL --connect-timeout 3 --max-time "$1" -H 'Accept: application/vnd.github+json' \
+        "https://api.github.com/users/{{ .githubUser }}/ssh_signing_keys" 2>/dev/null) || return 1
+    printf '%s\n' "$gsk_json" | grep -o '"key": *"[^"]*"' |
+        sed -e 's/^"key": *"//' -e 's/"$//' | awk '{ print $1 " " $2 }'
+    # An account without signing keys is still a successful fetch, though grep
+    # finds nothing (which pipefail would report as a failure).
+    return 0
+}
+
+# write_allowed_signers <keys>: replaces ~/.ssh/allowed_signers with each
+# "type blob" line of <keys> under each of this identity's emails.
+write_allowed_signers() {
+    [ -d "$HOME/.ssh" ] || mkdir -m 700 "$HOME/.ssh"
+    was_tmp=$(mktemp "$HOME/.ssh/allowed_signers.XXXXXX") || return 1
+    for was_principal in {{ .personalEmail | quote }}{{ if .workEmail }} {{ .workEmail | quote }}{{ end }}; do
+        printf '%s\n' "$1" | awk -v p="$was_principal" 'NF { print p " " $0 }'
+    done > "$was_tmp"
+    chmod 644 "$was_tmp"
+    mv -f "$was_tmp" "$HOME/.ssh/allowed_signers"
+}

@@ -28,21 +28,17 @@ warn() { printf 'git-signing: %s\n' "$1" >&2; }
 PATH="$PATH:${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims"
 
 github_user={{ .githubUser | quote }}
-principals=({{ .personalEmail | quote }}{{ if .workEmail }} {{ .workEmail | quote }}{{ end }})
 ssh_dir="$HOME/.ssh"
 signers="$ssh_dir/allowed_signers"
 
+{{ template "git-signing-sh" . }}
+
 [[ -d "$ssh_dir" ]] || mkdir -m 700 "$ssh_dir"
 
-# GitHub's signing keys for the account, one "type blob" per line. Public, so
-# no gh login is needed.
 fetched=false
 github_keys=""
-if json=$(curl -fsSL --max-time 10 -H 'Accept: application/vnd.github+json' \
-    "https://api.github.com/users/$github_user/ssh_signing_keys" 2>/dev/null); then
+if github_keys=$(github_signing_keys 10); then
     fetched=true
-    github_keys=$(printf '%s\n' "$json" | grep -o '"key": *"[^"]*"' |
-        sed -e 's/^"key": *"//' -e 's/"$//' | awk '{ print $1 " " $2 }')
 else
     warn "could not fetch the GitHub signing keys for $github_user; keeping $signers as is"
 fi
@@ -66,13 +62,39 @@ registered() {
     printf '%s\n' "$github_keys" | grep -qxF "$local_key"
 }
 
+# gh authenticates with GH_TOKEN or GITHUB_TOKEN when either is set, ahead of
+# its stored login, and refuses to refresh the stored login's scopes while one
+# is. Such tokens rarely carry admin:ssh_signing_key, so registration falls
+# back to the stored login with them cleared.
+env_token=false
+[[ -n "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]] && env_token=true
+
 register_hint() {
     warn "$key.pub is not registered with GitHub, so its signatures show as Unverified"
-    warn "to register it: gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+    if $env_token; then
+        warn "to register it: env -u GH_TOKEN -u GITHUB_TOKEN gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+    else
+        warn "to register it: gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+    fi
 }
 
-add_key() {
-    gh ssh-key add "$key.pub" --type signing --title {{ .chezmoi.hostname | quote }} >/dev/null 2>&1
+# register_with <gh command...>: registers the key as that gh, if it is logged
+# in as github_user. gh's error is kept in add_error for the final warning.
+add_error=""
+register_with() {
+    local login out
+    login=$("$@" api user --jq .login 2>/dev/null) || return 1
+    if [[ "$(printf '%s' "$login" | tr '[:upper:]' '[:lower:]')" != \
+        "$(printf '%s' "$github_user" | tr '[:upper:]' '[:lower:]')" ]]; then
+        warn "gh is logged in as $login, not $github_user; not registering $key.pub with that login"
+        return 1
+    fi
+    if out=$("$@" ssh-key add "$key.pub" --type signing --title {{ .chezmoi.hostname | quote }} 2>&1); then
+        printf 'git-signing: registered %s with GitHub\n' "$key.pub"
+        return 0
+    fi
+    add_error=$out
+    return 1
 }
 
 register() {
@@ -80,26 +102,19 @@ register() {
         register_hint
         return
     fi
-    local login
-    if ! login=$(gh api user --jq .login 2>/dev/null); then
-        register_hint
-        return
-    fi
-    if [[ "$(printf '%s' "$login" | tr '[:upper:]' '[:lower:]')" != \
-        "$(printf '%s' "$github_user" | tr '[:upper:]' '[:lower:]')" ]]; then
-        warn "gh is logged in as $login, not $github_user; not registering $key.pub"
-        return
-    fi
-    if add_key; then
-        printf 'git-signing: registered %s with GitHub\n' "$key.pub"
-        return
+    register_with gh && return
+    local stored=(gh)
+    if $env_token; then
+        stored=(env -u GH_TOKEN -u GITHUB_TOKEN gh)
+        register_with "${stored[@]}" && return
     fi
     # Usually a missing scope; it can be granted in place, but only from a terminal.
     if [[ -t 0 && -t 1 ]] &&
-        gh auth refresh -h github.com -s admin:ssh_signing_key && add_key; then
-        printf 'git-signing: registered %s with GitHub\n' "$key.pub"
+        "${stored[@]}" auth refresh -h github.com -s admin:ssh_signing_key &&
+        register_with "${stored[@]}"; then
         return
     fi
+    [[ -n "$add_error" ]] && warn "gh ssh-key add: $(printf '%s\n' "$add_error" | tail -n 1)"
     register_hint
 }
 
@@ -118,14 +133,7 @@ elif [[ -r "$signers" ]]; then
 else
     keys=""
 fi
-keys=$(printf '%s\n%s\n' "$keys" "$local_key" | awk 'NF && !seen[$0]++')
-
-tmp=$(mktemp "$signers.XXXXXX")
-for principal in "${principals[@]}"; do
-    [[ -n "$keys" ]] && printf '%s\n' "$keys" | awk -v p="$principal" '{ print p " " $0 }'
-done > "$tmp"
-mv -f "$tmp" "$signers"
-chmod 644 "$signers"
+write_allowed_signers "$(printf '%s\n%s\n' "$keys" "$local_key" | awk 'NF && !seen[$0]++')"
 {{- if .isDc }}
 
 {{ joinPath .binDirAbs "git-signing-agent" }} --quiet
