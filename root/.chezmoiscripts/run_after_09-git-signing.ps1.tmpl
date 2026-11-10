@@ -45,30 +45,56 @@ if (-not (Test-Path "$key.pub")) {
 }
 $localKey = KeyId (Get-Content "$key.pub" -Raw)
 
+# gh authenticates with GH_TOKEN or GITHUB_TOKEN when either is set, ahead of
+# its stored login, and refuses to refresh the stored login's scopes while one
+# is. Such tokens rarely carry admin:ssh_signing_key, so registration falls
+# back to the stored login with them cleared.
+$envToken = [bool]($env:GH_TOKEN -or $env:GITHUB_TOKEN)
+
 function RegisterHint {
     Warn "$key.pub is not registered with GitHub, so its signatures show as Unverified"
-    Warn "to register it: gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+    if ($envToken) {
+        Warn "to register it: clear GH_TOKEN and GITHUB_TOKEN, run gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+    } else {
+        Warn "to register it: gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+    }
 }
 
-function AddKey {
-    gh ssh-key add "$key.pub" --type signing --title {{ .chezmoi.hostname | quote }} 2>&1 | Out-Null
-    $LASTEXITCODE -eq 0
+# Registers the key as the current gh, if it is logged in as $githubUser.
+# gh's error is kept in $script:addError for the final warning.
+$script:addError = ''
+function RegisterWith {
+    $login = gh api user --jq .login 2>$null
+    if ($LASTEXITCODE -ne 0) { return $false }
+    if ($login -ne $githubUser) {
+        Warn "gh is logged in as $login, not $githubUser; not registering $key.pub with that login"
+        return $false
+    }
+    $out = gh ssh-key add "$key.pub" --type signing --title {{ .chezmoi.hostname | quote }} 2>&1
+    if ($LASTEXITCODE -eq 0) { Write-Host "git-signing: registered $key.pub with GitHub"; return $true }
+    # String conversion, not Out-String: 5.1 wraps stderr lines in ErrorRecords,
+    # and Out-String would add their position and category lines.
+    $script:addError = "$($out | Select-Object -Last 1)".Trim()
+    $false
+}
+
+# Runs $block with GH_TOKEN and GITHUB_TOKEN cleared, so gh uses its stored login.
+function WithoutEnvToken([scriptblock]$block) {
+    $saved = $env:GH_TOKEN, $env:GITHUB_TOKEN
+    Remove-Item Env:GH_TOKEN, Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+    try { & $block } finally { $env:GH_TOKEN, $env:GITHUB_TOKEN = $saved }
 }
 
 function Register {
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { RegisterHint; return }
-    $login = gh api user --jq .login 2>$null
-    if ($LASTEXITCODE -ne 0) { RegisterHint; return }
-    if ($login -ne $githubUser) {
-        Warn "gh is logged in as $login, not $githubUser; not registering $key.pub"
-        return
-    }
-    if (AddKey) { Write-Host "git-signing: registered $key.pub with GitHub"; return }
+    if (RegisterWith) { return }
+    if ($envToken -and (WithoutEnvToken { RegisterWith })) { return }
     # Usually a missing scope; it can be granted in place, but only from a terminal.
     if (-not [Console]::IsInputRedirected) {
-        gh auth refresh -h github.com -s admin:ssh_signing_key
-        if ($LASTEXITCODE -eq 0 -and (AddKey)) { Write-Host "git-signing: registered $key.pub with GitHub"; return }
+        WithoutEnvToken { gh auth refresh -h github.com -s admin:ssh_signing_key }
+        if ($LASTEXITCODE -eq 0 -and (WithoutEnvToken { RegisterWith })) { return }
     }
+    if ($script:addError) { Warn "gh ssh-key add: $($script:addError)" }
     RegisterHint
 }
 
