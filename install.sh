@@ -46,6 +46,19 @@ omarchy_provides() {
         omarchy-mise-default-tools declares "$1"
 }
 
+# Runs a vendor's `curl | sh` installer: run_installer <url> <shell> [args...].
+# The script is downloaded in full before it runs. An installer that exits
+# before reading all of it (Antigravity's does when it is already installed)
+# would otherwise break curl's pipe ("curl: Failed writing body"), and pipefail
+# would abort the whole bootstrap. The script still arrives on stdin, as it
+# would through a pipe; set env vars as `VAR=val run_installer ...`.
+run_installer() {
+    local url=$1 shell=$2 script
+    shift 2
+    script="$(curl -fsSL "$url")"
+    "$shell" -s -- "$@" <<<"$script"
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
     --work-email)
@@ -107,7 +120,7 @@ if command -v mise >/dev/null 2>&1; then
     log_info "mise $(mise --version | cut -d' ' -f1) already installed, leaving it as-is"
 else
     show_progress "Installing mise"
-    curl -fsSL https://mise.run | sh
+    run_installer https://mise.run sh
     log_success "mise installed"
 fi
 if [[ -n "$WORKSPACE_DIR" ]]; then
@@ -140,7 +153,7 @@ if omarchy_provides claude; then
     log_info "Claude Code is provided by Omarchy"
 else
     show_progress "Installing Claude Code"
-    curl -fsSL https://claude.ai/install.sh | bash
+    run_installer https://claude.ai/install.sh bash
     log_success "Claude Code installed"
 fi
 
@@ -151,7 +164,7 @@ if omarchy_provides codex; then
     log_info "Codex is provided by Omarchy"
 else
     show_progress "Installing Codex"
-    curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
+    CODEX_NON_INTERACTIVE=1 run_installer https://chatgpt.com/codex/install.sh sh
     log_success "Codex installed"
 fi
 
@@ -160,7 +173,7 @@ if omarchy_provides antigravity-cli; then
     log_info "Antigravity CLI is provided by Omarchy"
 else
     show_progress "Installing Antigravity CLI"
-    curl -fsSL https://antigravity.google/cli/install.sh | bash
+    run_installer https://antigravity.google/cli/install.sh bash
     log_success "Antigravity CLI installed"
 fi
 
@@ -170,7 +183,7 @@ if omarchy_provides copilot; then
     log_info "GitHub Copilot CLI is provided by Omarchy"
 else
     show_progress "Installing GitHub Copilot CLI"
-    curl -fsSL https://gh.io/copilot-install | PREFIX="$HOME/.local" bash
+    PREFIX="$HOME/.local" run_installer https://gh.io/copilot-install bash
     log_success "GitHub Copilot CLI installed"
 fi
 
@@ -181,7 +194,7 @@ if omarchy_provides opencode; then
     log_info "opencode is provided by Omarchy"
 else
     show_progress "Installing opencode"
-    curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
+    run_installer https://opencode.ai/v2/install bash --no-modify-path
     log_success "opencode installed"
 fi
 
