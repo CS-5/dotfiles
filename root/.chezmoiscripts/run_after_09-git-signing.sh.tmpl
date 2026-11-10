@@ -1,0 +1,135 @@
+{{ if and .gitSign (ne .chezmoi.os "windows") -}}
+#!/bin/bash
+
+# Keep commit signing working without any per-machine edits to the dotfiles:
+#
+# 1. Outside dev containers, create this machine's signing key,
+#    ~/.ssh/git_signing (no passphrase, so signing never prompts), and
+#    register it with GitHub as a signing key through gh.
+# 2. Write ~/.ssh/allowed_signers from GitHub's public list of the account's
+#    signing keys, so `git log --show-signature` can verify commits from every
+#    machine. The repo holds no keys, so a new machine needs no commit here.
+# 3. In dev containers, let git-signing-agent pick a forwarded agent key from
+#    that list (or turn signing off).
+#
+# A plain run_ script rather than run_onchange_, on purpose: registration
+# needs gh logged in with the right scope and the network up, so it is retried
+# on every apply until it succeeds. Once registered, this is one unauthenticated
+# API call. Failures only warn, so they never block the apply.
+#
+# Windows runs run_after_09-git-signing.ps1.tmpl instead; keep the two in step.
+# Bash 3.2 compatible, for macOS.
+
+set -uo pipefail
+
+warn() { printf 'git-signing: %s\n' "$1" >&2; }
+
+# gh is usually a mise tool, and an apply doesn't always have the shims on PATH.
+PATH="$PATH:${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims"
+
+github_user={{ .githubUser | quote }}
+principals=({{ .personalEmail | quote }}{{ if .workEmail }} {{ .workEmail | quote }}{{ end }})
+ssh_dir="$HOME/.ssh"
+signers="$ssh_dir/allowed_signers"
+
+[[ -d "$ssh_dir" ]] || mkdir -m 700 "$ssh_dir"
+
+# GitHub's signing keys for the account, one "type blob" per line. Public, so
+# no gh login is needed.
+fetched=false
+github_keys=""
+if json=$(curl -fsSL --max-time 10 -H 'Accept: application/vnd.github+json' \
+    "https://api.github.com/users/$github_user/ssh_signing_keys" 2>/dev/null); then
+    fetched=true
+    github_keys=$(printf '%s\n' "$json" | grep -o '"key": *"[^"]*"' |
+        sed -e 's/^"key": *"//' -e 's/"$//' | awk '{ print $1 " " $2 }')
+else
+    warn "could not fetch the GitHub signing keys for $github_user; keeping $signers as is"
+fi
+
+local_key=""
+{{- if not .isDc }}
+
+key="$ssh_dir/git_signing"
+if [[ ! -e "$key" ]]; then
+    if ssh-keygen -q -t ed25519 -N '' -C {{ printf "git-signing@%s" .chezmoi.hostname | quote }} -f "$key"; then
+        printf 'git-signing: created %s\n' "$key"
+    else
+        warn "could not create $key; commits will fail to sign until it exists"
+        exit 0
+    fi
+fi
+[[ -e "$key.pub" ]] || ssh-keygen -y -f "$key" > "$key.pub"
+local_key=$(awk '{ print $1 " " $2 }' "$key.pub")
+
+registered() {
+    printf '%s\n' "$github_keys" | grep -qxF "$local_key"
+}
+
+register_hint() {
+    warn "$key.pub is not registered with GitHub, so its signatures show as Unverified"
+    warn "to register it: gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+}
+
+add_key() {
+    gh ssh-key add "$key.pub" --type signing --title {{ .chezmoi.hostname | quote }} >/dev/null 2>&1
+}
+
+register() {
+    if ! command -v gh >/dev/null 2>&1; then
+        register_hint
+        return
+    fi
+    local login
+    if ! login=$(gh api user --jq .login 2>/dev/null); then
+        register_hint
+        return
+    fi
+    if [[ "$(printf '%s' "$login" | tr '[:upper:]' '[:lower:]')" != \
+        "$(printf '%s' "$github_user" | tr '[:upper:]' '[:lower:]')" ]]; then
+        warn "gh is logged in as $login, not $github_user; not registering $key.pub"
+        return
+    fi
+    if add_key; then
+        printf 'git-signing: registered %s with GitHub\n' "$key.pub"
+        return
+    fi
+    # Usually a missing scope; it can be granted in place, but only from a terminal.
+    if [[ -t 0 && -t 1 ]] &&
+        gh auth refresh -h github.com -s admin:ssh_signing_key && add_key; then
+        printf 'git-signing: registered %s with GitHub\n' "$key.pub"
+        return
+    fi
+    register_hint
+}
+
+if $fetched && ! registered; then
+    register
+fi
+{{- end }}
+
+# Rebuild allowed_signers from GitHub's list, or from the current file when
+# GitHub is unreachable. This machine's own key is always included, so its
+# signatures verify locally even before it is registered.
+if $fetched; then
+    keys="$github_keys"
+elif [[ -r "$signers" ]]; then
+    keys=$(awk '{ print $2 " " $3 }' "$signers")
+else
+    keys=""
+fi
+keys=$(printf '%s\n%s\n' "$keys" "$local_key" | awk 'NF && !seen[$0]++')
+
+tmp=$(mktemp "$signers.XXXXXX")
+for principal in "${principals[@]}"; do
+    [[ -n "$keys" ]] && printf '%s\n' "$keys" | awk -v p="$principal" '{ print p " " $0 }'
+done > "$tmp"
+mv -f "$tmp" "$signers"
+chmod 644 "$signers"
+{{- if .isDc }}
+
+{{ joinPath .binDirAbs "git-signing-agent" }} --quiet
+{{- end }}
+
+exit 0
+{{ end -}}

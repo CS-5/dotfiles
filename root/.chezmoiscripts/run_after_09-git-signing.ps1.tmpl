@@ -1,0 +1,91 @@
+{{ if and .gitSign (eq .chezmoi.os "windows") -}}
+# Windows counterpart of run_after_09-git-signing.sh.tmpl (see it for the
+# why); keep the two in step. Creates and registers ~/.ssh/git_signing and
+# writes ~/.ssh/allowed_signers from GitHub's list. Failures only warn.
+
+function Warn($msg) { Write-Host "git-signing: $msg" }
+
+# Windows PowerShell 5.1 drops empty native arguments, so ssh-keygen's empty
+# passphrase is passed as '""'. Legacy passing keeps that working on 7.3+.
+$PSNativeCommandArgumentPassing = 'Legacy'
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+$githubUser = {{ .githubUser | quote }}
+$principals = @({{ .personalEmail | quote }}{{ if .workEmail }}, {{ .workEmail | quote }}{{ end }})
+$sshKeygen = 'C:/Windows/System32/OpenSSH/ssh-keygen.exe'
+$sshDir = Join-Path $HOME '.ssh'
+$signers = Join-Path $sshDir 'allowed_signers'
+$key = Join-Path $sshDir 'git_signing'
+
+New-Item -ItemType Directory -Force -Path $sshDir | Out-Null
+
+function KeyId($line) { ($line.Trim() -split '\s+')[0..1] -join ' ' }
+
+$fetched = $false
+$githubKeys = @()
+try {
+    $response = Invoke-RestMethod -TimeoutSec 10 -Headers @{ Accept = 'application/vnd.github+json' } `
+        -Uri "https://api.github.com/users/$githubUser/ssh_signing_keys"
+    $githubKeys = @($response | ForEach-Object { KeyId $_.key })
+    $fetched = $true
+} catch {
+    Warn "could not fetch the GitHub signing keys for $githubUser; keeping $signers as is"
+}
+
+if (-not (Test-Path $key)) {
+    & $sshKeygen -q -t ed25519 -N '""' -C {{ printf "git-signing@%s" .chezmoi.hostname | quote }} -f $key
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $key)) {
+        Warn "could not create $key; commits will fail to sign until it exists"
+        exit 0
+    }
+    Write-Host "git-signing: created $key"
+}
+if (-not (Test-Path "$key.pub")) {
+    & $sshKeygen -y -f $key | Set-Content -Encoding ascii "$key.pub"
+}
+$localKey = KeyId (Get-Content "$key.pub" -Raw)
+
+function RegisterHint {
+    Warn "$key.pub is not registered with GitHub, so its signatures show as Unverified"
+    Warn "to register it: gh auth refresh -h github.com -s admin:ssh_signing_key (gh auth login -s ... if not logged in), then chezmoi apply"
+}
+
+function AddKey {
+    gh ssh-key add "$key.pub" --type signing --title {{ .chezmoi.hostname | quote }} 2>&1 | Out-Null
+    $LASTEXITCODE -eq 0
+}
+
+function Register {
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { RegisterHint; return }
+    $login = gh api user --jq .login 2>$null
+    if ($LASTEXITCODE -ne 0) { RegisterHint; return }
+    if ($login -ne $githubUser) {
+        Warn "gh is logged in as $login, not $githubUser; not registering $key.pub"
+        return
+    }
+    if (AddKey) { Write-Host "git-signing: registered $key.pub with GitHub"; return }
+    # Usually a missing scope; it can be granted in place, but only from a terminal.
+    if (-not [Console]::IsInputRedirected) {
+        gh auth refresh -h github.com -s admin:ssh_signing_key
+        if ($LASTEXITCODE -eq 0 -and (AddKey)) { Write-Host "git-signing: registered $key.pub with GitHub"; return }
+    }
+    RegisterHint
+}
+
+if ($fetched -and ($githubKeys -notcontains $localKey)) { Register }
+
+if ($fetched) {
+    $keys = $githubKeys
+} elseif (Test-Path $signers) {
+    $keys = @(Get-Content $signers | Where-Object { $_.Trim() } | ForEach-Object { ($_.Trim() -split '\s+')[1..2] -join ' ' })
+} else {
+    $keys = @()
+}
+$keys = @($keys + $localKey | Where-Object { $_ } | Select-Object -Unique)
+
+$lines = foreach ($principal in $principals) { foreach ($k in $keys) { "$principal $k" } }
+# LF and no BOM, which ssh-keygen reads reliably; Set-Content in 5.1 adds a BOM.
+[IO.File]::WriteAllText($signers, (($lines -join "`n") + "`n"))
+
+exit 0
+{{ end -}}

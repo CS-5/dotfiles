@@ -37,6 +37,9 @@ set -gx SSH_AUTH_SOCK ({{ .binDirAbs }}/bitwarden-ssh-sock)
 {{- else if .isWsl -}}
 fish_ssh_agent
 {{- end }}
+{{- if and .isDc .gitSign }}
+{{ .binDirAbs }}/git-signing-agent --quiet
+{{- end }}
 
 # Per-machine overrides, never managed by the dotfiles.
 test -r ~/.config/local/shell.fish; and source ~/.config/local/shell.fish

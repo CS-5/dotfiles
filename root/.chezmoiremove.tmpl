@@ -10,3 +10,6 @@
 {{- /* Replaced by conf.d/abbreviations.fish. chezmoi leaves a target in place
        when its source is deleted, so a retired file is listed here. */}}
 .config/fish/conf.d/claude.fish
+{{- /* No longer used: WSL signs with its own key file, not through the
+       Windows-side agent. */}}
+.local/bin/ssh-keygen-wsl
