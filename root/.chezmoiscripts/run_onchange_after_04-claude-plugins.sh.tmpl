@@ -1,18 +1,11 @@
 {{/* Rendered only once claude is on PATH: an empty script doesn't run or get
      recorded, so the first apply after claude is installed provisions it. */ -}}
-{{ if and (ne .chezmoi.os "windows") (lookPath "claude") -}}
+{{ if and (not .isWindows) (lookPath "claude") -}}
 #!/bin/bash
 
 # claude plugins hash: {{ include ".chezmoidata/claude.toml" | sha256sum }}
 
 set -euo pipefail
 
-{{ range merge (dict) .claude.marketplaces (dig "identities" .identity "marketplaces" dict .claude) -}}
-echo "Adding marketplace {{ . }}..."
-claude plugin marketplace add "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to add marketplace {{ . }}"
-{{ end -}}
-{{ range concat .claude.plugins (dig "identities" .identity "plugins" list .claude) -}}
-echo "Installing {{ . }}..."
-claude plugin install "{{ . }}" --scope user 2>/dev/null || echo "[WARN] failed to install {{ . }}"
-{{ end -}}
+{{ template "plugin-provision" (dict "cli" "claude" "data" .claude "identity" .identity "install" "install" "flags" " --scope user") }}
 {{- end }}

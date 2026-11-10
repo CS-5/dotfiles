@@ -1,4 +1,4 @@
-{{ if and (ne .chezmoi.os "windows") (not .isOmarchy) -}}
+{{ if and (not .isWindows) (not .isOmarchy) -}}
 #!/bin/bash
 
 # Regenerate whenever any pinned tool version changes, not just when this

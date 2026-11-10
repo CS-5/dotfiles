@@ -1,4 +1,4 @@
-{{ if ne .chezmoi.os "windows" -}}
+{{ if not .isWindows -}}
 #!/bin/bash
 
 # Copy Claude config from ~/.claude to $CLAUDE_CONFIG_DIR if set

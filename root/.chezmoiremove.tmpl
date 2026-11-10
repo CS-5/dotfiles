@@ -13,3 +13,6 @@
 {{- /* No longer used: WSL signs with its own key file, not through the
        Windows-side agent. */}}
 .local/bin/ssh-keygen-wsl
+{{- /* Replaced by the fzkill command in ~/.local/bin, which a leftover fish
+       function of the same name would shadow. */}}
+.config/fish/functions/fzkill.fish

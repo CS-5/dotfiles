@@ -51,7 +51,7 @@ main() {
         step "Updating mise"
         # A package-managed mise (Homebrew, Arch, distro packages) has
         # self-update disabled and exits nonzero; the system-package step above
-        # is what updates those. See .chezmoiscripts/run_after_mise-update.sh.
+        # is what updates those. See .chezmoiscripts/run_after_11-mise-update.sh.
         mise self-update --yes || echo "mise self-update skipped"
     fi
 

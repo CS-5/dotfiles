@@ -10,7 +10,7 @@
 source "$OMARCHY_PATH/default/bash/rc"
 {{ else -}}
 {{ if .isMac -}}
-# Homebrew completion (macOS)
+# Homebrew environment and completion (macOS)
 if command -v brew >/dev/null 2>&1; then
     eval "$(brew shellenv)"
     if [[ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]]; then
@@ -23,12 +23,7 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="{{ .binDirAbs }}:$PATH"
 {{- end }}
 {{ template "env-posix" . }}
-{{- if .bitwardenSshAgent }}
-export SSH_AUTH_SOCK="$({{ .binDirAbs }}/bitwarden-ssh-sock)"
-{{- end }}
-{{- if and .isDc .gitSign }}
-{{ .binDirAbs }}/git-signing-agent --quiet
-{{- end }}
+{{- template "posix-agents" . }}
 {{- if not .isOmarchy }}
 
 if command -v starship >/dev/null 2>&1; then
@@ -49,10 +44,6 @@ if command -v mcfly >/dev/null 2>&1; then
 fi
 
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
-
-fzkill() {
-    ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
-}
 {{- if not .isOmarchy }}
 
 HISTFILE=~/.bash_history

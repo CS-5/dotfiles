@@ -26,7 +26,7 @@ ripgrep = "15.2.0"
 zoxide = "0.10.0"
 usage = "6.12.1"
 {{ end -}}
-{{ if ne .chezmoi.os "windows" -}}
+{{ if not .isWindows -}}
 {{ if not .isOmarchy -}}
 # Omarchy ships herdr as a package and deletes mise copies of it: a stale
 # client would shadow /usr/bin/herdr with an older wire protocol.

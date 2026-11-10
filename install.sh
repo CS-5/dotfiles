@@ -116,11 +116,7 @@ fi
 
 #### Chezmoi Setup ####
 show_progress "Installing chezmoi and dotfiles"
-if [[ -n "$WORK_EMAIL" ]]; then
-    "$SCRIPT_DIR/install-dotfiles.sh" --work-email "$WORK_EMAIL"
-else
-    "$SCRIPT_DIR/install-dotfiles.sh"
-fi
+"$SCRIPT_DIR/install-dotfiles.sh" ${WORK_EMAIL:+--work-email "$WORK_EMAIL"}
 log_success "Dotfiles installed and applied"
 
 #### Shell ####

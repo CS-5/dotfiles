@@ -1,0 +1,13 @@
+{{- /* Adds each marketplace and installs each plugin from a plugin list in
+       .chezmoidata (the shared entries plus the current identity's). Takes a
+       dict: cli (the agent CLI), data (its .chezmoidata table), identity,
+       install (the CLI's install verb) and flags (appended to every command,
+       with a leading space). */ -}}
+{{ range merge (dict) .data.marketplaces (dig "identities" .identity "marketplaces" dict .data) -}}
+echo "Adding marketplace {{ . }}..."
+{{ $.cli }} plugin marketplace add "{{ . }}"{{ $.flags }} 2>/dev/null || echo "[WARN] failed to add marketplace {{ . }}"
+{{ end -}}
+{{ range concat .data.plugins (dig "identities" .identity "plugins" list .data) -}}
+echo "Installing {{ . }}..."
+{{ $.cli }} plugin {{ $.install }} "{{ . }}"{{ $.flags }} 2>/dev/null || echo "[WARN] failed to install {{ . }}"
+{{ end -}}

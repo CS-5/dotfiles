@@ -1,4 +1,4 @@
-{{ if and .gitSign (eq .chezmoi.os "windows") -}}
+{{ if and .gitSign .isWindows -}}
 # Windows counterpart of run_after_09-git-signing.sh.tmpl (see it for the
 # why); keep the two in step. Creates and registers ~/.ssh/git_signing and
 # writes ~/.ssh/allowed_signers from GitHub's list. Failures only warn.

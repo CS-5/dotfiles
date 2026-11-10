@@ -55,7 +55,7 @@
 [tag]
   sort = -version:refname
 
-{{ if eq .os "windows" -}}
+{{ if .isWindows -}}
 [credential]
   helper = manager
 {{- end }}

@@ -41,10 +41,9 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
      forwarded into an SSH session (ssh -A), which is how a headless box
      reaches it. Dev containers use the host's forwarded agent instead, and
      on WSL the app runs on the Windows side where its Unix socket is
-     unreachable. Sandboxed
-     installs (App Store, snap, flatpak) put the socket inside their
-     container, so candidates are checked in order at runtime; the last
-     entry, the native install path, is the fallback. */}}
+     unreachable. Sandboxed installs (App Store, snap, flatpak) put the
+     socket inside their container, so candidates are checked in order at
+     runtime; the last entry, the native install path, is the fallback. */}}
 {{ $isWsl := env "WSL_DISTRO_NAME" | not | not -}}
 {{ $bitwardenSshSocks := list -}}
 {{ if eq .chezmoi.os "darwin" -}}
@@ -65,10 +64,6 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
 
 [data]
     # Environment Info
-    os = {{ .chezmoi.os | quote }}
-    arch = {{ .chezmoi.arch | quote }}
-    hostname = {{ .chezmoi.hostname | quote }}
-
     isMac = {{ eq .chezmoi.os "darwin" }}
     isWindows = {{ eq .chezmoi.os "windows" }}
     isWsl = {{ $isWsl }}
@@ -93,7 +88,6 @@ sourceDir = {{ env "DOTFILES_SOURCE_DIR" | default "~/.local/share/chezmoi" | qu
     bitwardenSshSocks = {{ $bitwardenSshSocks | toJson }}
 
     # Directory paths
-    binDir = {{ $binDir | quote }}
     binDirAbs = {{ joinPath .chezmoi.homeDir $binDir | quote }}
 
 [add]

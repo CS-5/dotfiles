@@ -1,4 +1,4 @@
-{{ if ne .chezmoi.os "windows" -}}
+{{ if not .isWindows -}}
 #!/bin/bash
 
 if ! command -v mise >/dev/null 2>&1; then

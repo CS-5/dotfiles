@@ -1,4 +1,4 @@
-{{ if eq .chezmoi.os "windows" -}}
+{{ if .isWindows -}}
 # mise config hash: {{ include "private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl" | sha256sum }}
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
