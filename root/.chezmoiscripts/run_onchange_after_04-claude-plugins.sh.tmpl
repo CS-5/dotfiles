@@ -1,6 +1,6 @@
 {{/* Rendered only once claude is on PATH: an empty script doesn't run or get
      recorded, so the first apply after claude is installed provisions it. */ -}}
-{{ if and (ne .chezmoi.os "windows") (lookPath "claude") -}}
+{{ if and (not .isWindows) (lookPath "claude") -}}
 #!/bin/bash
 
 # claude plugins hash: {{ include ".chezmoidata/claude.toml" | sha256sum }}

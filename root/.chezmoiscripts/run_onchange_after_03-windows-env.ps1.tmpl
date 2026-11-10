@@ -1,4 +1,4 @@
-{{ if eq .chezmoi.os "windows" -}}
+{{ if .isWindows -}}
 # env vars hash: {{ includeTemplate "env-windows-persist" . | sha256sum }}
 
 {{ template "env-windows-persist" . }}

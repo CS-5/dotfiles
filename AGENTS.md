@@ -107,8 +107,9 @@ CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_con
 
 Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
 
-- `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
+- `run_onchange_after_01-mise-install.sh.tmpl` / `.ps1.tmpl` - Installs mise tools when config changes
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup). Not on Omarchy, where fish isn't used
+- `run_onchange_after_03-windows-env.ps1.tmpl` - Windows: persists the vars in the `env-windows-persist` partial to the User registry and adds `~/.local/bin` to the User `Path`; re-runs when the partial changes (see Environment Variables)
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
 - `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
 - `run_onchange_after_06-codex-plugins.sh.tmpl` - Installs Codex plugins when the plugin list changes (see Codex Plugin Management)

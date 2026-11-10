@@ -1,4 +1,4 @@
-{{ if ne .chezmoi.os "windows" -}}
+{{ if not .isWindows -}}
 #!/bin/bash
 
 # mise config hash: {{ include "private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl" | sha256sum }}

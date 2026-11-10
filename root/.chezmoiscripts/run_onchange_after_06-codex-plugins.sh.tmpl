@@ -1,6 +1,6 @@
 {{/* Rendered only once codex is on PATH: an empty script doesn't run or get
      recorded, so the first apply after codex is installed provisions it. */ -}}
-{{ if and (ne .chezmoi.os "windows") (lookPath "codex") -}}
+{{ if and (not .isWindows) (lookPath "codex") -}}
 #!/bin/bash
 
 # codex plugins hash: {{ include ".chezmoidata/codex.toml" | sha256sum }}

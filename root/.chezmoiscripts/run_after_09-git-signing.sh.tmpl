@@ -1,4 +1,4 @@
-{{ if and .gitSign (ne .chezmoi.os "windows") -}}
+{{ if and .gitSign (not .isWindows) -}}
 #!/bin/bash
 
 # Keep commit signing working without any per-machine edits to the dotfiles:
