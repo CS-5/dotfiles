@@ -117,7 +117,7 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_after_08-omarchy-packages.sh.tmpl` - Omarchy: installs whatever `.chezmoidata/omarchy.toml` lists that is missing (see Omarchy)
 - `run_after_09-git-signing.sh.tmpl` / `.ps1.tmpl` - Creates and registers the machine's signing key, writes `allowed_signers` from GitHub, and in dev containers runs `git-signing-agent` (see Git Signing)
 - `run_after_10-install-claude-config.sh.tmpl` - When `CLAUDE_CONFIG_DIR` points somewhere other than `~/.claude`, copies `CLAUDE.md`, `settings.json` and `skills/` from `~/.claude` into it
-- `run_after_11-mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is reported and stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it
+- `run_after_11-mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's and Omarchy's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it. mise's package-manager refusal is expected on every apply there, so it is recognized by its message and stays silent (`update` says the mise is package-managed); any other failure is shown with mise's own reason
 
 ### Claude Plugin Management
 

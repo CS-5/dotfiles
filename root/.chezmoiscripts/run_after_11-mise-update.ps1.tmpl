@@ -1,11 +1,13 @@
 {{ if .isWindows -}}
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     # See run_after_11-mise-update.sh.tmpl: a package-managed mise (scoop, winget,
-    # chocolatey) has self-update disabled and exits nonzero. mise prints its
-    # own reason; don't fail the apply over it.
-    mise self-update --yes --quiet > $null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "mise self-update skipped (unavailable for this install, or it failed)"
+    # chocolatey) has self-update disabled and exits nonzero. That refusal is
+    # expected on every apply, so it stays silent; any other failure is shown,
+    # and neither fails the apply.
+    $out = mise self-update --yes --quiet 2>&1
+    if ($LASTEXITCODE -ne 0 -and "$out" -notmatch 'installed via a package manager') {
+        $out | ForEach-Object { Write-Host "$_" }
+        Write-Host "mise self-update skipped (it failed)"
     }
 } else {
     Write-Host "mise not found, skipping update"
