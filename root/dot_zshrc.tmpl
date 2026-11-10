@@ -1,5 +1,5 @@
 {{ if .isMac -}}
-# Homebrew completion (macOS)
+# Homebrew environment and completion (macOS)
 if command -v brew >/dev/null 2>&1; then
     eval "$(brew shellenv)"
     if [[ -r "$(brew --prefix)/share/zsh/site-functions" ]]; then
@@ -11,12 +11,7 @@ fi
 export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="{{ .binDirAbs }}:$PATH"
 {{ template "env-posix" . }}
-{{- if .bitwardenSshAgent }}
-export SSH_AUTH_SOCK="$({{ .binDirAbs }}/bitwarden-ssh-sock)"
-{{- end }}
-{{- if and .isDc .gitSign }}
-{{ .binDirAbs }}/git-signing-agent --quiet
-{{- end }}
+{{- template "posix-agents" . }}
 
 # Enable completions
 autoload -U compinit && compinit
@@ -38,10 +33,6 @@ if command -v mcfly >/dev/null 2>&1; then
 fi
 
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
-
-fzkill() {
-    ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}' | xargs kill "$@"
-}
 
 HISTFILE=~/.zsh_history
 HISTSIZE=20000

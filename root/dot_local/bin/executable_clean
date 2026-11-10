@@ -2,14 +2,18 @@
 
 # Prune old and unused packages left behind by `update`: orphaned system
 # packages and package caches (apt/pacman/brew; on Omarchy `omarchy update`
-# already does this), and mise tool versions no longer
-# referenced by any config, plus mise's download cache.
+# already does this), and mise tool versions no longer referenced by any
+# config, plus mise's download cache.
 #
 # Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
 
 set -eufo pipefail
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
+
+is_omarchy() {
+    [[ -r /etc/os-release ]] && grep -qx 'ID=omarchy' /etc/os-release
+}
 
 case "$(uname -s)" in
 Darwin)
@@ -18,7 +22,7 @@ Darwin)
     brew cleanup --prune=all
     ;;
 Linux)
-    if [[ -r /etc/os-release ]] && grep -qx 'ID=omarchy' /etc/os-release; then
+    if is_omarchy; then
         # `omarchy update` already removes orphans and prunes the cache, but
         # keeps two versions of each package (paccache -rk2): its offline
         # rollback path, which `pacman -Sc` would empty.

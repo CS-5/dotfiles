@@ -6,15 +6,11 @@
 .zshrc
 .hushlogin
 .config/fish
-.config/brouter
 .config/ghostty
 .config/zellij
 .config/pnpm
 .docker
 Library
-{{- if .isPersonal }}
-.gitconfig-work
-{{- end }}
 {{- else }}
 Documents
 AppData
@@ -23,18 +19,21 @@ AppData
 .config/pnpm
 {{- else }}
 Library
-.config/brouter
 {{- end }}
 
 {{- if .isDc }}
 .config/ghostty
 {{- end }}
 
+{{ end -}}
+
+{{- if not .isMac }}
+.config/brouter
+{{- end }}
+
 {{- if .isPersonal }}
 .gitconfig-work
 {{- end }}
-
-{{ end -}}
 
 {{- /* Desktop config for Omarchy (Hyprland + the Omarchy shell). On Omarchy,
        Omarchy owns the terminal, prompt and multiplexer configs (it themes

@@ -8,10 +8,10 @@ This is a personal dotfiles repository managed with [chezmoi](https://www.chezmo
 
 ### Installation Scripts
 
-- `./scripts/install-dotfiles.sh [--work-email <addr>]` - Standard installation script; `--work-email` writes `~/work.email` before applying
+- `./scripts/install-dotfiles.sh [--work-email <addr>]` - Installs chezmoi if missing, then runs `chezmoi init --apply` from this checkout (called by `install.sh`); `--work-email` writes `~/work.email` before applying
 - `./install.sh [--work-email <addr>]` - Dev container / Linux bootstrap (Debian/Ubuntu, Arch, Omarchy); `--work-email` writes `~/work.email` for non-interactive work setups
 
-### Development Scripts  
+### Development Scripts
 
 - `./render.sh [--identity IDENTITY] [--work-email <addr>] [--dc] [--codespaces] [--data <json>] <template-file>` - Renders chezmoi templates to stdout for testing. Drives the real `.chezmoi.toml.tmpl` (supplying the identity via `DOTFILES_WORK_EMAIL` while neutralizing any real `~/work.email` via `DOTFILES_WORK_EMAIL_FILE`) so output matches a live apply. `--data` passes a JSON object to chezmoi's `--override-data` to force `[data]` values (e.g. `'{"isMac":true}'` to preview macOS renders from Linux)
 
@@ -24,6 +24,7 @@ Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_
 - `bitwarden-ssh-sock` - Prints the SSH agent socket on machines where Bitwarden is the agent (see SSH Agent); `--forwarded` exits 0 only inside an SSH session with a forwarded agent. Applied only when `bitwardenSshAgent` is true (everywhere except dev containers, WSL and Windows)
 - `git-signing-agent` - Dev containers: turns commit signing on when the forwarded SSH agent holds a key registered with GitHub as a signing key, and off otherwise (see Git Signing). Shells run it at startup with `--quiet`; run it by hand after (re)connecting an agent. Applied only when `isDc` and `gitSign` are true
 - `set-work-email <addr>` - Writes `~/work.email` and re-runs `chezmoi init --apply` so the work identity takes effect (Windows gets a PowerShell function equivalent in the profile)
+- `fzkill [kill args]` - Picks processes in fzf and kills them, passing any arguments to `kill` (e.g. `fzkill -9`); selecting nothing kills nothing
 
 ## Architecture
 
@@ -38,9 +39,10 @@ Shell-agnostic commands applied by chezmoi to `~/.local/bin` (source: `root/dot_
 The dotfiles adapt based on environment variables:
 
 - `REMOTE_CONTAINERS_IPC` - Detects dev container environment
+- `USER=vscode` - Also treated as a dev container signal (the default user of the dev container images)
 - `CODESPACES` - Detects GitHub Codespaces environment
 - A `/workspaces` directory - Also treated as a dev container signal (covers containers whose user isn't `vscode` and where `REMOTE_CONTAINERS_IPC` isn't set at install time)
-- `DOTFILES_SOURCE_DIR` - Override source directory (defaults to current directory for install.sh)
+- `DOTFILES_SOURCE_DIR` - Override source directory (`install.sh` and `install-dotfiles.sh` set it to the checkout; `.chezmoi.toml.tmpl` falls back to `~/.local/share/chezmoi` when unset)
 - `DOTFILES_WORK_EMAIL` - Work email fallback when `~/work.email` is absent (the file wins; Codespaces user secrets surface as env vars)
 - `DOTFILES_WORK_EMAIL_FILE` - Relocates the work-email file from `~/work.email` (used by render.sh; unset in normal use)
 - `ID=omarchy` in `/etc/os-release` - Sets `isOmarchy` (see Omarchy). Keyed on the distro ID, so it is false by construction on WSL, dev containers, macOS and Windows
@@ -97,7 +99,7 @@ Bitwarden leaves its socket file on disk after quitting, so the check stays stab
 
 ### Tool Management
 
-CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl`, applied as a `conf.d` drop-in. Language SDKs (go, node, bun) are conditionally included only outside dev containers (`not .isDc`). On Omarchy, tools Omarchy installs as system packages (starship, lazygit, fd, fzf, jq, ripgrep, zoxide, usage, herdr) are left out. Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
+CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_config/mise/conf.d/10-dotfiles.toml.tmpl`, applied as a `conf.d` drop-in. Language SDKs and package managers (go, node, bun, python, pnpm) are conditionally included only outside dev containers (`not .isDc`). On Omarchy, tools Omarchy installs as system packages (starship, lazygit, fd, fzf, jq, ripgrep, zoxide, usage, herdr) are left out. Tools are installed automatically during `chezmoi apply` via the `run_onchange_after_01-mise-install.sh.tmpl` script.
 
 `~/.config/mise/config.toml` is deliberately not managed: it belongs to `mise use -g`, whether you run it or Omarchy's agent wrappers fall back to it, so a managed copy would be reverted and rewritten on every apply. A tool pinned there outranks the drop-in's pin. `modify_config.toml` only removes a `config.toml` that an older version of the dotfiles wrote (recognized by its top-level `minimum_release_age`/`idiomatic_version_file_enable_tools` settings, which `mise use -g` never writes); anything else passes through untouched.
 
@@ -106,8 +108,6 @@ CLI tools are managed by [mise](https://mise.jdx.dev/) via `root/private_dot_con
 Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmoi apply`:
 
 - `run_onchange_after_01-mise-install.sh.tmpl` - Installs mise tools when config changes
-- `run_after_mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is reported and stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it
-- `run_after_install-claude-config.sh.tmpl` - Syncs Claude Code configuration
 - `run_onchange_after_02-install-completions.sh.tmpl` - Generates fish completions for every installed tool that supports it (gh, docker, mise, rg, fd, ast-grep, zellij, herdr, starship, pnpm); re-runs when the mise config changes so completions track tool versions. worktrunk uses dynamic completions instead (`conf.d/wt.fish` sources `COMPLETE=fish wt` at shell startup). Not on Omarchy, where fish isn't used
 - `run_onchange_after_04-claude-plugins.sh.tmpl` - Installs/enables Claude Code plugins when the plugin list changes (see Claude Plugin Management)
 - `run_onchange_after_05-bitwarden-ssh-agent.sh.tmpl` - macOS: (re)loads the Bitwarden `SSH_AUTH_SOCK` LaunchAgent when it changes, so GUI apps pick it up without a re-login (see SSH Agent)
@@ -115,6 +115,8 @@ Post-install scripts in `root/.chezmoiscripts/` run automatically during `chezmo
 - `run_onchange_after_07-omarchy-theme.sh.tmpl` - Omarchy: runs `omarchy theme refresh` when a managed theme's `colors.toml` changes and that theme is the active one (see Omarchy)
 - `run_after_08-omarchy-packages.sh.tmpl` - Omarchy: installs whatever `.chezmoidata/omarchy.toml` lists that is missing (see Omarchy)
 - `run_after_09-git-signing.sh.tmpl` / `.ps1.tmpl` - Creates and registers the machine's signing key, writes `allowed_signers` from GitHub, and in dev containers runs `git-signing-agent` (see Git Signing)
+- `run_after_10-install-claude-config.sh.tmpl` - When `CLAUDE_CONFIG_DIR` points somewhere other than `~/.claude`, copies `CLAUDE.md`, `settings.json` and `skills/` from `~/.claude` into it
+- `run_after_11-mise-update.sh.tmpl` / `.ps1.tmpl` - Runs `mise self-update`. Failure is reported and stepped over rather than aborting the apply: packagers can disable self-update so mise is updated through the package manager instead (Homebrew, Arch's `mise`, distro and scoop/winget packages), and those builds exit nonzero — as does a root-owned mise an unprivileged user can't replace. Updating mise there belongs to whatever installed it
 
 ### Claude Plugin Management
 
@@ -234,7 +236,7 @@ Simple key-value environment variables (e.g., `VISUAL`, `HOMEBREW_NO_AUTO_UPDATE
 
 **To add a new env var:** Add one line in the appropriate syntax to each partial that should receive it. Use chezmoi template guards (e.g., `{{ if .isMac }}`) for conditional vars. Not all vars need to appear in every partial — add only to the shells/platforms where the var applies.
 
-**Complex setup** (PATH manipulation, `brew shellenv`, tool activations like mise/starship/zoxide, SSH agent) belongs in each shell's own config file or `conf.d/` files — not in the centralized partials.
+**Complex setup** (PATH manipulation, `brew shellenv`, tool activations like mise/starship/zoxide, SSH agent) belongs in each shell's own config file or `conf.d/` files — not in the centralized partials. The one exception is the `posix-agents` partial, which holds the `SSH_AUTH_SOCK` export (via `bitwarden-ssh-sock`) and the dev-container `git-signing-agent --quiet` call that `dot_bashrc.tmpl` and `dot_zshrc.tmpl` share verbatim.
 
 On Windows, `run_onchange_after_03-windows-env.ps1.tmpl` persists env vars from `env-windows-persist` to the User registry via `[Environment]::SetEnvironmentVariable()`. It re-runs automatically when the partial's content changes.
 

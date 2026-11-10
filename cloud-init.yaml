@@ -6,7 +6,8 @@
 # mise, chezmoi-managed dotfiles, fish, fundle, Claude Code, Codex,
 # Antigravity CLI, GitHub Copilot CLI, and opencode.
 #
-# Target distro: Ubuntu/Debian (apt-based). install.sh uses apt-get.
+# Target distro: Ubuntu/Debian (the package names and sudo group below are
+# Debian-family; install.sh itself also handles Arch and Omarchy).
 
 hostname: csdev
 manage_etc_hosts: true

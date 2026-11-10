@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Pick processes with fzf and kill them; arguments are passed to kill
+# (e.g. `fzkill -9`). Selecting nothing kills nothing.
+#
+# Managed by chezmoi; installed to ~/.local/bin so it works from any shell.
+
+set -eufo pipefail
+
+# fzf exits nonzero when the picker is dismissed or nothing matches, which
+# here just means there is nothing to kill.
+pids="$(ps -eo pid,args,%mem,%cpu | fzf --multi --header-lines=1 | awk '{print $1}')" || true
+
+if [[ -n "$pids" ]]; then
+    printf '%s\n' "$pids" | xargs kill "$@"
+fi

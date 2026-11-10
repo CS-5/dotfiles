@@ -1,6 +1,6 @@
 {{ if eq .chezmoi.os "windows" -}}
 if (Get-Command mise -ErrorAction SilentlyContinue) {
-    # See run_after_mise-update.sh.tmpl: a package-managed mise (scoop, winget,
+    # See run_after_11-mise-update.sh.tmpl: a package-managed mise (scoop, winget,
     # chocolatey) has self-update disabled and exits nonzero. mise prints its
     # own reason; don't fail the apply over it.
     mise self-update --yes --quiet > $null

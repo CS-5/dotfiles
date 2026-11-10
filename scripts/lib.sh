@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Shared logging utilities for dotfiles scripts.
-# Usage: source "$(dirname "${BASH_SOURCE[0]}")/scripts/lib.sh"
-#   or:  source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# Usage: source "$SCRIPT_DIR/lib.sh", with SCRIPT_DIR set to this directory.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -16,10 +15,6 @@ log_info() {
 
 log_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
 log_error() {
