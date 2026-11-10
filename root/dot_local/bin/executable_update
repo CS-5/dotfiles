@@ -52,7 +52,15 @@ main() {
         # A package-managed mise (Homebrew, Arch, distro packages) has
         # self-update disabled and exits nonzero; the system-package step above
         # is what updates those. See .chezmoiscripts/run_after_11-mise-update.sh.
-        mise self-update --yes || echo "mise self-update skipped"
+        local out
+        if out=$(mise self-update --yes 2>&1); then
+            printf '%s\n' "$out"
+        elif printf '%s\n' "$out" | grep -q 'installed via a package manager'; then
+            echo "mise is package-managed, updated with the system packages"
+        else
+            printf '%s\n' "$out"
+            echo "mise self-update failed, skipping"
+        fi
     fi
 
     # Upgrade the chezmoi binary before pulling the dotfiles: newer templates

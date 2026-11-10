@@ -18,8 +18,14 @@ fi
 # Neither case is detected up front on purpose: which paths carry the disable
 # marker is mise's own business, and a plain network failure shouldn't fail an
 # apply either. Keeping mise current is a convenience here, so a failure is
-# reported and stepped over. mise prints its own reason on stderr.
-if ! mise self-update --yes --quiet >/dev/null; then
-    echo "mise self-update skipped (unavailable for this install, or it failed)"
+# stepped over. A package-managed mise is the expected case on every apply
+# there, so mise's refusal is recognized by its message and stays silent; any
+# other failure is shown with mise's own reason. Should mise reword that
+# message, the refusal is just shown like any other failure.
+if ! out=$(mise self-update --yes --quiet 2>&1 >/dev/null); then
+    if ! printf '%s\n' "$out" | grep -q 'installed via a package manager'; then
+        printf '%s\n' "$out" >&2
+        echo "mise self-update skipped (it failed)"
+    fi
 fi
 {{- end }}
